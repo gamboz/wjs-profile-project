@@ -7,7 +7,7 @@ DESCRIPTION = """Enrich Janeway's user profile with a field "profession"."""
 AUTHOR = 'mg'
 VERSION = '1.0'
 SHORT_NAME = 'wjs_jcom_profile'
-MANAGER_URL = 'books_admin'
+# MANAGER_URL = 'books_admin'
 JANEWAY_VERSION = "1.4"
 
 
