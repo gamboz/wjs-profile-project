@@ -10,8 +10,8 @@ from django.contrib.auth.decorators import login_required
 
 from core import logic
 
-from wjs.jcom_profile.forms import JCOMProfileForm
-from wjs.jcom_profile.models import JCOMProfile
+from wjs_jcom_profile.forms import JCOMProfileForm
+from wjs_jcom_profile.models import JCOMProfile
 
 
 @login_required

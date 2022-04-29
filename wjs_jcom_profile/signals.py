@@ -8,7 +8,7 @@ profile instance must be created as well.
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
-from wjs.jcom_profile.models import JCOMProfile
+from wjs_jcom_profile.models import JCOMProfile
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

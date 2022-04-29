@@ -1,7 +1,7 @@
 """Register the models with the admin interface."""
 
 from django.contrib import admin
-from wjs.jcom_profile.models import JCOMProfile
+from wjs_jcom_profile.models import JCOMProfile
 # from django.contrib.admin.sites import NotRegistered
 from core.models import Account
 from core.admin import AccountAdmin
