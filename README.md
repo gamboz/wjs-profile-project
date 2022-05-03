@@ -1,31 +1,23 @@
 # WJS - JCOM profile
 
-Add the field "profession" to the user account.
+**Experimental**
 
-See https://gitlab.sissamedialab.it/medialab/janeway/-/issues/7
 
+A plugin for Janeway that enriches the `Account` profile with the
+field "profession".
+
+**Important**: needs JCOM graphical theme (because of some modified templates)
 
 ## Install & use
 
-TODO: verify that it works as plugin!
-TODO: review this file!
 
-This is a django app that should live inside Janeway. To use it, proceed as follows:
+The code in the `master` branch is in the form of a django app, while
+the branch `as-plugin` contains the same code in "plugin" version.
 
-1. Activate your Janeway's virtual environment and install in development mode:
-   `pip install -e .../wjs-profession'
+1. Clone the code in some dir
 
-### Not yet implemented...
+1. switch to the branch `as-plugin`
 
-1. Activate your Janeway's virtual environment and install the package
-   of this app (please see
-   https://gitlab.sissamedialab.it/ml-foss/omlpi/-/packages)
+1. link/copy the folder `wjs_jcom_profile` into `src/pugins`
 
-2. Add "wjs\_profession" to Janeway's INSTALLED\_APPS in
-   `src/core/janeway\_global\_setting.py` like this::
-   ```
-   INSTALLED_APPS = [
-       ...
-       'wjs_profession',
-   ]
-   ```
+1. install the plugin (ala `./manage.py install_plugins`)
