@@ -6,7 +6,9 @@
 A plugin for Janeway that enriches the `Account` profile with the
 field "profession".
 
-**Important**: needs JCOM graphical theme (because of some modified templates)
+**Important**: needs [JCOM graphical
+theme](https://github.com/gamboz/jcom-theme) (because of some modified
+templates)
 
 ## Install & use
 
