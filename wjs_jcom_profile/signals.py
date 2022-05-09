@@ -34,5 +34,8 @@ def create_profile_handler(sender, instance, created, **kwargs):
     # of core.forms.RegistrationForm's ancestor (l.133) but with
     # `commit=False`, so that the form's data is not yet in the DB.
     instance.save()
-    # TODO: tests instance.save_m2m()
+
+    # NB: instance.save_m2m() fails with
+    # AttributeError: 'Account' object has no attribute 'save_m2m'
+    # because this is not a many-to-many relation
     # https://django.readthedocs.io/en/stable/topics/forms/modelforms.html?highlight=save_m2m#the-save-method
