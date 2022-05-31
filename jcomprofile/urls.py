@@ -1,7 +1,7 @@
 """My URLs. Looking for a way to "enrich" Janeway's `edit_profile`."""
 
 from django.conf.urls import url
-from plugins.wjs_jcom_profile import views
+from plugins.jcomprofile import views
 
 
 urlpatterns = [

@@ -13,8 +13,8 @@ from django.contrib.auth.decorators import login_required
 from core import logic
 from core import models as core_models
 
-from wjs_jcom_profile.forms import JCOMProfileForm, JCOMRegistrationForm
-from wjs_jcom_profile.models import JCOMProfile
+from jcomprofile.forms import JCOMProfileForm, JCOMRegistrationForm
+from jcomprofile.models import JCOMProfile
 
 
 @login_required

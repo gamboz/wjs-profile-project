@@ -7,8 +7,8 @@ DISPLAY_NAME = 'JCOM profile'
 DESCRIPTION = 'Enrich default Janeway account with fields related to JCOM'
 AUTHOR = 'Matteo'
 VERSION = '0.1'
-SHORT_NAME = 'wjs_jcom_profile'
-MANAGER_URL = 'wjs_jcom_profile_manager'
+SHORT_NAME = 'jcomprofile'
+MANAGER_URL = 'jcomprofile_manager'
 JANEWAY_VERSION = "1.4"
 
 

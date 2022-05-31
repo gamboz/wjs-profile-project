@@ -6,7 +6,7 @@ from django.forms import ModelForm
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from utils.forms import CaptchaForm
-from wjs_jcom_profile.models import JCOMProfile
+from jcomprofile.models import JCOMProfile
 from core.forms import EditAccountForm
 
 

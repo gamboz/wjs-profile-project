@@ -82,5 +82,5 @@ class JCOMProfileURLs(TestCase):
         journal_path = "/JCOM/"
         response = client.get(journal_path)
         expected_register_link = \
-            '/JCOM/plugins/wjs_jcom_profile/register/step/1/">Register'
+            '/JCOM/plugins/jcomprofile/register/step/1/">Register'
         self.assertContains(response, expected_register_link)
