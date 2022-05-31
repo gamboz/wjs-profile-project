@@ -7,14 +7,18 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from utils.forms import CaptchaForm
 from wjs_jcom_profile.models import JCOMProfile
+from core.forms import EditAccountForm
 
 
-class JCOMProfileForm(ModelForm):
+class JCOMProfileForm(EditAccountForm):
     """Additional fields of the JCOM profile."""
 
     class Meta:
         model = JCOMProfile
-        fields = '__all__'
+        exclude = ('email', 'username', 'activation_code', 'email_sent',
+                   'date_confirmed', 'confirmation_code', 'is_active',
+                   'is_staff', 'is_admin', 'date_joined', 'password',
+                   'is_superuser', 'janeway_account')
 
 
 class JCOMRegistrationForm(ModelForm, CaptchaForm):
