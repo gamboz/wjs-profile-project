@@ -75,6 +75,7 @@ def prova(request):
                                      'Old password is not correct.')
 
         elif 'edit_profile' in request.POST:
+            import ipdb; ipdb.set_trace()
             form = JCOMProfileForm(request.POST, request.FILES, instance=user)
 
             if form.is_valid():
