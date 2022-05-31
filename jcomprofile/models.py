@@ -19,6 +19,10 @@ PROFESSIONS = (
 class JCOMProfile(Account):
     """An enrichment of Janeway's Account."""
 
+    # class Meta:
+    #     app_label = 'plugins.jcomprofile'
+    #     app_label = 'jcomprofile'
+
     objects = AccountManager()
     # The following is redundant.
     # If not explicitly given, django creates a OTOField
