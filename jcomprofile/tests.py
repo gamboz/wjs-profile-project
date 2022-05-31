@@ -3,11 +3,11 @@
 from django.test import TestCase
 from core.models import Account
 from django.core.exceptions import ObjectDoesNotExist
-from wjs.jcome_profile.models import AccountProfession
+from plugins.jcomprofile.models import JCOMProfile
 # from utils.testing import helpers
 
 
-class AccountProfessionModelTests(TestCase):
+class JCOMProfileProfessionModelTests(TestCase):
 
     def setUp(self):
         """Do setup."""
@@ -24,7 +24,7 @@ class AccountProfessionModelTests(TestCase):
         tests.
         """
         try:
-            userX = Account.objects.get(username=self.username)
+            userX = JCOMProfile.objects.get(username=self.username)
         except ObjectDoesNotExist:
             pass
         else:
@@ -36,17 +36,17 @@ class AccountProfessionModelTests(TestCase):
         However, the profession is not set by default.
         """
         self.drop_userX()
-        userX = Account(username=self.username,
+        userX = JCOMProfile(username=self.username,
                         first_name="User", last_name="Ics")
         userX.save()
-        again = Account.objects.get(username=self.username)
+        again = JCOMProfile.objects.get(username=self.username)
         self.assertEqual(again.username, self.username)
         self.assertIsNone(again.accountprofession.profession)
 
     def test_account_can_save_profession(self):
         """One can set and save a profession onto an account."""
         self.drop_userX()
-        userX = Account(username=self.username,
+        userX = JCOMProfile(username=self.username,
                         first_name="User", last_name="Ics")
         userX.save()
 
@@ -56,14 +56,14 @@ class AccountProfessionModelTests(TestCase):
         # (or something similar)
         # I think not...
         profession_id = 2
-        profile_extension = AccountProfession(userX)
+        profile_extension = JCOMProfile(userX)
         profile_extension.profession = profession_id
         profile_extension.save()
 
         userX.accountprofession = profile_extension
         userX.save()
 
-        again = Account.objects.get(username=self.username)
+        again = JCOMProfile.objects.get(username=self.username)
         self.assertEqual(again.username, self.username)
         self.assertEqual(again.accountprofession.profession, profession_id)
 
