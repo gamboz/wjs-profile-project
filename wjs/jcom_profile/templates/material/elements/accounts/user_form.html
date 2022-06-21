@@ -1,0 +1,10 @@
+{% extends "elements/accounts/user_form.html" %}
+{% load bootstrap4 %}
+{% block extra_corefields %}
+Included from wjs/jcom_profile/templates/elements/accounts/user_form.html
+<div class="row">
+    <div class="col m3">
+        {% bootstrap_field form.profession %}
+    </div>
+</div>
+{% endblock %}

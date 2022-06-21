@@ -1,0 +1,10 @@
+{% extends "elements/accounts/user_form.html" %}
+{% load foundation %}
+{% block extra_corefields %}
+Included from wjs/jcom_profile/templates/elements/accounts/user_form.html
+<div class="row">
+    <div class="large-3 columns">
+        {{ form.profession|foundation }}
+    </div>
+</div>
+{% endblock %}
