@@ -9,6 +9,9 @@ from utils.forms import CaptchaForm
 from wjs.jcom_profile.models import JCOMProfile
 from core.forms import EditAccountForm
 
+from django.urls import reverse
+from django.utils.functional import lazy
+
 
 class JCOMProfileForm(EditAccountForm):
     """Additional fields of the JCOM profile."""
@@ -32,12 +35,14 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm):
         widget=forms.PasswordInput, label=_('Password'))
     password_2 = forms.CharField(
         widget=forms.PasswordInput, label=_('Repeat Password'))
+    gdpr_checkbox = forms.BooleanField(initial=True,)
+                                       # label=lazy(lambda: _("Privacy <a href='%s' a>policy</a>" % reverse('privacy'))))
 
     class Meta:
         model = JCOMProfile
         fields = ('email', 'salutation', 'first_name', 'middle_name',
                   'last_name', 'department', 'institution', 'country',
-                  'profession')
+                  'profession', 'gdpr_checkbox')
 
     def clean_password_2(self):
         """Validate password."""
