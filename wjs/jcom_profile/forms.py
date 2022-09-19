@@ -35,8 +35,7 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm):
         widget=forms.PasswordInput, label=_('Password'))
     password_2 = forms.CharField(
         widget=forms.PasswordInput, label=_('Repeat Password'))
-    gdpr_checkbox = forms.BooleanField(initial=True,)
-                                       # label=lazy(lambda: _("Privacy <a href='%s' a>policy</a>" % reverse('privacy'))))
+    gdpr_checkbox = forms.BooleanField(initial=False, required=True)
 
     class Meta:
         model = JCOMProfile

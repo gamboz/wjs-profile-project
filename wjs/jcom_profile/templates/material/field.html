@@ -1,8 +1,19 @@
-{% load bootstrap4 %}
-Included from material/field.html
-<div class="row">
-    <div class="col m3">
-        {% bootstrap_field form.profession %}
-        {% bootstrap_field form.gdpr_checkbox %}
-    </div>
+{% load materialize %}
+
+<div class="input-field col s12">
+    {{ form.profession }}
+    <label for={{ form.profession.id }}>Profession</label>
+</div>
+<div class="col s12">
+    <p>
+        {{ form.gdpr_checkbox }}
+        <label for="id_gdpr_checkbox">
+            {% trans "By registering an account you agree to our" %}
+            {% if journal_settings.general.privacy_policy_url %}
+                <a href="{{ journal_settings.general.privacy_policy_url }}">{% trans "Privacy Policy" %}</a>
+            {% else %}
+                <a href="{% url 'cms_page' "privacy" %}">{% trans "Privacy Policy" %} </a>
+            {% endif %}
+        </label>
+    </p>
 </div>
