@@ -31,13 +31,19 @@ class PrivacyAcknowledgedMiddleware:
         if not hasattr(request, "user"):
             return None
 
-        # TODO: maybe use request.resolver_match.url_name == 'article_view':
-        # if request.path in ("/logout/", "/profile/"): <-- fails on <J-CODE>/profile
-        import ipdb; ipdb.set_trace()
-        match = resolve(request.path)
-        if match.url_name in (
-            "core_edit_profile",
-            "core_logout",
+        # The following fails on <J-CODE>/profile
+        # if request.path in ("/logout/", "/profile/"): <--
+        # import ipdb; ipdb.set_trace()
+
+        # The following fails on <J-CODE>/*
+        # (does the resolver know about journals?)
+        # match = resolve(request.path)
+        # if match.url_name in (
+        #     "core_edit_profile",
+        #     "core_logout",
+        # ):
+        if request.path.endswith("/logout/") or request.path.endswith(
+            "/profile/"
         ):
             return None
 
@@ -53,6 +59,7 @@ class PrivacyAcknowledgedMiddleware:
         message_text = """Please acknowledge privacy note (see checkbox below)
         or log-out to continue navigate the site.
         """
+        # TODO: the flash message is almost invisible in some theme (OLH?)
         # TODO: the flash message can be too fast. Trying to add extra
         # tags to slow it down at js level.
         messages.add_message(
