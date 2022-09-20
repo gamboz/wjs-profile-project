@@ -141,15 +141,15 @@ class TestJCOMProfileURLs:
         (
             "material",
             (
-                '<select name="profession" class="form-control" title="" required id="id_profession">',
-                '<label class="form-control-label" for="id_profession">Profession</label>',
+                '<select name="profession" required id="id_profession">',
+                '<label>Profession</label>',
             ),
         ),
         (
             "OLH",
             (
-                '<select name="profession" class="form-control" title="" required id="id_profession">',
-                '<label class="form-control-label" for="id_profession">Profession</label>',
+                '<select name="profession" required id="id_profession">',
+                '<label for="id_profession">'
             ),
         ),
     ]
@@ -164,8 +164,8 @@ class TestJCOMProfileURLs:
         (
             "material",
             (
-                '<select name="profession" class="validate" required id="id_profession">',
-                '<label for="id_profession" data-error="" data-success="" id="label_profession">Profession</label>',
+                '<select name="profession" required id="id_profession">',
+                '<label>Profession</label>',
             ),
         ),
         (
@@ -182,7 +182,7 @@ class TestJCOMProfileURLs:
     @pytest.mark.parametrize("theme,fragments", PROFESSION_SELECT_FRAGMENTS_JOURNAL)
     @pytest.mark.django_db
     def test_journalregistrationForm_has_fieldProfession(
-        self, journalPippo, theme, fragments, clear_script_prefix_fix
+            self, journalPippo, theme, fragments, clear_script_prefix_fix
     ):
         """The field "profession" must appear in the journal registration form."""
         # Set graphical theme.
@@ -237,7 +237,6 @@ class TestJCOMWIP:
         field_label = profile._meta.get_field("profession").verbose_name
         expected_label = "profession"
         assert field_label == expected_label
-
 
 # Historical
 # ==========
