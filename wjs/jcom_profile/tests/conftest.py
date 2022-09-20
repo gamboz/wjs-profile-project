@@ -1,32 +1,5 @@
-"""Do not cleanup / use a read only database."""
-
-# You can replace the ordinary django_db_setup to completely avoid
-# database creation/migrations. If you have no need for rollbacks or
-# truncating tables, you can simply avoid blocking the database and
-# use it directly. When using this method you must ensure that your
-# tests do not change the database state.
-
-# https://pytest-django.readthedocs.io/en/latest/database.html
-
-
-# @pytest.fixture(scope='session')
-# def django_db_setup():
-#     """Avoid creating/setting up the test database."""
-#     pass
-
-
-# @pytest.fixture
-# def db_access_without_rollback_and_truncate(
-#         request,
-#         django_db_setup, django_db_blocker):
-#     """Do not clean the DB."""
-#     django_db_blocker.unblock()
-#     request.addfinalizer(django_db_blocker.restore)
+"""pytest common stuff and fixtures."""
 import pytest
-from django.core.exceptions import ObjectDoesNotExist
-from django.urls import clear_script_prefix
-
-from core.models import Account
 from journal.tests.utils import make_test_journal
 from press.models import Press
 
@@ -101,7 +74,7 @@ PROFESSION_SELECT_FRAGMENTS_PRESS = [
             <label for="id_profession">
                 Profession
                 <span class="red">*</span>
-                
+
             </label>
             """
         ),
@@ -135,14 +108,16 @@ def user():
 def press():
     """Prepare a press."""
     # Copied from journal.tests.test_models
-    press = Press.objects.create(domain="testserver", is_secure=False, name="Medialab")
-    press.save()
-    yield press
-    press.delete()
+    apress = Press.objects.create(
+        domain="testserver", is_secure=False, name="Medialab"
+    )
+    apress.save()
+    yield apress
+    apress.delete()
 
 
 @pytest.fixture
-def journal(press):
+def journalPippo(press):
     """Prepare a journal."""
     # The  graphical theme is set by the single tests.
     journal_kwargs = dict(
@@ -156,14 +131,25 @@ def journal(press):
     journal.delete()
 
 
-@pytest.fixture
-def clear_script_prefix_fix():
-    """Clear django's script prefix at the end of the test.
-
-    Otherwise `reverse()` might produce unexpected results.
-
-    This fixture clears the script prefix before and after the test.
-    """
-    clear_script_prefix()
-    yield None
-    clear_script_prefix()
+# You can replace the ordinary django_db_setup to completely avoid
+# database creation/migrations. If you have no need for rollbacks or
+# truncating tables, you can simply avoid blocking the database and
+# use it directly. When using this method you must ensure that your
+# tests do not change the database state.
+#
+# https://pytest-django.readthedocs.io/en/latest/database.html
+#
+#
+# @pytest.fixture(scope='session')
+# def django_db_setup():
+#     """Avoid creating/setting up the test database."""
+#     pass
+#
+#
+# @pytest.fixture
+# def db_access_without_rollback_and_truncate(
+#         request,
+#         django_db_setup, django_db_blocker):
+#     """Do not clean the DB."""
+#     django_db_blocker.unblock()
+#     request.addfinalizer(django_db_blocker.restore)
