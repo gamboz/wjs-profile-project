@@ -153,6 +153,28 @@ class TestJCOMProfileURLs:
             ),
         ),
     ]
+
+    GDPR_FRAGMENTS_JOURNAL = [
+        (
+            "clean",
+            (
+                '<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',
+            ),
+        ),
+        (
+            "material",
+            (
+                '<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',
+            ),
+        ),
+        (
+            "OLH",
+            (
+                '<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',
+            ),
+        ),
+    ]
+
     PROFESSION_SELECT_FRAGMENTS_PRESS = [
         (
             "clean",
@@ -200,6 +222,26 @@ class TestJCOMProfileURLs:
         for fragment in fragments:
             assert fragment in response.content.decode()
 
+    @pytest.mark.parametrize("theme,fragments", GDPR_FRAGMENTS_JOURNAL)
+    @pytest.mark.django_db
+    def test_journal_registration_form_has_gdpr_checkbox(
+            self, journalPippo, theme, fragments, clear_script_prefix_fix
+    ):
+        # Set graphical theme.
+        # Do not use `journal.theme`: it has been deprecated!
+        from core.models import Setting, SettingValue
+        from utils import setting_handler
+
+        theme_setting = Setting.objects.get(name="journal_theme")
+        setting_handler.save_setting(
+            theme_setting.group.name, theme_setting.name, journalPippo, theme
+        )
+
+        client = Client()
+        response = client.get(f"/{JOURNAL_CODE}/register/step/1/")
+        for fragment in fragments:
+            assert fragment in response.content.decode()
+
     @pytest.mark.parametrize("theme,fragments", PROFESSION_SELECT_FRAGMENTS_PRESS)
     @pytest.mark.django_db
     def test_pressregistrationForm_has_fieldProfession(self, press, theme, fragments):
@@ -213,6 +255,26 @@ class TestJCOMProfileURLs:
         for fragment in fragments:
             assert fragment in response.content.decode()
 
+    @pytest.mark.parametrize("theme,fragments", GDPR_FRAGMENTS_JOURNAL)
+    @pytest.mark.django_db
+    def test_press_registration_form_has_gdpr_checkbox(
+            self, journalPippo, theme, fragments, clear_script_prefix_fix
+    ):
+        # Set graphical theme.
+        # Do not use `journal.theme`: it has been deprecated!
+        from core.models import Setting, SettingValue
+        from utils import setting_handler
+
+        theme_setting = Setting.objects.get(name="journal_theme")
+        setting_handler.save_setting(
+            theme_setting.group.name, theme_setting.name, journalPippo, theme
+        )
+
+        client = Client()
+        response = client.get(f"/register/step/1/")
+        for fragment in fragments:
+            assert fragment in response.content.decode()
+
 
 class TestJCOMWIP:
     """Tests in `pytest`-style."""
@@ -221,6 +283,11 @@ class TestJCOMWIP:
         """The field "profession" is mandatory in the registration form."""
         form = JCOMRegistrationForm()
         assert form.fields.get("profession").required
+
+    def test_gdpr_checkbox_is_mandatory(self):
+        """The field "profession" is mandatory in the registration form."""
+        form = JCOMRegistrationForm()
+        assert form.fields.get("gdpr_checkbox").required
 
     def test_profileForm_fieldProfession_isMandatory(self):
         """The field "profession" is mandatory in the profile form."""
