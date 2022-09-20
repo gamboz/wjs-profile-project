@@ -51,8 +51,9 @@ class PrivacyAcknowledgedMiddleware:
         if not request.user.is_authenticated:
             return None
 
-        if hasattr(request.user, "jcom_profile"):
-            if request.user.jcom_profile.gdpr_policy:
+        if hasattr(request.user, "jcomprofile"):
+            logger.warning(f"User {request.user.id} has no extended profile!")
+            if request.user.jcomprofile.gdpr_checkbox:
                 return None
 
         # TODO: parametrize message text in journal settings?
