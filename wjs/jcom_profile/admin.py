@@ -7,10 +7,12 @@ from django.contrib import admin, messages
 from wjs.jcom_profile import forms, models
 from wjs.jcom_profile.models import JCOMProfile
 # from django.contrib.admin.sites import NotRegistered
+from django.conf import settings
 from core.models import Account
 from core.admin import AccountAdmin
 
 from django.conf.urls import url
+from django.core.mail import send_mail
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -53,6 +55,14 @@ class UserAdmin(AccountAdmin):
                     institution=form.data["institution"],
                     invitation_token=data,
                     is_active=False
+                )
+                url = reverse("accept_gdpr", kwargs={"token": data})
+                mail_text = f"{form.data['plain_text']} \n {url}"
+                send_mail(
+                    "Join JCOM journal",
+                    mail_text,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [form.data["email"]]
                 )
                 messages.add_message(
                     request,
