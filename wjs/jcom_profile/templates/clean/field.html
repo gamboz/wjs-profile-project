@@ -5,7 +5,7 @@
 </div>
 <div class="form-group">
     {{ form.gdpr_checkbox }}
-    <label for={{ form.gdpr_checkbox.id }} class="form-group-label">{% trans "By registering an account you agree to our" %}
+    <label for="{{ form.gdpr_checkbox.id_for_label }}" class="form-group-label">{% trans "By registering an account you agree to our" %}
         {% if journal_settings.general.privacy_policy_url %}
             <a href="{{ journal_settings.general.privacy_policy_url }}">{% trans "Privacy Policy" %}</a>
         {% else %}
