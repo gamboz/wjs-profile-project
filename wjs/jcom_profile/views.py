@@ -1,4 +1,6 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
+import base64
+import json
 
 from django.urls import reverse
 from django.contrib import messages
@@ -12,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from core import logic
 from core import models as core_models
 
+from wjs.jcom_profile import forms
 from wjs.jcom_profile.forms import JCOMProfileForm, JCOMRegistrationForm
 from wjs.jcom_profile.models import JCOMProfile
 
@@ -140,4 +143,33 @@ def register(request):
         'form': form,
     }
 
+    return render(request, template, context)
+
+
+def confirm_gdpr_acceptance(request, token):
+    template = "admin/core/account/gdpr_acceptance.html"
+    try:
+        data = json.loads(base64.urlsafe_b64decode(token.encode()).decode())
+    except Exception:
+        context = {"error": True}
+        return render(request, template, context)
+
+    context = {
+        "first_name": data["first_name"],
+        "last_name": data["last_name"],
+        "form": forms.GDPRAcceptanceForm(),
+    }
+
+    if request.POST:
+        template = "admin/core/account/thankyou.html"
+        try:
+            account = JCOMProfile.objects.get(invitation_token=token)
+        except JCOMProfile.DoesNotExist:
+            account = None
+
+        if account and not (account.is_active and account.gdpr_checkbox):
+            account.is_active = True
+            account.gdpr_checkbox = True
+            account.save()
+            context["activated"] = True
     return render(request, template, context)

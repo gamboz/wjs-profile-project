@@ -9,8 +9,9 @@ from utils.forms import CaptchaForm
 from wjs.jcom_profile.models import JCOMProfile
 from core.forms import EditAccountForm
 
-from django.urls import reverse
-from django.utils.functional import lazy
+
+class GDPRAcceptanceForm(forms.Form):
+    gdpr_checkbox = forms.BooleanField(initial=False, required=True)
 
 
 class JCOMProfileForm(EditAccountForm):
@@ -24,7 +25,7 @@ class JCOMProfileForm(EditAccountForm):
                    'is_superuser', 'janeway_account')
 
 
-class JCOMRegistrationForm(ModelForm, CaptchaForm):
+class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
     """A form that creates a user.
 
     With no privileges, from the given username and password.
@@ -35,7 +36,6 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm):
         widget=forms.PasswordInput, label=_('Password'))
     password_2 = forms.CharField(
         widget=forms.PasswordInput, label=_('Repeat Password'))
-    gdpr_checkbox = forms.BooleanField(initial=False, required=True)
 
     class Meta:
         model = JCOMProfile
@@ -66,3 +66,12 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm):
             user.save()
 
         return user
+
+
+class InviteUserForm(forms.Form):
+    first_name = forms.CharField()
+    last_name = forms.CharField()
+    email = forms.EmailField()
+    institution = forms.CharField()
+    department = forms.CharField()
+    plain_text = forms.Textarea()
