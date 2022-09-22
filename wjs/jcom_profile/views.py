@@ -149,42 +149,43 @@ def register(request):
 
 
 def confirm_gdpr_acceptance(request, token):
+    """
+    The view for explicit GDPR acceptance for invited users.
+    The token encodes base user information (name, surname and email)
+    """
     template = "admin/core/account/gdpr_acceptance.html"
+
+    # verify the account existence
     try:
-        data = json.loads(base64.urlsafe_b64decode(token.encode()).decode())
-    except Exception:
+        account = JCOMProfile.objects.get(invitation_token=token)
+    except JCOMProfile.DoesNotExist:
         context = {"error": True}
         return render(request, template, context)
 
     context = {
-        "first_name": data["first_name"],
-        "last_name": data["last_name"],
+        "first_name": account.first_name,
+        "last_name": account.last_name,
         "form": forms.GDPRAcceptanceForm(),
     }
-
     if request.POST:
         template = "admin/core/account/thankyou.html"
-        try:
-            account = JCOMProfile.objects.get(invitation_token=token)
-        except JCOMProfile.DoesNotExist:
-            account = None
-
-        if account and not (account.is_active and account.gdpr_checkbox):
+        if not (account.is_active and account.gdpr_checkbox):
             account.is_active = True
             account.gdpr_checkbox = True
             account.save()
             context["activated"] = True
-
+            # Generate a temporary token to set a brand new password
             core_models.PasswordResetToken.objects.filter(account=account).update(expired=True)
             reset_token = core_models.PasswordResetToken.objects.create(account=account)
-            reset_psw_url = request.build_absolute_uri(reverse("core_reset_password", kwargs={"token": reset_token.token}))
-            mail_text = f"Dear {data['first_name']} {data['last_name']}, please add your password to complete " \
-                        f"the registration process before first login: click here {reset_psw_url}"
+            reset_psw_url = request.build_absolute_uri(
+                reverse("core_reset_password", kwargs={"token": reset_token.token}))
             send_mail(
                 "Reset Password",
-                mail_text,
+                f"""Dear {account.first_name} {account.last_name}, please add your password to complete 
+                the registration process before first login: click here {reset_psw_url}
+                """,
                 settings.DEFAULT_FROM_EMAIL,
-                [data["email"]]
+                [account.email]
             )
 
     return render(request, template, context)

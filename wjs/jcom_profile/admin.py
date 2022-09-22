@@ -1,5 +1,6 @@
 """Register the models with the admin interface."""
 import base64
+import hashlib
 import json
 
 from django.contrib import admin, messages
@@ -41,29 +42,40 @@ class UserAdmin(AccountAdmin):
         return import_users_url + urls
 
     def invite(self, request):
+        """
+        Invite external users from admin Account interface.
+        The user is created as inactive and his/her account is marked without GDPR explicitly accepted,
+        Invited user base information are encoded to generate a token to be appended to the url for GDPR acceptance.
+        """
         if request.method == 'POST':
             form = forms.InviteUserForm(request.POST)
             if form.is_valid():
-                data = base64.urlsafe_b64encode(
-                    json.dumps(
-                        {k: item for k, item in form.data.items() if k != "csrfmiddlewaretoken"}).encode()).decode()
+                # generate token from email (which is unique)
+                token = base64.b64encode(hashlib.sha256(form.data["email"].encode('utf-8')).digest()).hex()
+
+                # create inactive account with minimal data
                 models.JCOMProfile.objects.create(
                     email=form.data["email"],
                     first_name=form.data["first_name"],
                     last_name=form.data["last_name"],
                     department=form.data["department"],
                     institution=form.data["institution"],
-                    invitation_token=data,
+                    invitation_token=token,
                     is_active=False
                 )
-                acceptance_url = request.build_absolute_uri(reverse("accept_gdpr", kwargs={"token": data}))
-                mail_text = f"{form.data['plain_text']} {acceptance_url}"
+                # Send email to user allowing him/her to accept GDPR policy explicitly
+                acceptance_url = request.build_absolute_uri(reverse("accept_gdpr", kwargs={"token": token}))
                 send_mail(
                     "Join JCOM journal",
-                    mail_text,
+                    f"""
+                    {form.data['plain_text']}\n
+                    Click here: {acceptance_url}
+                    """,
                     settings.DEFAULT_FROM_EMAIL,
                     [form.data["email"]]
                 )
+
+                # admin feedback
                 messages.add_message(
                     request,
                     messages.SUCCESS,
