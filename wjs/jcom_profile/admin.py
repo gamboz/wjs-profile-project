@@ -56,8 +56,8 @@ class UserAdmin(AccountAdmin):
                     invitation_token=data,
                     is_active=False
                 )
-                url = reverse("accept_gdpr", kwargs={"token": data})
-                mail_text = f"{form.data['plain_text']} \n {url}"
+                acceptance_url = request.build_absolute_uri(reverse("accept_gdpr", kwargs={"token": data}))
+                mail_text = f"{form.data['plain_text']} {acceptance_url}"
                 send_mail(
                     "Join JCOM journal",
                     mail_text,

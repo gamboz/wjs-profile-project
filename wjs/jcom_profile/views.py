@@ -3,6 +3,7 @@ import base64
 import json
 
 from django.urls import reverse
+from django.conf import settings
 from django.contrib import messages
 from django.db import IntegrityError
 from django.shortcuts import render, redirect
@@ -10,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
 
 from core import logic
 from core import models as core_models
@@ -172,4 +174,17 @@ def confirm_gdpr_acceptance(request, token):
             account.gdpr_checkbox = True
             account.save()
             context["activated"] = True
+
+            core_models.PasswordResetToken.objects.filter(account=account).update(expired=True)
+            reset_token = core_models.PasswordResetToken.objects.create(account=account)
+            reset_psw_url = request.build_absolute_uri(reverse("core_reset_password", kwargs={"token": reset_token.token}))
+            mail_text = f"Dear {data['first_name']} {data['last_name']}, please add your password to complete " \
+                        f"the registration process before first login: click here {reset_psw_url}"
+            send_mail(
+                "Reset Password",
+                mail_text,
+                settings.DEFAULT_FROM_EMAIL,
+                [data["email"]]
+            )
+
     return render(request, template, context)
