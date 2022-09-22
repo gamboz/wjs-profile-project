@@ -74,4 +74,4 @@ class InviteUserForm(forms.Form):
     email = forms.EmailField()
     institution = forms.CharField()
     department = forms.CharField()
-    plain_text = forms.CharField(widget=forms.Textarea)
+    message = forms.CharField(widget=forms.Textarea)

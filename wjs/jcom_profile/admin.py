@@ -18,6 +18,8 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
+from wjs.jcom_profile.utils import generate_token
+
 
 class JCOMProfileInline(admin.StackedInline):
     """Helper class to "inline" account profession."""
@@ -50,37 +52,38 @@ class UserAdmin(AccountAdmin):
         if request.method == 'POST':
             form = forms.InviteUserForm(request.POST)
             if form.is_valid():
-                # generate token from email (which is unique)
-                token = base64.b64encode(hashlib.sha256(form.data["email"].encode('utf-8')).digest()).hex()
-
-                # create inactive account with minimal data
-                models.JCOMProfile.objects.create(
-                    email=form.data["email"],
-                    first_name=form.data["first_name"],
-                    last_name=form.data["last_name"],
-                    department=form.data["department"],
-                    institution=form.data["institution"],
-                    invitation_token=token,
-                    is_active=False
-                )
-                # Send email to user allowing him/her to accept GDPR policy explicitly
-                acceptance_url = request.build_absolute_uri(reverse("accept_gdpr", kwargs={"token": token}))
-                send_mail(
-                    "Join JCOM journal",
-                    f"""
-                    {form.data['plain_text']}\n
-                    Click here: {acceptance_url}
-                    """,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [form.data["email"]]
-                )
-
-                # admin feedback
-                messages.add_message(
-                    request,
-                    messages.SUCCESS,
-                    'Account created',
-                )
+                email = form.data["email"]
+                if not JCOMProfile.objects.filter(email=email):
+                    # generate token from email (which is unique)
+                    token = generate_token(email)
+                    # create inactive account with minimal data
+                    models.JCOMProfile.objects.create(
+                        email=email,
+                        first_name=form.data["first_name"],
+                        last_name=form.data["last_name"],
+                        department=form.data["department"],
+                        institution=form.data["institution"],
+                        invitation_token=token,
+                        is_active=False
+                    )
+                    # Send email to user allowing him/her to accept GDPR policy explicitly
+                    acceptance_url = request.build_absolute_uri(reverse("accept_gdpr", kwargs={"token": token}))
+                    send_mail(
+                        settings.JOIN_JOURNAL_SUBJECT,
+                        settings.JOIN_JOURNAL_BODY.format(form.data["first_name"], form.data["last_name"],
+                                                          form.data['message'], acceptance_url),
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email]
+                    )
+                    messages.success(
+                        request=request,
+                        message='Account created',
+                    )
+                else:
+                    messages.warning(
+                        request=request,
+                        message='An account with the specified email already exists.'
+                    )
                 return HttpResponseRedirect(reverse("admin:core_account_changelist"))
 
         template = "admin/core/account/invite.html"

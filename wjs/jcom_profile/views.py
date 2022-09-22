@@ -160,7 +160,7 @@ def confirm_gdpr_acceptance(request, token):
         account = JCOMProfile.objects.get(invitation_token=token)
     except JCOMProfile.DoesNotExist:
         context = {"error": True}
-        return render(request, template, context)
+        return render(request, template, context, status=404)
 
     context = {
         "first_name": account.first_name,
@@ -180,10 +180,8 @@ def confirm_gdpr_acceptance(request, token):
             reset_psw_url = request.build_absolute_uri(
                 reverse("core_reset_password", kwargs={"token": reset_token.token}))
             send_mail(
-                "Reset Password",
-                f"""Dear {account.first_name} {account.last_name}, please add your password to complete 
-                the registration process before first login: click here {reset_psw_url}
-                """,
+                settings.RESET_PASSWORD_SUBJECT,
+                settings.RESET_PASSWORD_BODY.format(account.first_name, account.last_name, reset_psw_url),
                 settings.DEFAULT_FROM_EMAIL,
                 [account.email]
             )

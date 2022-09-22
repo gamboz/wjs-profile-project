@@ -30,6 +30,10 @@ from core.models import Account
 from journal.tests.utils import make_test_journal
 from press.models import Press
 
+from wjs.jcom_profile.models import JCOMProfile
+from wjs.jcom_profile.utils import generate_token
+
+
 USERNAME = "user"
 JOURNAL_CODE = "CODE"
 
@@ -108,6 +112,10 @@ PROFESSION_SELECT_FRAGMENTS_PRESS = [
     ),
 ]
 
+INVITE_BUTTON = """<li>
+    <a href="/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
+</li>"""
+
 
 def drop_user():
     """Delete the test user."""
@@ -120,6 +128,12 @@ def drop_user():
 
 
 @pytest.fixture
+def admin():
+    return Account.objects.create(username="admin", email="admin@admin.it", is_active=True, is_staff=True,
+                                  is_admin=True, is_superuser=True)
+
+
+@pytest.fixture
 def user():
     """Create / reset a user in the DB.
     Create both core.models.Account and wjs.jcom_profile.models.JCOMProfile.
@@ -129,6 +143,24 @@ def user():
     user = Account(username=USERNAME, first_name="User", last_name="Ics")
     user.save()
     yield user
+
+
+@pytest.fixture()
+def invited_user():
+    """
+    Create an user invited by staff, with minimal data
+    """
+    email = "invited_user@mail.it"
+    return JCOMProfile.objects.create(
+        first_name="Invited",
+        last_name="User",
+        email=email,
+        department="Dep",
+        institution="1",
+        is_active=False,
+        gdpr_checkbox=False,
+        invitation_token=generate_token(email)
+    )
 
 
 @pytest.fixture
