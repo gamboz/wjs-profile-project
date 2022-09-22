@@ -103,6 +103,12 @@ def user():
     user.save()
     yield user
 
+# Only works at module "resolution", i.e. not for the single test
+# https://docs.pytest.org/en/7.1.x/reference/reference.html#globalvar-collect_ignore
+# collect_ignore = [
+#     'test_app.py',
+# ]
+
 
 @pytest.fixture
 def press():
