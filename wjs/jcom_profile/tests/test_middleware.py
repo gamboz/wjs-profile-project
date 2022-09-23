@@ -43,7 +43,7 @@ def test_shy_user_cannot_navigate(journalPippo):
     user.jcomprofile.gdpr_checkbox = False
     user.save()
     client.force_login(user)
-
+    # TODO: CHECK WHAT AUTH MIDDLEWARE
     response = client.get("/contact/")
     assert response.status_code == 302
 

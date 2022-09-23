@@ -1,7 +1,6 @@
 """Middleware for JCOM account profile."""
 from django.contrib import messages
 from django.shortcuts import redirect, reverse
-from django.urls import resolve
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,6 +28,7 @@ class PrivacyAcknowledgedMiddleware:
         """
         logger.debug("Privacy middleware")
         if not hasattr(request, "user"):
+            logger.debug("Privacy middleware - no logged user")
             return None
 
         # The following fails on <J-CODE>/profile
@@ -45,20 +45,24 @@ class PrivacyAcknowledgedMiddleware:
         if request.path.endswith("/logout/") or request.path.endswith(
             "/profile/"
         ):
+            logger.debug("Privacy middleware - logout or profile")
             return None
 
         # TODO: do I need `if request.user.is_authenticated`?
         if not request.user.is_authenticated:
+            logger.debug("Privacy middleware - user not authenticated")
             return None
 
         if hasattr(request.user, "jcomprofile"):
             logger.warning(f"User {request.user.id} has no extended profile!")
             if request.user.jcomprofile.gdpr_checkbox:
+                logger.debug("Privacy middleware - privacy acknowledged")
                 return None
 
         # TODO: parametrize message text in journal settings?
         message_text = """Please acknowledge privacy note (see checkbox below)
         or log-out to continue navigate the site.
+        If you do not acknowledge pn, WRITE ME!!!
         """
         # TODO: the flash message is almost invisible in some theme (OLH?)
         # TODO: the flash message can be too fast. Trying to add extra
