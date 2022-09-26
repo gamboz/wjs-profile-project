@@ -15,7 +15,7 @@ class PrivacyAcknowledgedMiddleware:
     #     self.get_response = get_response
 
     # def __call__(self, request):
-    @staticmethod  # is this needed???
+    @staticmethod
     def process_request(request):
         """Ensure that the logged-in user has acknowledged the privacy policy.
 

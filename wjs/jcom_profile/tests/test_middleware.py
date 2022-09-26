@@ -5,7 +5,7 @@ from django.test import Client
 
 
 @pytest.mark.django_db
-def test_anonymous_can_navigate(journalPippo):
+def test_anonymous_can_navigate(journal):
     """Test that anonymous users can navigate.
 
     Here "anonymous" means not logged in.
@@ -16,7 +16,7 @@ def test_anonymous_can_navigate(journalPippo):
 
 
 @pytest.mark.django_db
-def test_normal_user_can_navigate(journalPippo):
+def test_normal_user_can_navigate(journal):
     """Test that a normal user can navigate normally.
 
     A normal user has acknowledged our privay policy (i.e. checkbox is
@@ -37,7 +37,7 @@ def test_normal_user_can_navigate(journalPippo):
 
 
 @pytest.mark.django_db
-def test_shy_user_cannot_navigate(journalPippo):
+def test_shy_user_cannot_navigate(journal):
     """Test that a user that didn't acknowledge privacy cannot navigate."""
     # check this also:
     # https://flowfx.de/blog/test-django-with-selenium-pytest-and-user-authentication/
@@ -54,7 +54,7 @@ def test_shy_user_cannot_navigate(journalPippo):
 
 
 @pytest.mark.django_db
-def test_shy_user_cannot_navigate_bis(journalPippo, client):
+def test_shy_user_cannot_navigate_bis(journal, client):
     """Test that a user that didn't acknowledge privacy cannot navigate."""
     # https://pytest-django.readthedocs.io/en/latest/helpers.html#client-django-test-client
     username = "user1"
