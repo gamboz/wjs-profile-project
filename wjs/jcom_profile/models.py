@@ -26,7 +26,6 @@ PROFESSIONS = (
     (3, "Other"),
 )
 
-
 class JCOMProfile(Account):
     """An enrichment of Janeway's Account."""
 

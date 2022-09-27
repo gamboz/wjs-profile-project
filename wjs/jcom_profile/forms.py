@@ -9,6 +9,9 @@ from utils.forms import CaptchaForm
 from wjs.jcom_profile.models import JCOMProfile
 from core.forms import EditAccountForm
 
+from django.urls import reverse
+from django.utils.functional import lazy
+
 
 class GDPRAcceptanceForm(forms.Form):
     gdpr_checkbox = forms.BooleanField(initial=False, required=True)
@@ -36,6 +39,7 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
         widget=forms.PasswordInput, label=_('Password'))
     password_2 = forms.CharField(
         widget=forms.PasswordInput, label=_('Repeat Password'))
+    gdpr_checkbox = forms.BooleanField(initial=False, required=True)
 
     class Meta:
         model = JCOMProfile
