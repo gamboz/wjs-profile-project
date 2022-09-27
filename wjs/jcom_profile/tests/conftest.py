@@ -123,7 +123,7 @@ def press():
 
 
 @pytest.fixture
-def journalPippo(press):
+def journal(press):
     """Prepare a journal."""
     # The  graphical theme is set by the single tests.
     journal_kwargs = dict(
