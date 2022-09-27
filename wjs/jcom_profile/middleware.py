@@ -57,7 +57,6 @@ class PrivacyAcknowledgedMiddleware:
             request,
             messages.WARNING,
             message_text,
-            extra_tags="ciao-tag,ciaone",  # not honored by themes?
         )
         logger.debug(
             f"Redirecting {request.user.id} to profile page to acknowledge privacy."
