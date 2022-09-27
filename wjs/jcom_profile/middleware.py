@@ -9,12 +9,6 @@ logger = get_logger(__name__)
 class PrivacyAcknowledgedMiddleware:
     """Ensure that the logged-in user has acknowledged the privacy policy."""
 
-    # TODO: probably the callable-class system is post-django1.11
-    # def __init__(self, get_response):
-    #     """One-time configuration and initialization."""
-    #     self.get_response = get_response
-
-    # def __call__(self, request):
     @staticmethod
     def process_request(request):
         """Ensure that the logged-in user has acknowledged the privacy policy.
@@ -26,14 +20,11 @@ class PrivacyAcknowledgedMiddleware:
         flash message and redirect to /profile.
 
         """
-        logger.debug("Privacy middleware")
         if not hasattr(request, "user"):
-            logger.debug("Privacy middleware - no logged user")
             return None
 
         # The following fails on <J-CODE>/profile
         # if request.path in ("/logout/", "/profile/"): <--
-        # import ipdb; ipdb.set_trace()
 
         # The following fails on <J-CODE>/*
         # (does the resolver know about journals?)
@@ -45,28 +36,23 @@ class PrivacyAcknowledgedMiddleware:
         if request.path.endswith("/logout/") or request.path.endswith(
             "/profile/"
         ):
-            logger.debug("Privacy middleware - logout or profile")
             return None
 
-        # TODO: do I need `if request.user.is_authenticated`?
+        # I need `if request.user.is_authenticated` because request
+        # always have a user attribute, usually an instance of
+        # AnonymousUser
         if not request.user.is_authenticated:
-            logger.debug("Privacy middleware - user not authenticated")
             return None
 
         if hasattr(request.user, "jcomprofile"):
             logger.warning(f"User {request.user.id} has no extended profile!")
             if request.user.jcomprofile.gdpr_checkbox:
-                logger.debug("Privacy middleware - privacy acknowledged")
                 return None
 
-        # TODO: parametrize message text in journal settings?
         message_text = """Please acknowledge privacy note (see checkbox below)
         or log-out to continue navigate the site.
         If you do not acknowledge pn, WRITE ME!!!
         """
-        # TODO: the flash message is almost invisible in some theme (OLH?)
-        # TODO: the flash message can be too fast. Trying to add extra
-        # tags to slow it down at js level.
         messages.add_message(
             request,
             messages.WARNING,
