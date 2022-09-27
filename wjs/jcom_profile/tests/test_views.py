@@ -100,6 +100,7 @@ def test_gdpr_acceptance(admin, invited_user, journal):
     assert response.status_code == 200
     assert invited_user.gdpr_checkbox
     assert invited_user.is_active
+    assert not invited_user.invitation_token
     assert response.context.get("activated")
     assert len(mail.outbox) == 1
 
