@@ -169,7 +169,7 @@ def confirm_gdpr_acceptance(request, token):
     }
     if request.POST:
         template = "admin/core/account/thankyou.html"
-        if not (account.is_active and account.gdpr_checkbox):
+        if not account.gdpr_checkbox:
             account.is_active = True
             account.gdpr_checkbox = True
             account.save()
