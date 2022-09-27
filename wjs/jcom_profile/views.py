@@ -174,6 +174,7 @@ def confirm_gdpr_acceptance(request, token):
             if not account.gdpr_checkbox:
                 account.is_active = True
                 account.gdpr_checkbox = True
+                account.invitation_token = ""
                 account.save()
                 context["activated"] = True
                 # Generate a temporary token to set a brand new password
