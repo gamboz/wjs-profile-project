@@ -168,22 +168,26 @@ def confirm_gdpr_acceptance(request, token):
         "form": forms.GDPRAcceptanceForm(),
     }
     if request.POST:
-        template = "admin/core/account/thankyou.html"
-        if not account.gdpr_checkbox:
-            account.is_active = True
-            account.gdpr_checkbox = True
-            account.save()
-            context["activated"] = True
-            # Generate a temporary token to set a brand new password
-            core_models.PasswordResetToken.objects.filter(account=account).update(expired=True)
-            reset_token = core_models.PasswordResetToken.objects.create(account=account)
-            reset_psw_url = request.build_absolute_uri(
-                reverse("core_reset_password", kwargs={"token": reset_token.token}))
-            send_mail(
-                settings.RESET_PASSWORD_SUBJECT,
-                settings.RESET_PASSWORD_BODY.format(account.first_name, account.last_name, reset_psw_url),
-                settings.DEFAULT_FROM_EMAIL,
-                [account.email]
-            )
+        form = forms.GDPRAcceptanceForm(request.POST)
+        if form.is_valid():
+            template = "admin/core/account/thankyou.html"
+            if not account.gdpr_checkbox:
+                account.is_active = True
+                account.gdpr_checkbox = True
+                account.save()
+                context["activated"] = True
+                # Generate a temporary token to set a brand new password
+                core_models.PasswordResetToken.objects.filter(account=account).update(expired=True)
+                reset_token = core_models.PasswordResetToken.objects.create(account=account)
+                reset_psw_url = request.build_absolute_uri(
+                    reverse("core_reset_password", kwargs={"token": reset_token.token}))
+                send_mail(
+                    settings.RESET_PASSWORD_SUBJECT,
+                    settings.RESET_PASSWORD_BODY.format(account.first_name, account.last_name, reset_psw_url),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [account.email]
+                )
+        else:
+            context["form"] = form
 
     return render(request, template, context)
