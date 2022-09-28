@@ -15,7 +15,7 @@ from django.utils.functional import lazy
 
 class GDPRAcceptanceForm(forms.Form):
     """
-    A GDPR form, consisting ina checkbox. It is sued by JCOMRegistrationForm to let user explicitly
+    A GDPR form, consisting in a checkbox. It is sued by JCOMRegistrationForm to let user explicitly
     accept the GDPR Policy.
     """
     gdpr_checkbox = forms.BooleanField(initial=False, required=True)
