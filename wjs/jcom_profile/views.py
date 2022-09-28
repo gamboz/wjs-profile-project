@@ -186,6 +186,7 @@ def confirm_gdpr_acceptance(request, token):
                     reverse("core_reset_password", kwargs={"token": reset_token.token}))
                 # Send email.
                 # FIXME: Email setting should be handled using the janeway settings framework.
+                # See https://gitlab.sissamedialab.it/wjs/wjs-profile-project/-/issues/4
                 send_mail(
                     settings.RESET_PASSWORD_SUBJECT,
                     settings.RESET_PASSWORD_BODY.format(account.first_name, account.last_name, reset_psw_url),
