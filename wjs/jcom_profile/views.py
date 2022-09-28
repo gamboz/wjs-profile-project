@@ -172,7 +172,6 @@ def confirm_gdpr_acceptance(request, token):
         if form.is_valid():
             template = "admin/core/account/thankyou.html"
             # if the form is valid and the existing account does not have the GDPR policy accepted, it is updated
-            # and an email is sent to the user to let him/her add a password
             if not account.gdpr_checkbox:
                 account.is_active = True
                 account.gdpr_checkbox = True
