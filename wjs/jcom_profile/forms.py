@@ -79,8 +79,6 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
 class InviteUserForm(forms.Form):
     """
     The form used from staff to invite external users to join a journal for review activities.
-    This form gathers minimal user information to create an inactive user which will be set to active when he/she
-    will have explicitly accepted the journal GDP policy.
     """
     first_name = forms.CharField()
     last_name = forms.CharField()
