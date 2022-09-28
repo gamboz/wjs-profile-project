@@ -171,17 +171,21 @@ def confirm_gdpr_acceptance(request, token):
         form = forms.GDPRAcceptanceForm(request.POST)
         if form.is_valid():
             template = "admin/core/account/thankyou.html"
+            # if the form is valid and the existing account does not have the GDPR policy accepted, it is updated
+            # and an email is sent to the user to let him/her add a password
             if not account.gdpr_checkbox:
                 account.is_active = True
                 account.gdpr_checkbox = True
                 account.invitation_token = ""
                 account.save()
                 context["activated"] = True
-                # Generate a temporary token to set a brand new password
+                # Generate a temporary token to set a brand-new password
                 core_models.PasswordResetToken.objects.filter(account=account).update(expired=True)
                 reset_token = core_models.PasswordResetToken.objects.create(account=account)
                 reset_psw_url = request.build_absolute_uri(
                     reverse("core_reset_password", kwargs={"token": reset_token.token}))
+                # Send email.
+                # FIXME: Email setting should be handled using the janeway settings framework.
                 send_mail(
                     settings.RESET_PASSWORD_SUBJECT,
                     settings.RESET_PASSWORD_BODY.format(account.first_name, account.last_name, reset_psw_url),

@@ -67,6 +67,7 @@ class UserAdmin(AccountAdmin):
                         is_active=False
                     )
                     # Send email to user allowing him/her to accept GDPR policy explicitly
+                    # FIXME: Email setting should be handled using the janeway settings framework.
                     acceptance_url = request.build_absolute_uri(reverse("accept_gdpr", kwargs={"token": token}))
                     send_mail(
                         settings.JOIN_JOURNAL_SUBJECT,
