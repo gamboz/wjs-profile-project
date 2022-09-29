@@ -1,6 +1,9 @@
 # Build this python package
 # and upload it to our package registry/repo.
 upload-package:
+  extends:
+    - .default_things
+
   stage: build
 
   variables:
@@ -19,7 +22,3 @@ upload-package:
     - pip install twine
     - python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${PACKAGE_REGISTRY_PROJECT_ID}/packages/pypi dist/*
     - echo "Package successfully published."
-
-  only:
-    - feature/task-20-autodeploy-packages
-    # - tags

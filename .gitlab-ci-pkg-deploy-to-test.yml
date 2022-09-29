@@ -1,4 +1,7 @@
 deploy-to-test:
+  extends:
+    - .default_things
+
   stage: deploy
 
   variables:
@@ -11,7 +14,3 @@ deploy-to-test:
     - echo "Deploy to testing server"
     - chmod og= $ID_RSA
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "( cd janeway && $PIP install --index-url=$PIP_INDEX_URL -U $PACKAGE_NAME && touch --no-dereference $UWSGI_VASSAL )"
-
-  only:
-    - feature/task-20-autodeploy-packages
-    # - tags

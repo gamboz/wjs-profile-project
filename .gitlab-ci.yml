@@ -13,6 +13,13 @@ stages:
   - build
   - deploy
 
+# phony job that only holds some default settings / variables
+.default_things:
+  only:
+    - feature/task-20-autodeploy-packages
+    # - tags
+
+
 include:
   - project: 'wjs/wjs-profile-project'
     ref: feature/task-20-autodeploy-packages
