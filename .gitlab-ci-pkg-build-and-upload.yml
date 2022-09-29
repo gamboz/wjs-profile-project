@@ -21,5 +21,5 @@ upload-package:
     - echo "Package successfully published."
 
   only:
-    feature/task-20-autodeploy-packages
+    - feature/task-20-autodeploy-packages
     # - tags
