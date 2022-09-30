@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:13.8
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '1234:5432'
+      # - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  janeway:
+    build: ./
+
+
+volumes:
+  db:
+    driver: local

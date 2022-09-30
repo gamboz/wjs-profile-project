@@ -10,14 +10,9 @@ variables:
 # Not running any tests (at the moment), because they require a
 # working installation of Janeway, with this django app installed.
 stages:
+  - test
   - build
   - deploy
-
-# phony job that only holds some default settings / variables
-.default_things:
-  only:
-    - feature/task-20-autodeploy-packages
-    # - tags
 
 
 include:
@@ -27,3 +22,38 @@ include:
   - project: 'wjs/wjs-profile-project'
     ref: feature/task-20-autodeploy-packages
     file: '.gitlab-ci-pkg-deploy-to-test.yml'
+  - project: 'wjs/wjs-profile-project'
+    ref: feature/task-20-autodeploy-packages
+    file: '.gitlab-ci-run-tests.yml'
+
+
+run-tests:
+  # remove me before going to master
+  only:
+    - feature/task-20-autodeploy-packages
+  except:
+    - tags
+
+  extends:
+    - .run-tests
+
+upload-package:
+  only:
+    - tags
+
+  extends:
+    - .upload-package
+
+  # might be not necessry, but best is to explicit dependencies
+  needs:
+    - run-tests
+
+deploy-to-test:
+  only:
+    - tags
+
+  extends:
+    - .deploy-to-test
+
+  needs:
+    - upload-package

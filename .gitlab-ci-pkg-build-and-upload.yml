@@ -1,8 +1,6 @@
 # Build this python package
 # and upload it to our package registry/repo.
-upload-package:
-  extends:
-    - .default_things
+.upload-package:
 
   stage: build
 

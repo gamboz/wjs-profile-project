@@ -1,6 +1,4 @@
-deploy-to-test:
-  extends:
-    - .default_things
+.deploy-to-test:
 
   stage: deploy
 
