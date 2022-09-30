@@ -1,3 +1,35 @@
 [build-system]
 requires = ['setuptools>=40.8.0', 'wheel']
 build-backend = 'setuptools.build_meta:__legacy__'
+
+[tool.isort]
+profile = "black"
+# combine_as_imports = true
+# default_section = THIRDPARTY
+# force_grid_wrap = 0
+# include_trailing_comma = true
+# line_length = 119
+# multi_line_output = 3
+# not_skip = __init__.py
+# skip = data, .tox
+# use_parentheses = True
+
+
+[tool.black]
+line-length = 119
+target-version = ["py39"]
+include = '/(wjs)/.*\.pyi?$'
+
+
+[tool.pydocstyle]
+convention = pep257
+# http://www.pydocstyle.org/en/stable/error_codes.html
+add_ignore = D100,D101,D104,D105,D106,D107,D412,D200
+# mg TBV: ignore = D101,D104,D106,D212,D203,D213
+add_select = D204,D205,D214,D413
+
+
+[tool.flake8]
+exclude = *.egg-info,.git,.settings,.tox,build,dist,docs,requirements,tmp,*migrations*,tests,data
+ignore = E800, W503, C812, C813, C815, C408
+max-line-length = 119
