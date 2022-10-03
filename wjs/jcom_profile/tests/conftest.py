@@ -6,6 +6,10 @@ from press.models import Press
 from wjs.jcom_profile.models import JCOMProfile
 from wjs.jcom_profile.utils import generate_token
 
+from core.models import Account
+from django.core.exceptions import ObjectDoesNotExist
+from django.urls.base import clear_script_prefix
+
 
 USERNAME = "user"
 JOURNAL_CODE = "CODE"
@@ -102,6 +106,7 @@ def drop_user():
 
 @pytest.fixture
 def admin():
+    """Create admin user."""
     return Account.objects.create(username="admin", email="admin@admin.it", is_active=True, is_staff=True,
                                   is_admin=True, is_superuser=True)
 
@@ -109,6 +114,7 @@ def admin():
 @pytest.fixture
 def user():
     """Create / reset a user in the DB.
+
     Create both core.models.Account and wjs.jcom_profile.models.JCOMProfile.
     """
     # Delete the test user (just in case...).
@@ -126,9 +132,7 @@ def user():
 
 @pytest.fixture()
 def invited_user():
-    """
-    Create an user invited by staff, with minimal data
-    """
+    """Create an user invited by staff, with minimal data."""
     email = "invited_user@mail.it"
     return JCOMProfile.objects.create(
         first_name="Invited",
