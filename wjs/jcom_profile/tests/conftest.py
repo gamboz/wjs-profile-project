@@ -4,7 +4,7 @@ from journal.tests.utils import make_test_journal
 from press.models import Press
 
 from wjs.jcom_profile.models import JCOMProfile
-from wjs.jcom_profile.utils import generate_token
+from wjs.jcom_profile.wjs_utils import generate_token
 
 
 USERNAME = "user"

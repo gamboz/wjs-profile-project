@@ -1,9 +1,10 @@
 """My URLs. Looking for a way to "enrich" Janeway's `edit_profile`."""
 
-from django.conf.urls import url
+from django.conf.urls import url, include
 from wjs.jcom_profile import views
 from core import include_urls
 
+include('wjs.jcom_profile.wjs_events')
 
 urlpatterns = [
     url(r'^profile/$', views.prova, name='core_edit_profile'),

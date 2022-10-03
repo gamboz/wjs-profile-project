@@ -11,7 +11,7 @@ from core import models as core_models
 
 from wjs.jcom_profile.tests.conftest import INVITE_BUTTON
 from wjs.jcom_profile.models import JCOMProfile
-from wjs.jcom_profile.utils import generate_token
+from wjs.jcom_profile.wjs_utils import generate_token
 
 
 @pytest.mark.django_db

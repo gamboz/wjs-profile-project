@@ -18,7 +18,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
-from wjs.jcom_profile.utils import generate_token
+from wjs.jcom_profile.wjs_utils import generate_token
 
 
 class JCOMProfileInline(admin.StackedInline):
