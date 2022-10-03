@@ -151,4 +151,14 @@ ENABLE_FULL_TEXT_SEARCH = False  # Read the docs before enabling full text
 # Model used for indexing full text files
 CORE_FILETEXT_MODEL = "core.PGFileText"  # Use "core.PGFileText" for Postgres
 
+# Invite email settings
+# https://gitlab.sissamedialab.it/wjs/wjs-profile-project/-/merge_requests/3
+JOIN_JOURNAL_SUBJECT = "Join journal"
+JOIN_JOURNAL_BODY = "Dear {} {},\n{}; to continue click the following link:{}"
+
+RESET_PASSWORD_SUBJECT = "Reset password"
+RESET_PASSWORD_BODY = """Dear {} {}, please add your password to complete
+the registration process before first login: click here {}
+"""
+
 print("🍠")
