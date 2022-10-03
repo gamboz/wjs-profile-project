@@ -23,7 +23,7 @@
     # TODO: drop me ↴
     - git checkout feature/task-20-autodeploy-packages
     # TODO: drop me ↴
-    - cd /
+    - cd ..
     - pip install ./${PACKAGE_REPO_NAME}
     - pip install pytest pytest-django
     - cd /janeway/src
