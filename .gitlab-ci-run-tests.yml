@@ -1,13 +1,15 @@
 .run-tests:
+  stage: test
+
   image: registry.gitlab.sissamedialab.it/wjs/wjs-profile-project/debian-python-git-janeway
 
   # TODO: Must match with test_settings.DATABASES
   variables:
-    POSTGRES_USER=janeway
-    POSTGRES_PASSWORD=janeway
-    POSTGRES_DB=janeway
-    PACKAGE_REPO_NAME=wjs-profile-project
-    DJANGO_SETTINGS_MODULE=core.test_settings
+    POSTGRES_USER: janeway
+    POSTGRES_PASSWORD: janeway
+    POSTGRES_DB: janeway
+    PACKAGE_REPO_NAME: wjs-profile-project
+    DJANGO_SETTINGS_MODULE: core.test_settings
 
   services:
     - name: postgres:13.8
@@ -20,3 +22,7 @@
     - pip install pytest pytest-django
     - cd /janeway/src
     - pytest -c /${PACKAGE_REPO_NAME}/pytest.ini /${PACKAGE_REPO_NAME}/ -v -x
+
+
+# lintme:
+#   extends: .run-tests
