@@ -1,4 +1,4 @@
-.test:
+.run-tests:
   image: registry.gitlab.sissamedialab.it/wjs/wjs-profile-project/debian-python-git-janeway
 
   # TODO: Must match with test_settings.DATABASES
