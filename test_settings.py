@@ -1,6 +1,8 @@
 """Merge janeway_global_settings and custom settings for pytest."""
 
-from ..janeway_global_settings import *
+import os
+
+from core.janeway_global_settings import *
 
 # Install my stuff
 INSTALLED_APPS.extend(
@@ -12,8 +14,6 @@ INSTALLED_APPS.extend(
 MIDDLEWARE_CLASSES += (
     "wjs.jcom_profile.middleware.PrivacyAcknowledgedMiddleware",
 )
-
-import os
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # You should change this key before you go live!
@@ -56,7 +56,7 @@ DATABASES = {
         "NAME": "janeway",
         "USER": "janeway",
         "PASSWORD": "janeway",
-        "HOST": "localhost",
+        "HOST": "db",
         "PORT": "5432",
     }
 }

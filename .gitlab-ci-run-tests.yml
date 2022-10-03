@@ -5,7 +5,7 @@
     DB_PASSWD...
 
   services:
-    - postgresql:14?
+    - postgres:13.8
 
   script:
     - git clone janeway
