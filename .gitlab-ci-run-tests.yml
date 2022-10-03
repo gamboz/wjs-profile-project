@@ -12,12 +12,18 @@
     DJANGO_SETTINGS_MODULE: core.test_settings
 
   services:
-    - name: postgres:13.8
+    - name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/postgres:13.8
       alias: db
 
   script:
     - cp test_settings.py /janeway/src/core
     - git clone --depth 1 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
+    # TODO: drop me ↴
+    - cd ${PACKAGE_REPO_NAME}
+    # TODO: drop me ↴
+    - git checkout feature/task-20-autodeploy-packages
+    # TODO: drop me ↴
+    - cd /
     - pip install ./${PACKAGE_REPO_NAME}
     - pip install pytest pytest-django
     - cd /janeway/src
