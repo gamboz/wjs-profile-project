@@ -1,24 +1,22 @@
 .test:
+  image: registry.gitlab.sissamedialab.it/wjs/wjs-profile-project/debian-python-git-janeway
+
+  # TODO: Must match with test_settings.DATABASES
   veriables:
-    per postgre? TBV (check image documentation)
-    DB_USER...
-    DB_PASSWD...
+    POSTGRES_USER=janeway
+    POSTGRES_PASSWORD=janeway
+    POSTGRES_DB=janeway
+    PACKAGE_REPO_NAME=wjs-profile-project
+    DJANGO_SETTINGS_MODULE=core.test_settings
 
   services:
-    - postgres:13.8
+    - name: postgres:13.8
+      alias: db
 
   script:
-    - git clone janeway
-    - setup venv
-    - prepare settings module
-      - with my package in  INSTALLED_APPS
-      - with middleware
-      - with postgres things
-    - make install_janeway
-    - pip install package
-
-
-# write docker compose? OR connect to local postgresql (verify local postgres binding - no only localhost)
-# run image and work in container
-# mount in bind le dir di J. e pacchetto
-# refine script (setup and co)
+    - cp test_settings.py /janeway/src/core
+    - git clone --depth 1 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
+    - pip install ./${PACKAGE_REPO_NAME}
+    - pip install pytest pytest-django
+    - cd /janeway/src
+    - pytest -c /${PACKAGE_REPO_NAME}/pytest.ini /${PACKAGE_REPO_NAME}/ -v -x
