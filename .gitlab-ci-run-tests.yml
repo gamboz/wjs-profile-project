@@ -17,9 +17,8 @@
 
   script:
     - pwd
-    - ls
-    - ls ..
-    - ls *
+    - echo "${CI_PROJECT_PATH}"
+    - echo "${CI_PROJECT_NAMESPACE} /  ${CI_PROJECT_NAME}"
     - cp test_settings.py /janeway/src/core
     # - git clone --depth 1 --no-single-branch https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
     # # TODO: drop me ↴
@@ -31,7 +30,7 @@
     - pip install ./${PACKAGE_REPO_NAME}
     - pip install pytest pytest-django
     - cd /janeway/src
-    - pytest -c /root/${PACKAGE_REPO_NAME}/pytest.ini /${PACKAGE_REPO_NAME}/ -v -x
+    - pytest -c ${CI_BUILDS_DIR}/${CI_PROJECT_PATH}/pytest.ini /${PACKAGE_REPO_NAME}/ -v -x
 
 
 # lintme:
