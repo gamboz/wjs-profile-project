@@ -2,7 +2,7 @@
   image: registry.gitlab.sissamedialab.it/wjs/wjs-profile-project/debian-python-git-janeway
 
   # TODO: Must match with test_settings.DATABASES
-  veriables:
+  variables:
     POSTGRES_USER=janeway
     POSTGRES_PASSWORD=janeway
     POSTGRES_DB=janeway
