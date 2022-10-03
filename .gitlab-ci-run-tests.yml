@@ -16,18 +16,22 @@
       alias: db
 
   script:
+    - pwd
+    - ls
+    - ls ..
+    - ls *
     - cp test_settings.py /janeway/src/core
-    - git clone --depth 1 --no-single-branch https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
-    # TODO: drop me ↴
-    - cd ${PACKAGE_REPO_NAME}
+    # - git clone --depth 1 --no-single-branch https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
+    # # TODO: drop me ↴
+    # - cd ${PACKAGE_REPO_NAME}
     # TODO: drop me ↴
     - git checkout feature/task-20-autodeploy-packages
     # TODO: drop me ↴
-    - cd ..
+    # - cd ..
     - pip install ./${PACKAGE_REPO_NAME}
     - pip install pytest pytest-django
     - cd /janeway/src
-    - pytest -c /${PACKAGE_REPO_NAME}/pytest.ini /${PACKAGE_REPO_NAME}/ -v -x
+    - pytest -c /root/${PACKAGE_REPO_NAME}/pytest.ini /${PACKAGE_REPO_NAME}/ -v -x
 
 
 # lintme:
