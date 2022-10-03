@@ -8,7 +8,6 @@
     POSTGRES_USER: janeway
     POSTGRES_PASSWORD: janeway
     POSTGRES_DB: janeway
-    PACKAGE_REPO_NAME: wjs-profile-project
     DJANGO_SETTINGS_MODULE: core.test_settings
 
   services:
@@ -16,21 +15,11 @@
       alias: db
 
   script:
-    - pwd
-    - echo "${CI_PROJECT_PATH}"
-    - echo "${CI_PROJECT_NAMESPACE} /  ${CI_PROJECT_NAME}"
-    - cp test_settings.py /janeway/src/core
-    # - git clone --depth 1 --no-single-branch https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
-    # # TODO: drop me ↴
-    # - cd ${PACKAGE_REPO_NAME}
-    # TODO: drop me ↴
     - git checkout feature/task-20-autodeploy-packages
-    # TODO: drop me ↴
-    # - cd ..
-    - pip install ./${PACKAGE_REPO_NAME}
-    - pip install pytest pytest-django
+    - cp test_settings.py /janeway/src/core
+    - pip install ./[test]
     - cd /janeway/src
-    - pytest -c ${CI_BUILDS_DIR}/${CI_PROJECT_PATH}/pytest.ini /${PACKAGE_REPO_NAME}/ -v -x
+    - pytest -c ${CI_PROJECT_DIR}/pytest.ini ${CI_PROJECT_DIR}/ -v -x
 
 
 # lintme:
