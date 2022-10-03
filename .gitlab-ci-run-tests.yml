@@ -17,7 +17,7 @@
 
   script:
     - cp test_settings.py /janeway/src/core
-    - git clone --depth 1 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
+    - git clone --depth 1 --no-single-branch https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.sissamedialab.it/wjs/${PACKAGE_REPO_NAME}.git
     # TODO: drop me ↴
     - cd ${PACKAGE_REPO_NAME}
     # TODO: drop me ↴
