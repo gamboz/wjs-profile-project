@@ -4,7 +4,7 @@ from django.conf.urls import url, include
 from wjs.jcom_profile import views
 from core import include_urls
 
-include('wjs.jcom_profile.wjs_events')
+include('wjs.jcom_profile.events.wjs_registration')
 
 urlpatterns = [
     url(r'^profile/$', views.prova, name='core_edit_profile'),
