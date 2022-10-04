@@ -35,9 +35,9 @@ class PrivacyAcknowledgedMiddleware:
         #     "core_edit_profile",
         #     "core_logout",
         # ):
-        for free_path in settings.CORE_PRIVACY_MIDDLEWARE_ALLOWED_URLS:
-            if request.path.endswith(free_path):
-                return None
+        free_paths = getattr(settings, "CORE_PRIVACY_MIDDLEWARE_ALLOWED_URLS", [])
+        if any(request.path.endswith(free_path) for free_path in free_paths):
+            return None
         if request.path.startswith("/admin/"):
             return None
 
