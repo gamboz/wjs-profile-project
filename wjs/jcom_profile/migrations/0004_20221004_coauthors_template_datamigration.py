@@ -9,10 +9,10 @@ from django.utils.translation import ugettext_lazy as _
 def add_coauthors_submission_email_subject_and_template(apps, schema_editor):
     Setting = apps.get_model('core', 'Setting')
     SettingValue = apps.get_model('core', 'SettingValue')
-    Group = apps.get_model('core', 'SettingGroup')
+    SettingGroup = apps.get_model('core', 'SettingGroup')
 
-    email_settings_group = Group.objects.get(name='email')
-    email_subject_settings_group = Group.objects.get(name='email_subject')
+    email_settings_group, email_created = SettingGroup.objects.get_or_create(name='email')
+    email_subject_settings_group, subject_created = SettingGroup.objects.get_or_create(name='email_subject')
 
     coauthor_submission_email_template = Setting.objects.create(
         name="submission_coauthors_acknowledgment",
