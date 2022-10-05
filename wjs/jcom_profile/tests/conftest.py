@@ -1,10 +1,21 @@
 """pytest common stuff and fixtures."""
 import pytest
-from core.models import Account
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls.base import clear_script_prefix
+from django.utils import translation
+
+
+from core.models import Account
+from submission.models import Article
 from journal.tests.utils import make_test_journal
 from press.models import Press
+from submission import models as submission_models
+
+from utils.install import update_xsl_files, update_settings, update_issue_types
+from journal import models as journal_models
+
+
 from wjs.jcom_profile.models import JCOMProfile
 from wjs.jcom_profile.wjs_utils import generate_token
 
@@ -107,10 +118,23 @@ def admin():
     return Account.objects.create(
         username="admin",
         email="admin@admin.it",
+        first_name="Admin",
+        last_name="Admin",
         is_active=True,
         is_staff=True,
         is_admin=True,
         is_superuser=True,
+    )
+
+
+@pytest.fixture
+def coauthor():
+    """Create admin user."""
+    return Account.objects.create(
+        username="coauthor",
+        email="coauthor@coauthor.it",
+        first_name="Coauthor",
+        last_name="Coauthor",
     )
 
 
@@ -175,6 +199,44 @@ def journal(press):
     yield journal
     # probably redundant because of django db transactions rollbacks
     journal.delete()
+
+
+@pytest.fixture
+def article_journal(press):
+    """
+    Creates a dummy journal for testing
+    :return: a journal
+    """
+    update_xsl_files()
+    update_settings()
+    journal_one = journal_models.Journal(code="TST", domain="testserver")
+    journal_one.title = "Test Journal: A journal of tests"
+    journal_one.save()
+    update_issue_types(journal_one)
+
+    return journal_one
+
+
+@pytest.fixture
+def article(admin, coauthor, article_journal):
+    with translation.override("en"):
+        section = submission_models.Section.objects.create(
+            journal=article_journal,
+            name="section",
+            public_submissions=False,
+        )
+    article = Article.objects.create(
+        abstract="Abstract",
+        journal=article_journal,
+        journal_id=article_journal.id,
+        title="Title",
+        correspondence_author=admin,
+        owner=admin,
+        date_submitted=None,
+        section=section
+    )
+    article.authors.add(admin, coauthor)
+    return article
 
 
 @pytest.fixture
