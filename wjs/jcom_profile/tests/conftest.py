@@ -203,10 +203,7 @@ def journal(press):
 
 @pytest.fixture
 def article_journal(press):
-    """
-    Creates a dummy journal for testing
-    :return: a journal
-    """
+    # FIXME: Can't figure out why the journal fixtures does not work with article submission
     update_xsl_files()
     update_settings()
     journal_one = journal_models.Journal(code="TST", domain="testserver")
