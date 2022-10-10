@@ -9,7 +9,11 @@
     POSTGRES_PASSWORD: janeway
     POSTGRES_DB: janeway
     DJANGO_SETTINGS_MODULE: core.test_settings
-    GIT_STRATEGY: clone
+    # Use the following after force-pushes:
+    # GIT_STRATEGY: clone
+    # see e.g.:
+    # - https://docs.gitlab.com/ee/ci/runners/configure_runners.html#git-strategy
+    # - https://stackoverflow.com/a/66519431/1581629
 
   services:
     - name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/postgres:13.8
