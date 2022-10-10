@@ -10,7 +10,7 @@
     POSTGRES_DB: janeway
     DJANGO_SETTINGS_MODULE: core.test_settings
     # Use the following after force-pushes:
-    # GIT_STRATEGY: clone
+    GIT_STRATEGY: clone
     # see e.g.:
     # - https://docs.gitlab.com/ee/ci/runners/configure_runners.html#git-strategy
     # - https://stackoverflow.com/a/66519431/1581629
