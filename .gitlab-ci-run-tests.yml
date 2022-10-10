@@ -1,6 +1,8 @@
 .run-tests:
   stage: test
 
+  cache: []
+
   image: registry.gitlab.sissamedialab.it/wjs/wjs-profile-project/debian-python-git-janeway
 
   # TODO: Must match with test_settings.DATABASES
@@ -16,7 +18,6 @@
 
   script:
     - git checkout feature/task-20-autodeploy-packages
-    - git pull --no-rebase --no-commit -s ort -Xtheirs origin feature/task-20-autodeploy-packages
     - cp test_settings.py /janeway/src/core
     - pip install ./[test]
     - cd /janeway/src
