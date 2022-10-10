@@ -66,9 +66,7 @@
 
                 {% if request.journal.submissionconfiguration.figures_data %}
                     <div class="title-area">
-                      <h2>{{ request.settings.styling.submission_figure_data_title }}</h2>{% BREAK %}
-                      TODO: enable debug toolbar, check what I get in request
-                      <!-- was {% trans 'Figures and Data Files' %} -->
+                      {% autoescape off %}{{ journal_settings.styling.submission_figures_data_title }}{% endautoescape %}
                     </div>
                     <div class="row expanded">
                         <div class="large-3 columns">
