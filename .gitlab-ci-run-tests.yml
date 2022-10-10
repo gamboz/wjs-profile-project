@@ -1,8 +1,6 @@
 .run-tests:
   stage: test
 
-  cache: []
-
   image: registry.gitlab.sissamedialab.it/wjs/wjs-profile-project/debian-python-git-janeway
 
   # TODO: Must match with test_settings.DATABASES
@@ -11,6 +9,8 @@
     POSTGRES_PASSWORD: janeway
     POSTGRES_DB: janeway
     DJANGO_SETTINGS_MODULE: core.test_settings
+    GIT_STRATEGY: clone
+    GIT_CHECKOUT: "true"
 
   services:
     - name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/postgres:13.8
