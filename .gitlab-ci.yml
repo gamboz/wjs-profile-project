@@ -17,20 +17,19 @@ stages:
 
 include:
   - project: 'wjs/wjs-profile-project'
-    ref: feature/task-20-autodeploy-packages
+    ref: master
     file: '.gitlab-ci-pkg-build-and-upload.yml'
   - project: 'wjs/wjs-profile-project'
-    ref: feature/task-20-autodeploy-packages
+    ref: master
     file: '.gitlab-ci-pkg-deploy-to-test.yml'
   - project: 'wjs/wjs-profile-project'
-    ref: feature/task-20-autodeploy-packages
+    ref: master
     file: '.gitlab-ci-run-tests.yml'
 
 
 run-tests:
-  # remove me before going to master
-  only:
-    - feature/task-20-autodeploy-packages
+  # Always run tests, except for tags, which have tests already run on
+  # them when the commit is made.
   except:
     - tags
 
@@ -55,5 +54,7 @@ deploy-to-test:
   extends:
     - .deploy-to-test
 
+  # Deploy basically means `pip install`, so the package must already
+  # be in the package registry.
   needs:
     - upload-package

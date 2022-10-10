@@ -20,7 +20,6 @@
       alias: db
 
   script:
-    - git checkout feature/task-20-autodeploy-packages
     - cp test_settings.py /janeway/src/core
     - pip install ./[test]
     - cd /janeway/src
