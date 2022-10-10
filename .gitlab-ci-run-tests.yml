@@ -16,7 +16,7 @@
 
   script:
     - git checkout feature/task-20-autodeploy-packages
-    - git pull -s ort -Xtheirs
+    - git pull --no-rebase --no-commit -s ort -Xtheirs origin feature/task-20-autodeploy-packages
     - cp test_settings.py /janeway/src/core
     - pip install ./[test]
     - cd /janeway/src
