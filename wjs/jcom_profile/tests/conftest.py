@@ -129,7 +129,7 @@ def admin():
 
 @pytest.fixture
 def coauthor():
-    """Create admin user."""
+    """Create coauthor user."""
     return Account.objects.create(
         username="coauthor",
         email="coauthor@coauthor.it",
