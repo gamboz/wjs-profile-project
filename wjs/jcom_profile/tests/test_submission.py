@@ -61,6 +61,8 @@ class TestFilesStage:
         new_value = "ciao 🤞"
         setting_value.value = new_value
         setting_value.save()
+        # django tests and cache; a bit unexpected:
+        # https://til.codeinthehole.com/posts/django-doesnt-flush-caches-between-tests/
         cache.clear()  # 🠄 Important!
         response = client.get(url)
         assert new_value in response.content.decode()
