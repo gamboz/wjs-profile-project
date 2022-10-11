@@ -3,7 +3,7 @@
 {% load foundation %}
 {% load i18n %}
 
-{% block title-section %}{% trans "Article Info" %}{% endblock %}
+{% block title-section %}{% trans "Submission Destination" %}{% endblock %}
 {% block css %}
     <link href="{% static 'admin/css/timeline.css' %}" rel="stylesheet">{% endblock %}
 
@@ -22,12 +22,8 @@
                     </div>
                     <div class="content">
                       {% include "elements/forms/errors.html" with form=form %}
-                      <form method="post">
-                        {% csrf_token %}
-                        {{ form }}
-                        <input type="submit" value="Submit">
-                      </form>
-
+                      {{ form }}
+                    </div>
 
                     <div class="large-12 columns">
                         <button class="success button pull-right" type="submit" name="start_submission"><i
