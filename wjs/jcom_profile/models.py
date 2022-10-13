@@ -110,8 +110,12 @@ class SpecialIssue(models.Model):
 class ArticleWrapper(models.Model):
     """An enrichment of Janeway's Article."""
 
-    # objects = ArticleManager()
-    objects = models.Manager()
+    # Do not inherit from Article, otherwise we get Article's method
+    # `save()` which does things that raise IntegrityError when called
+    # from here...
+
+    # redundant:
+    # objects = models.Manager()
 
     janeway_article = models.OneToOneField(
         Article,

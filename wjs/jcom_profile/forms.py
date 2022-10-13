@@ -124,6 +124,10 @@ def SI_choices():
 class SIForm(forms.Form):
     """Used to choose the destination special issue during submission."""
 
+    # Not using a forms.ModelForm with Meta.model set to
+    # ArticleWrapper or SpecialIssue, because I'm not sure how to
+    # manage it...
+
     special_issue = forms.ChoiceField(
         choices=SI_choices
     )

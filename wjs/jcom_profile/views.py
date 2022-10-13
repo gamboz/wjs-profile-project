@@ -218,7 +218,7 @@ def confirm_gdpr_acceptance(request, token):
 
 
 class SpecialIssues(TemplateView):
-    """Views related to a journal's special issues."""
+    """Views used to link an article to a special issue during submission."""
 
     form_class = SIForm
     template_name = "admin/submission/submit_si_chooser.html"
@@ -226,8 +226,12 @@ class SpecialIssues(TemplateView):
     #                       kwargs={"article_id": ???)
 
     def post(self, *args, **kwargs):
-        """Boh."""
-        logger.debug("CALLED POST")
+        """Set the choosen special issue and continue.
+
+        The SI is associated to the Article via an ArticleWrapper,
+        that is created if not already present.
+
+        """
         form = self.form_class(self.request.POST)
         if form.is_valid():
             article = get_object_or_404(
@@ -236,8 +240,6 @@ class SpecialIssues(TemplateView):
             article_wrapper, _ = ArticleWrapper.objects.get_or_create(
                 janeway_article=article
             )
-            # import pudb; pudb.set_trace()
-            # TODO: use model-form
             article_wrapper.special_issue_id = int(form.cleaned_data["special_issue"])
             article_wrapper.save()
             return redirect(
@@ -254,12 +256,22 @@ class SpecialIssues(TemplateView):
         )
 
     def get(self, *args, **kwargs):
-        """Boh."""
-        logger.debug("CALLED GET")
+        """Show a form to choose the special issue to which one is submitting."""
+        # The following should be safe, since article_id is not part
+        # of the query string but of the path
         article = get_object_or_404(
             submission_models.Article, pk=kwargs["article_id"]
         )
-        form = self.form_class()
+        # The following is no-go: no `article` in the request
+        # article = self.request.article
+
+        # form = self.form_class(instance=article)
+        special_issue = None
+        article_wrapper = getattr(article, 'articlewrapper', None)
+        if article_wrapper:
+            special_issue = article_wrapper.special_issue.id
+        data = dict(special_issue=special_issue)
+        form = self.form_class(data)
         # NB: templates (base and timeline and all) expect to find
         # "article" in context!
         context = dict(form=form, article=article)
