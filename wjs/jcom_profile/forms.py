@@ -1,16 +1,17 @@
 """Forms for the additional fields in this profile extension."""
 
 import uuid
+
+from core.forms import EditAccountForm
 from django import forms
 from django.forms import ModelForm
-from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
-from utils.forms import CaptchaForm
-from wjs.jcom_profile.models import JCOMProfile
-from core.forms import EditAccountForm
-
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.functional import lazy
+from django.utils.translation import ugettext_lazy as _
+from wjs.jcom_profile.models import JCOMProfile, SpecialIssue
+
+from utils.forms import CaptchaForm
 
 
 class GDPRAcceptanceForm(forms.Form):
@@ -18,6 +19,7 @@ class GDPRAcceptanceForm(forms.Form):
     A GDPR form, consisting in a checkbox. It is sued by JCOMRegistrationForm to let user explicitly
     accept the GDPR Policy.
     """
+
     gdpr_checkbox = forms.BooleanField(initial=False, required=True)
 
 
@@ -26,10 +28,22 @@ class JCOMProfileForm(EditAccountForm):
 
     class Meta:
         model = JCOMProfile
-        exclude = ('email', 'username', 'activation_code', 'email_sent',
-                   'date_confirmed', 'confirmation_code', 'is_active',
-                   'is_staff', 'is_admin', 'date_joined', 'password',
-                   'is_superuser', 'janeway_account')
+        exclude = (
+            "email",
+            "username",
+            "activation_code",
+            "email_sent",
+            "date_confirmed",
+            "confirmation_code",
+            "is_active",
+            "is_staff",
+            "is_admin",
+            "date_joined",
+            "password",
+            "is_superuser",
+            "janeway_account",
+            "invitation_token",
+        )
 
 
 class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
@@ -40,16 +54,27 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
     """
 
     password_1 = forms.CharField(
-        widget=forms.PasswordInput, label=_('Password'))
+        widget=forms.PasswordInput, label=_("Password")
+    )
     password_2 = forms.CharField(
-        widget=forms.PasswordInput, label=_('Repeat Password'))
+        widget=forms.PasswordInput, label=_("Repeat Password")
+    )
     gdpr_checkbox = forms.BooleanField(initial=False, required=True)
 
     class Meta:
         model = JCOMProfile
-        fields = ('email', 'salutation', 'first_name', 'middle_name',
-                  'last_name', 'department', 'institution', 'country',
-                  'profession', 'gdpr_checkbox')
+        fields = (
+            "email",
+            "salutation",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "department",
+            "institution",
+            "country",
+            "profession",
+            "gdpr_checkbox",
+        )
 
     def clean_password_2(self):
         """Validate password."""
@@ -57,8 +82,8 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
         password_2 = self.cleaned_data.get("password_2")
         if password_1 and password_2 and password_1 != password_2:
             raise forms.ValidationError(
-                'Your passwords do not match.',
-                code='password_mismatch',
+                "Your passwords do not match.",
+                code="password_mismatch",
             )
 
         return password_2
@@ -80,9 +105,25 @@ class InviteUserForm(forms.Form):
     """
     The form used from staff to invite external users to join a journal for review activities.
     """
+
     first_name = forms.CharField()
     last_name = forms.CharField()
     email = forms.EmailField()
     institution = forms.CharField()
     department = forms.CharField()
     message = forms.CharField(widget=forms.Textarea)
+
+
+def SI_choices():
+    """Give me special issues open for submission."""
+    return SpecialIssue.objects.filter(
+        is_open_for_submission=True
+    ).values_list("id", "name")
+
+
+class SIForm(forms.Form):
+    """Used to choose the destination special issue during submission."""
+
+    special_issue = forms.ChoiceField(
+        choices=SI_choices
+    )

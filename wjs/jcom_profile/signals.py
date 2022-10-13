@@ -5,10 +5,11 @@ profile instance must be created as well.
 
 """
 
+from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings
-from wjs.jcom_profile.models import JCOMProfile
+from submission.models import Article
+from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -17,8 +18,7 @@ def create_profile_handler(sender, instance, created, **kwargs):
     if not created:
         return
 
-    JCOMProfile.objects.create(
-        janeway_account=instance)
+    JCOMProfile.objects.create(janeway_account=instance)
 
     # If I don't `save()` the instance also, an empty record is
     # created.
@@ -32,3 +32,24 @@ def create_profile_handler(sender, instance, created, **kwargs):
     # AttributeError: 'Account' object has no attribute 'save_m2m'
     # because this is not a many-to-many relation
     # https://django.readthedocs.io/en/stable/topics/forms/modelforms.html?highlight=save_m2m#the-save-method
+
+
+@receiver(
+    post_save,
+    sender=Article,
+    # dispatch_uid="my_unique_identifier",
+)
+def create_articlewrapper_handler(sender, instance, created, **kwargs):
+    """Create a record in our ArticleWrapper when any Article is newly created."""
+    if not created:
+        return
+    # import pudb
+
+    # pudb.set_trace()
+    from utils.logger import get_logger
+    logger = get_logger(__name__)
+    logger.debug("T1 %s", instance.date_started)
+    ArticleWrapper.objects.create(janeway_article=instance)
+    logger.debug("T2 %s", instance.date_started)
+    instance.save()
+    logger.debug("T3 %s", instance.date_started)

@@ -10,7 +10,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from wjs.jcom_profile import forms, models
-from wjs.jcom_profile.models import JCOMProfile
+from wjs.jcom_profile.models import JCOMProfile, SpecialIssue
 from wjs.jcom_profile.utils import generate_token
 
 
@@ -108,3 +108,14 @@ class UserAdmin(AccountAdmin):
 
 admin.site.unregister(Account)
 admin.site.register(Account, UserAdmin)
+
+
+class SpecialIssueAdmin(admin.ModelAdmin):
+    """Helper class to "admin" special issues."""
+
+    model = SpecialIssue
+    # fields = ["profession", "gdpr_checkbox", "invitation_token"]
+    # # TODO: No! this repeats all the fields (first name, password,...)
+
+
+admin.site.register(SpecialIssue, SpecialIssueAdmin)

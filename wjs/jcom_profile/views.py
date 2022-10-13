@@ -11,9 +11,15 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
+from submission import models as submission_models
 from wjs.jcom_profile import forms
-from wjs.jcom_profile.forms import JCOMProfileForm, JCOMRegistrationForm
-from wjs.jcom_profile.models import JCOMProfile
+from wjs.jcom_profile.forms import (JCOMProfileForm, JCOMRegistrationForm,
+                                    SIForm)
+from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile
+
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @login_required
@@ -211,18 +217,10 @@ def confirm_gdpr_acceptance(request, token):
     return render(request, template, context)
 
 
-from django import forms
-from utils.logger import get_logger
-logger = get_logger(__name__)
-
-class TMPForm(forms.Form):
-    dummy = forms.CharField(max_length=11)
-
-
 class SpecialIssues(TemplateView):
     """Views related to a journal's special issues."""
 
-    form_class = TMPForm
+    form_class = SIForm
     template_name = "admin/submission/submit_si_chooser.html"
     # success_url = reverse("submit_infozero",
     #                       kwargs={"article_id": ???)
@@ -232,7 +230,16 @@ class SpecialIssues(TemplateView):
         logger.debug("CALLED POST")
         form = self.form_class(self.request.POST)
         if form.is_valid():
-            # import ipdb; ipdb.set_trace()
+            article = get_object_or_404(
+                submission_models.Article, pk=kwargs["article_id"]
+            )
+            article_wrapper, _ = ArticleWrapper.objects.get_or_create(
+                janeway_article=article
+            )
+            # import pudb; pudb.set_trace()
+            # TODO: use model-form
+            article_wrapper.special_issue_id = int(form.cleaned_data["special_issue"])
+            article_wrapper.save()
             return redirect(
                 reverse(
                     "submit_infozero",
@@ -249,8 +256,13 @@ class SpecialIssues(TemplateView):
     def get(self, *args, **kwargs):
         """Boh."""
         logger.debug("CALLED GET")
+        article = get_object_or_404(
+            submission_models.Article, pk=kwargs["article_id"]
+        )
         form = self.form_class()
-        context = dict(form=form)
+        # NB: templates (base and timeline and all) expect to find
+        # "article" in context!
+        context = dict(form=form, article=article)
         return render(
             self.request,
             template_name=self.template_name,
