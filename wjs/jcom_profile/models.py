@@ -5,7 +5,7 @@ from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from submission.models import Article, ArticleManager
+from submission.models import Article
 
 # TODO: use settings.AUTH_USER_MODEL
 # from django.conf import settings
@@ -129,16 +129,3 @@ class ArticleWrapper(models.Model):
         related_name="special_issue",
         null=True,
     )
-
-    def can_be_submitted_to_special_issue(self):
-        """Return true if this article can be submitted to a special issue."""
-        # I.e. if this article's journal has SIs open for submission.
-
-        # This is here because the timeline.html template should
-        # show/hide the SI step as necessary, but it (the template)
-        # has access only to the article (i.e. it does not have access
-        # to the journal).
-
-        # TODO: link SI to journal via self.article.journal!
-        has_open_si = SpecialIssue.objects.filter(is_open_for_submission=True)
-        return len(has_open_si) > 0

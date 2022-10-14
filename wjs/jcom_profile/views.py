@@ -15,7 +15,7 @@ from submission import models as submission_models
 from wjs.jcom_profile import forms
 from wjs.jcom_profile.forms import (JCOMProfileForm, JCOMRegistrationForm,
                                     SIForm)
-from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile
+from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
 
 from utils.logger import get_logger
 
@@ -269,7 +269,8 @@ class SpecialIssues(TemplateView):
 
         article_wrapper = getattr(article, "articlewrapper", None)
 
-        if not article_wrapper.can_be_submitted_to_special_issue():
+        # TODO: this is a stub: SI should be linked to the journal
+        if not SpecialIssue.objects.filter(is_open_for_submission=True).exists():
             return redirect(
                 reverse(
                     "submit_infozero",
