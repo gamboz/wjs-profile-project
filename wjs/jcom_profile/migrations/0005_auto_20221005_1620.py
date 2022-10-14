@@ -26,11 +26,11 @@ def add_submission_figures_data_title(apps, schema_editor):
         journal=None,
         setting=submission_figures_data_title,
         value="Figures and Data Files",
-        value_cy="Figures and Data Files",  # TODO Fixme!
-        value_de="Figures and Data Files",  # TODO Fixme!
+        value_cy="Ffigurau a Ffeiliau Data",
+        value_de="Abbildungen und Datenfiles",
         value_en="Figures and Data Files",
-        value_fr="Figures and Data Files",  # TODO Fixme!
-        value_nl="Figures and Data Files",  # TODO Fixme!
+        value_fr="Figures et dossiers de données",
+        value_nl="Figuren en gegevensbestanden",
     )
 
 
