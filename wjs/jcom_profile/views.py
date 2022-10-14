@@ -241,7 +241,7 @@ class SpecialIssues(TemplateView):
             form.save()
             return redirect(
                 reverse(
-                    "submit_infozero",
+                    "submit_info_original",
                     kwargs={"article_id": kwargs["article_id"]},
                     # kwargs={"article_id": article_wrapper.article.id},
                     # TODO: form.save() returns an article, not an articlewrapper
@@ -271,7 +271,7 @@ class SpecialIssues(TemplateView):
         if not SpecialIssue.objects.filter(is_open_for_submission=True).exists():
             return redirect(
                 reverse(
-                    "submit_infozero",
+                    "submit_info_original",
                     kwargs={"article_id": kwargs["article_id"]},
                 )
             )

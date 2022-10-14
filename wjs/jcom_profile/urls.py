@@ -24,9 +24,9 @@ urlpatterns = [
     # ... and "rename" it (i.e. the submission's second step) to be
     # able to get back in the loop
     url(
-        r"^submit/(?P<article_id>\d+)/infozero/$",
+        r"^submit/(?P<article_id>\d+)/info-metadata/$",
         submission_views.submit_info,
-        name="submit_infozero",
+        name="submit_info_original",
     ),
 ]
 
