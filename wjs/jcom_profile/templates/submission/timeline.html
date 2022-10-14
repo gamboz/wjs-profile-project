@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load mytags...  %}
 <div class="hide-for-small-only">
     <ul class="timeline" id="timeline">
         <li class="li complete">
@@ -7,6 +8,8 @@
             </div>
         </li>
         {% if article.articlewrapper.can_be_submitted_to_special_issue %}
+        {% if_journal_has_open_si article.journal as has_open_si %}
+        {% if has_open_si %}...
         <li class="li {% if article.current_step >= 1 %}complete{% endif %}">
             <div class="status">
                 <h4>{% if article %}{% if article.current_step >= 1 or article.stage != "Unsubmitted" %}
