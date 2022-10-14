@@ -232,22 +232,20 @@ class SpecialIssues(TemplateView):
         that is created if not already present.
 
         """
-        form = self.form_class(self.request.POST)
+        article = get_object_or_404(
+            submission_models.Article, pk=kwargs["article_id"]
+        )
+        form = self.form_class(self.request.POST, instance=article)
+        # TODO: is instance=article correct? should it be articlewrapper?
         if form.is_valid():
-            article = get_object_or_404(
-                submission_models.Article, pk=kwargs["article_id"]
-            )
-            article_wrapper, _ = ArticleWrapper.objects.get_or_create(
-                janeway_article=article
-            )
-            article_wrapper.special_issue_id = int(
-                form.cleaned_data["special_issue"]
-            )
-            article_wrapper.save()
+            form.save()
             return redirect(
                 reverse(
                     "submit_infozero",
                     kwargs={"article_id": kwargs["article_id"]},
+                    # kwargs={"article_id": article_wrapper.article.id},
+                    # TODO: form.save() returns an article, not an articlewrapper
+                    # TODO: how do I go from articlewrapper to article.id?
                 )
             )
         context = dict(form=form)
@@ -277,12 +275,7 @@ class SpecialIssues(TemplateView):
                     kwargs={"article_id": kwargs["article_id"]},
                 )
             )
-        form = self.form_class()
-        # form = self.form_class(instance=article_wrapper)
-        if article_wrapper:
-            if article_wrapper.special_issue:
-                special_issue = article_wrapper.special_issue.id
-                form = self.form_class(data=dict(special_issue=special_issue))
+        form = self.form_class(instance=article_wrapper)
 
         # NB: templates (base and timeline and all) expect to find
         # "article" in context!

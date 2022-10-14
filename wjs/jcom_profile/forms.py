@@ -5,19 +5,18 @@ import uuid
 from core.forms import EditAccountForm
 from django import forms
 from django.forms import ModelForm
-from django.urls import reverse
 from django.utils import timezone
-from django.utils.functional import lazy
 from django.utils.translation import ugettext_lazy as _
-from wjs.jcom_profile.models import JCOMProfile, SpecialIssue
+from wjs.jcom_profile.models import JCOMProfile, SpecialIssue, ArticleWrapper
 
 from utils.forms import CaptchaForm
 
 
 class GDPRAcceptanceForm(forms.Form):
-    """
-    A GDPR form, consisting in a checkbox. It is sued by JCOMRegistrationForm to let user explicitly
-    accept the GDPR Policy.
+    """A GDPR form, consisting in a checkbox.
+
+    It is sued by JCOMRegistrationForm to let user explicitly accept
+    the GDPR Policy.
     """
 
     gdpr_checkbox = forms.BooleanField(initial=False, required=True)
@@ -102,9 +101,7 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
 
 
 class InviteUserForm(forms.Form):
-    """
-    The form used from staff to invite external users to join a journal for review activities.
-    """
+    """Used by staff to invite external users for review activities."""
 
     first_name = forms.CharField()
     last_name = forms.CharField()
@@ -121,12 +118,12 @@ def SI_choices():
     ).values_list("id", "name")
 
 
-class SIForm(forms.Form):
+class SIForm(forms.ModelForm):
     """Used to choose the destination special issue during submission."""
 
-    # Not using a forms.ModelForm with Meta.model set to
-    # ArticleWrapper or SpecialIssue, because I'm not sure how to
-    # manage it...
+    class Meta:
+        model = ArticleWrapper
+        fields = ("special_issue", )
 
     special_issue = forms.ChoiceField(
         choices=SI_choices
