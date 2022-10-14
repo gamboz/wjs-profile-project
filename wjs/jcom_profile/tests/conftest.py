@@ -18,7 +18,7 @@ from journal import models as journal_models
 
 
 from wjs.jcom_profile.models import JCOMProfile
-from wjs.jcom_profile.wjs_utils import generate_token
+from wjs.jcom_profile.utils import generate_token
 
 USERNAME = "user"
 JOURNAL_CODE = "CODE"
