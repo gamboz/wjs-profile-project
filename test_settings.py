@@ -161,50 +161,10 @@ RESET_PASSWORD_BODY = """Dear {} {}, please add your password to complete
 the registration process before first login: click here {}
 """
 
-# issue-25 start
-# https://gitlab.sissamedialab.it/wjs/specs/-/issues/25
-from core import plugin_installed_apps
-
-TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # "APP_DIRS": True,  # either APP_DIRS or DIRS, not both!
-        "DIRS": (
-            [
-                os.path.join(BASE_DIR, "templates"),
-                os.path.join(BASE_DIR, "templates", "common"),
-                os.path.join(BASE_DIR, "templates", "admin"),
-            ]
-            + plugin_installed_apps.load_plugin_templates(BASE_DIR)
-            + plugin_installed_apps.load_homepage_element_templates(BASE_DIR)
-        ),
-        "OPTIONS": {
-            "string_if_invalid": "INVALID %s",  # Debug only!
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "core.context_processors.journal",
-                "core.context_processors.journal_settings",
-                "core.context_processors.press",
-                "core.context_processors.active",
-                "core.context_processors.navigation",
-                "django_settings_export.settings_export",
-                "django.template.context_processors.i18n",
-            ],
-            "loaders": [
-                "django.template.loaders.app_directories.Loader",
-                "utils.template_override_middleware.Loader",
-                "django.template.loaders.filesystem.Loader",
-            ],
-            "builtins": [
-                "core.templatetags.fqdn",
-                "django.templatetags.i18n",
-            ],
-        },
-    },
+TEMPLATES[0]["OPTIONS"]["loaders"] = [
+    "django.template.loaders.app_directories.Loader",
+    "utils.template_override_middleware.Loader",
+    "django.template.loaders.filesystem.Loader",
 ]
-# issue-25 end
 
 print("🍠")
