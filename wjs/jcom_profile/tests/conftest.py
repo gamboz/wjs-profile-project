@@ -127,17 +127,14 @@ def admin():
 @pytest.fixture
 def coauthor():
     """Create coauthor user."""
-    user = Account.objects.create(
+    return JCOMProfile.objects.create(
         username="coauthor",
         email="coauthor@coauthor.it",
         first_name="Coauthor",
         last_name="Coauthor",
         is_active=True,
+        gdpr_checkbox=True
     )
-    user.jcomprofile.gdpr_checkbox = True
-    user.jcomprofile.save()
-    user.save()
-    return user
 
 
 @pytest.fixture
