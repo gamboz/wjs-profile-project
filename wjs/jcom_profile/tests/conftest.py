@@ -4,6 +4,8 @@ import pytest
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls.base import clear_script_prefix
 from django.utils import translation
+from django.core import management
+
 
 
 from core.models import Account
@@ -232,6 +234,11 @@ def article(admin, coauthor, article_journal):
     )
     article.authors.add(admin, coauthor)
     return article
+
+
+@pytest.fixture
+def coauthors_setting():
+    management.call_command("add_coauthors_submission_email_settings")
 
 
 @pytest.fixture
