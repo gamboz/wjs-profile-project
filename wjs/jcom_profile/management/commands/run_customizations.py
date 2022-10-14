@@ -8,3 +8,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         management.call_command('add_coauthors_submission_email_settings')
+        management.call_command('add_user_as_main_author_setting')
