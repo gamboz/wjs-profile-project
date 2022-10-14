@@ -11,7 +11,7 @@ class TestFilesStage:
     """Tests related to the file-submission stage."""
 
     @pytest.mark.django_db
-    def test_additional_files_form_title_obeys_setting(self, journal):
+    def test_additional_files_form_title_obeys_setting(self, journal, clear_script_prefix_fix):
         """The title of the additional files field should obey its setting."""
         # set the setting
         value = "<h2>Qui ci metto un po' <strong>di</strong> tutto</h2>"
