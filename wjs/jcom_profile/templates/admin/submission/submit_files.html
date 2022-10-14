@@ -66,7 +66,7 @@
 
                 {% if request.journal.submissionconfiguration.figures_data %}
                     <div class="title-area">
-                      {% autoescape off %}{{ journal_settings.styling.submission_figures_data_title }}{% endautoescape %}
+                      {{ journal_settings.styling.submission_figures_data_title|safe }}
                     </div>
                     <div class="row expanded">
                         <div class="large-3 columns">
