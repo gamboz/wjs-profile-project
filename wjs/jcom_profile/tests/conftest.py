@@ -7,6 +7,7 @@ from django.utils import translation
 
 
 from core.models import Account
+from wjs.jcom_profile.models import JCOMProfile
 from submission.models import Article
 from journal.tests.utils import make_test_journal
 from press.models import Press
@@ -111,7 +112,7 @@ def drop_user():
 @pytest.fixture
 def admin():
     """Create admin user."""
-    return Account.objects.create(
+    return JCOMProfile.objects.create(
         username="admin",
         email="admin@admin.it",
         first_name="Admin",
@@ -120,6 +121,7 @@ def admin():
         is_staff=True,
         is_admin=True,
         is_superuser=True,
+        gdpr_checkbox=True
     )
 
 
