@@ -240,7 +240,9 @@ class SpecialIssues(TemplateView):
             article_wrapper, _ = ArticleWrapper.objects.get_or_create(
                 janeway_article=article
             )
-            article_wrapper.special_issue_id = int(form.cleaned_data["special_issue"])
+            article_wrapper.special_issue_id = int(
+                form.cleaned_data["special_issue"]
+            )
             article_wrapper.save()
             return redirect(
                 reverse(
@@ -265,13 +267,22 @@ class SpecialIssues(TemplateView):
         # The following is no-go: no `article` in the request
         # article = self.request.article
 
-        # form = self.form_class(instance=article)
-        special_issue = None
-        article_wrapper = getattr(article, 'articlewrapper', None)
+        article_wrapper = getattr(article, "articlewrapper", None)
+
+        if not article_wrapper.can_be_submitted_to_special_issue():
+            return redirect(
+                reverse(
+                    "submit_infozero",
+                    kwargs={"article_id": kwargs["article_id"]},
+                )
+            )
+        form = self.form_class()
+        # form = self.form_class(instance=article_wrapper)
         if article_wrapper:
-            special_issue = article_wrapper.special_issue.id
-        data = dict(special_issue=special_issue)
-        form = self.form_class(data)
+            if article_wrapper.special_issue:
+                special_issue = article_wrapper.special_issue.id
+                form = self.form_class(data=dict(special_issue=special_issue))
+
         # NB: templates (base and timeline and all) expect to find
         # "article" in context!
         context = dict(form=form, article=article)

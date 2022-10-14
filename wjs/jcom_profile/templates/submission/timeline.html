@@ -1,5 +1,4 @@
 {% load i18n %}
-⇒ MIA TIMELINE ⇐
 <div class="hide-for-small-only">
     <ul class="timeline" id="timeline">
         <li class="li complete">
@@ -7,6 +6,7 @@
                 <h4> {% trans "Submission Started" %} </h4>
             </div>
         </li>
+        {% if article.articlewrapper.can_be_submitted_to_special_issue %}
         <li class="li {% if article.current_step >= 1 %}complete{% endif %}">
             <div class="status">
                 <h4>{% if article %}{% if article.current_step >= 1 or article.stage != "Unsubmitted" %}
@@ -15,6 +15,7 @@
                 </h4>
             </div>
         </li>
+        {% endif %}
         <li class="li {% if article.current_step >= 1 %}complete{% endif %}">
             <div class="status">
                 <h4>{% if article %}{% if article.current_step >= 1 %}
