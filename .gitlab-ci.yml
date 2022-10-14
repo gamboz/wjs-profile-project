@@ -43,10 +43,6 @@ upload-package:
   extends:
     - .upload-package
 
-  # might be not necessry, but best is to explicit dependencies
-  needs:
-    - run-tests
-
 deploy-to-test:
   only:
     - tags
