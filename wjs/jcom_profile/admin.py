@@ -110,10 +110,6 @@ admin.site.unregister(Account)
 admin.site.register(Account, UserAdmin)
 
 
+@admin.register(SpecialIssue)
 class SpecialIssueAdmin(admin.ModelAdmin):
     """Helper class to "admin" special issues."""
-
-    model = SpecialIssue
-
-
-admin.site.register(SpecialIssue, SpecialIssueAdmin)
