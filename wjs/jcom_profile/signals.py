@@ -39,4 +39,4 @@ def create_articlewrapper_handler(sender, instance, created, **kwargs):
     """Create a record in our ArticleWrapper when any Article is newly created."""
     if not created:
         return
-    ArticleWrapper.objects.create(janeway_article=instance)
+    ArticleWrapper.objects.get_or_create(janeway_article=instance)
