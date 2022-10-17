@@ -233,9 +233,7 @@ class SpecialIssues(TemplateView):
         article = get_object_or_404(
             submission_models.Article, pk=kwargs["article_id"]
         )
-        # form = self.form_class(self.request.POST, instance=article)
         form = self.form_class(self.request.POST, instance=article.articlewrapper)
-        # TODO: is instance=article correct? should it be articlewrapper?
         if form.is_valid():
             article_wrapper = form.save()
             return redirect(
@@ -244,7 +242,7 @@ class SpecialIssues(TemplateView):
                     kwargs={"article_id": article_wrapper.janeway_article.id},
                 )
             )
-        context = dict(form=form)
+        context = dict(form=form, article=article)
         return render(
             self.request,
             template_name=self.template_name,
@@ -261,8 +259,6 @@ class SpecialIssues(TemplateView):
         # The following is no-go: no `article` in the request
         # article = self.request.article
 
-        article_wrapper = getattr(article, "articlewrapper", None)
-
         # TODO: this is a stub: SI should be linked to the journal
         if not SpecialIssue.objects.filter(
             is_open_for_submission=True
@@ -273,7 +269,7 @@ class SpecialIssues(TemplateView):
                     kwargs={"article_id": kwargs["article_id"]},
                 )
             )
-        form = self.form_class(instance=article_wrapper)
+        form = self.form_class(instance=article.article_wrapper)
 
         # NB: templates (base and timeline and all) expect to find
         # "article" in context!
