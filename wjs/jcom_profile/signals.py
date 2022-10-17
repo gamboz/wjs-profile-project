@@ -40,4 +40,3 @@ def create_articlewrapper_handler(sender, instance, created, **kwargs):
     if not created:
         return
     ArticleWrapper.objects.create(janeway_article=instance)
-    instance.save()
