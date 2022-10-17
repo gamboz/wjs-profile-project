@@ -34,22 +34,10 @@ def create_profile_handler(sender, instance, created, **kwargs):
     # https://django.readthedocs.io/en/stable/topics/forms/modelforms.html?highlight=save_m2m#the-save-method
 
 
-@receiver(
-    post_save,
-    sender=Article,
-    # dispatch_uid="my_unique_identifier",
-)
+@receiver(post_save, sender=Article)
 def create_articlewrapper_handler(sender, instance, created, **kwargs):
     """Create a record in our ArticleWrapper when any Article is newly created."""
     if not created:
         return
-    # import pudb
-
-    # pudb.set_trace()
-    from utils.logger import get_logger
-    logger = get_logger(__name__)
-    logger.debug("T1 %s", instance.date_started)
     ArticleWrapper.objects.create(janeway_article=instance)
-    logger.debug("T2 %s", instance.date_started)
     instance.save()
-    logger.debug("T3 %s", instance.date_started)
