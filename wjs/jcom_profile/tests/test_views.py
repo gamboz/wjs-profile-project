@@ -11,7 +11,7 @@ from core import models as core_models
 
 from wjs.jcom_profile.tests.conftest import INVITE_BUTTON
 from wjs.jcom_profile.models import JCOMProfile
-from wjs.jcom_profile.wjs_utils import generate_token
+from wjs.jcom_profile.utils import generate_token
 
 
 @pytest.mark.django_db
@@ -128,7 +128,7 @@ def test_gdpr_acceptance_for_non_existing_user(admin, journal):
 
 
 @pytest.mark.django_db
-def test_email_are_sent_to_author_and_coauthors_after_article_submission_(admin, article):
+def test_email_are_sent_to_author_and_coauthors_after_article_submission_(admin, article, coauthors_setting):
     client = Client()
     client.force_login(admin)
     url = reverse("submit_review", args=(article.pk,))

@@ -4,20 +4,19 @@ import pytest
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls.base import clear_script_prefix
 from django.utils import translation
-
+from django.core import management
 
 from core.models import Account
-from submission.models import Article
+from journal import models as journal_models
 from journal.tests.utils import make_test_journal
 from press.models import Press
 from submission import models as submission_models
 
 from utils.install import update_xsl_files, update_settings, update_issue_types
-from journal import models as journal_models
 
-
-from wjs.jcom_profile.models import JCOMProfile
 from wjs.jcom_profile.wjs_utils import generate_token
+from wjs.jcom_profile.models import JCOMProfile
+
 
 USERNAME = "user"
 JOURNAL_CODE = "CODE"
@@ -86,13 +85,9 @@ PROFESSION_SELECT_FRAGMENTS_PRESS = [
         "OLH",
         (
             '<select name="profession" required id="id_profession">',
-            """
-            <label for="id_profession">
+            """<label for="id_profession">
                 Profession
-                <span class="red">*</span>
-
-            </label>
-            """,
+                <span class="red">*</span>""",
         ),
     ),
 ]
@@ -115,7 +110,7 @@ def drop_user():
 @pytest.fixture
 def admin():
     """Create admin user."""
-    return Account.objects.create(
+    return JCOMProfile.objects.create(
         username="admin",
         email="admin@admin.it",
         first_name="Admin",
@@ -124,17 +119,20 @@ def admin():
         is_staff=True,
         is_admin=True,
         is_superuser=True,
+        gdpr_checkbox=True
     )
 
 
 @pytest.fixture
 def coauthor():
     """Create coauthor user."""
-    return Account.objects.create(
+    return JCOMProfile.objects.create(
         username="coauthor",
         email="coauthor@coauthor.it",
         first_name="Coauthor",
         last_name="Coauthor",
+        is_active=True,
+        gdpr_checkbox=True
     )
 
 
@@ -222,7 +220,7 @@ def article(admin, coauthor, article_journal):
             name="section",
             public_submissions=False,
         )
-    article = Article.objects.create(
+    article = submission_models.Article.objects.create(
         abstract="Abstract",
         journal=article_journal,
         journal_id=article_journal.id,
@@ -234,6 +232,11 @@ def article(admin, coauthor, article_journal):
     )
     article.authors.add(admin, coauthor)
     return article
+
+
+@pytest.fixture
+def coauthors_setting():
+    management.call_command("add_coauthors_submission_email_settings")
 
 
 @pytest.fixture
