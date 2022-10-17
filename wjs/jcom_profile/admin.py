@@ -114,8 +114,6 @@ class SpecialIssueAdmin(admin.ModelAdmin):
     """Helper class to "admin" special issues."""
 
     model = SpecialIssue
-    # fields = ["profession", "gdpr_checkbox", "invitation_token"]
-    # # TODO: No! this repeats all the fields (first name, password,...)
 
 
 admin.site.register(SpecialIssue, SpecialIssueAdmin)
