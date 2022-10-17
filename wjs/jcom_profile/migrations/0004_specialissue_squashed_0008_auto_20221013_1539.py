@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('submission', '0069_delete_blank_keywords'),
-        ('jcom_profile', '0003_jcomprofile_invitation_token'),
+        ('jcom_profile', '0005_auto_20221005_1620'),
     ]
 
     operations = [
