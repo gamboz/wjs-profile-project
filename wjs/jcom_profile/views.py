@@ -233,17 +233,15 @@ class SpecialIssues(TemplateView):
         article = get_object_or_404(
             submission_models.Article, pk=kwargs["article_id"]
         )
-        form = self.form_class(self.request.POST, instance=article)
+        # form = self.form_class(self.request.POST, instance=article)
+        form = self.form_class(self.request.POST, instance=article.articlewrapper)
         # TODO: is instance=article correct? should it be articlewrapper?
         if form.is_valid():
-            form.save()
+            article_wrapper = form.save()
             return redirect(
                 reverse(
                     "submit_info_original",
-                    kwargs={"article_id": kwargs["article_id"]},
-                    # kwargs={"article_id": article_wrapper.article.id},
-                    # TODO: form.save() returns an article, not an articlewrapper
-                    # TODO: how do I go from articlewrapper to article.id?
+                    kwargs={"article_id": article_wrapper.janeway_article.id},
                 )
             )
         context = dict(form=form)

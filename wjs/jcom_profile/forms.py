@@ -7,7 +7,7 @@ from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from wjs.jcom_profile.models import JCOMProfile, SpecialIssue, ArticleWrapper
+from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
 
 from utils.forms import CaptchaForm
 
@@ -111,20 +111,14 @@ class InviteUserForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea)
 
 
-def SI_choices():
-    """Give me special issues open for submission."""
-    return SpecialIssue.objects.filter(
-        is_open_for_submission=True
-    ).values_list("id", "name")
-
-
 class SIForm(forms.ModelForm):
     """Used to choose the destination special issue during submission."""
 
     class Meta:
         model = ArticleWrapper
-        fields = ("special_issue", )
+        fields = ("special_issue",)
 
-    special_issue = forms.ChoiceField(
-        choices=SI_choices
+    special_issue = forms.ModelChoiceField(
+        queryset=SpecialIssue.objects.filter(is_open_for_submission=True),
+        initial=0,
     )
