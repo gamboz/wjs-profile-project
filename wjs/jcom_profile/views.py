@@ -15,7 +15,7 @@ from submission import models as submission_models
 from wjs.jcom_profile import forms
 from wjs.jcom_profile.forms import (JCOMProfileForm, JCOMRegistrationForm,
                                     SIForm)
-from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
+from wjs.jcom_profile.models import JCOMProfile, SpecialIssue
 
 from utils.logger import get_logger
 
@@ -222,8 +222,6 @@ class SpecialIssues(TemplateView):
 
     form_class = SIForm
     template_name = "admin/submission/submit_si_chooser.html"
-    # success_url = reverse("submit_infozero",
-    #                       kwargs={"article_id": ???)
 
     def post(self, *args, **kwargs):
         """Set the choosen special issue and continue.
@@ -268,7 +266,9 @@ class SpecialIssues(TemplateView):
         article_wrapper = getattr(article, "articlewrapper", None)
 
         # TODO: this is a stub: SI should be linked to the journal
-        if not SpecialIssue.objects.filter(is_open_for_submission=True).exists():
+        if not SpecialIssue.objects.filter(
+            is_open_for_submission=True
+        ).exists():
             return redirect(
                 reverse(
                     "submit_info_original",
