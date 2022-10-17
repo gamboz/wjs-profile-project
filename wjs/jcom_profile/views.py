@@ -269,7 +269,7 @@ class SpecialIssues(TemplateView):
                     kwargs={"article_id": kwargs["article_id"]},
                 )
             )
-        form = self.form_class(instance=article.article_wrapper)
+        form = self.form_class(instance=article.articlewrapper)
 
         # NB: templates (base and timeline and all) expect to find
         # "article" in context!
