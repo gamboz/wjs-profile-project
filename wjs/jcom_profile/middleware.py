@@ -1,6 +1,8 @@
 """Middleware for JCOM account profile."""
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import redirect, reverse
+
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -33,9 +35,10 @@ class PrivacyAcknowledgedMiddleware:
         #     "core_edit_profile",
         #     "core_logout",
         # ):
-        if request.path.endswith("/logout/") or request.path.endswith(
-            "/profile/"
-        ):
+        free_paths = getattr(settings, "CORE_PRIVACY_MIDDLEWARE_ALLOWED_URLS", [])
+        if any(request.path.endswith(free_path) for free_path in free_paths):
+            return None
+        if request.path.startswith("/admin/"):
             return None
 
         # I need `if request.user.is_authenticated` because request

@@ -21,6 +21,19 @@ This is a django app that should live inside Janeway. To use it, proceed as foll
 
 2. Migrations should be run specifying the sub-package name:
    `./manage.py migrate jcom_profile`
+3. From `janeway/src`, run the following command:
+
+   ```
+   python manage.py run_customizations
+   ```
+   It will add all our customization to Janeway project.
+
+### Available customization commands
+
+| command                                  | arguments | description                                                      |
+|------------------------------------------|-----------|------------------------------------------------------------------|
+| `add_coauthors_submission_email_settings` | -         | Add email settings to notify coauthors after article submission. |
+| `run_customizations`                     | -         | Run all customization commands to Janeway.                       |
 
 ### pre-commit
 
@@ -28,6 +41,7 @@ This project uses [pre-commit](https://pre-commit.com/) hooks to enforce code st
 
 When you make a commit, it will trigger `pre-commit` hooks which will check staged files style
 on `.pre-commit-config.yaml` rules basis.
+
 1. Install `pre-commit`:
    ```shell
    pip install pre-commit
