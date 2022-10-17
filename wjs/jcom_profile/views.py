@@ -1,7 +1,4 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
-import base64
-import json
-
 from django.urls import reverse
 from django.conf import settings
 from django.contrib import messages
@@ -15,6 +12,14 @@ from django.core.mail import send_mail
 
 from core import logic
 from core import models as core_models
+from repository import models as preprint_models
+from security.decorators import (
+    submission_authorised,
+)
+from utils import setting_handler
+from submission import forms as submission_forms
+from submission import decorators
+from submission import logic as submission_logic
 
 from wjs.jcom_profile import forms
 from wjs.jcom_profile.forms import JCOMProfileForm, JCOMRegistrationForm
@@ -194,5 +199,59 @@ def confirm_gdpr_acceptance(request, token):
                 )
         else:
             context["form"] = form
+
+    return render(request, template, context)
+
+
+@login_required
+@decorators.submission_is_enabled
+@submission_authorised
+def start(request, type=None):
+    # TODO: See submission.views.start
+    #  This view should be added to janeway core, avoiding useless code duplication.
+    #  Expected behaviour: check user_automatically_author and user_automatically_main_author settings to eventually
+    #  article main author automatically.
+    form = submission_forms.ArticleStart(journal=request.journal)
+
+    if not request.user.is_author(request):
+        request.user.add_account_role('author', request.journal)
+
+    if request.POST:
+        form = submission_forms.ArticleStart(request.POST, journal=request.journal)
+
+        if form.is_valid():
+            new_article = form.save(commit=False)
+            new_article.owner = request.user
+            new_article.journal = request.journal
+            new_article.current_step = 1
+            new_article.article_agreement = submission_logic.get_agreement_text(request.journal)
+            new_article.save()
+
+            user_automatically_author = setting_handler.get_setting(
+                'general',
+                'user_automatically_author',
+                request.journal,
+            ).processed_value
+            user_automatically_main_author = setting_handler.get_setting(
+                'general',
+                'user_automatically_main_author',
+                request.journal,
+            ).processed_value
+
+            if type == 'preprint':
+                preprint_models.Preprint.objects.create(article=new_article)
+
+            if user_automatically_author:
+                submission_logic.add_user_as_author(request.user, new_article)
+                if user_automatically_main_author:
+                    new_article.correspondence_author = request.user
+                new_article.save()
+
+            return redirect(reverse('submit_info', kwargs={'article_id': new_article.pk}))
+
+    template = 'admin/submission/start.html'
+    context = {
+        'form': form
+    }
 
     return render(request, template, context)
