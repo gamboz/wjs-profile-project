@@ -2,7 +2,7 @@
 
 import os
 
-from core.janeway_global_settings import INSTALLED_APPS, MIDDLEWARE_CLASSES, TEMPLATES
+from core.janeway_global_settings import INSTALLED_APPS, MIDDLEWARE_CLASSES, TEMPLATES, PLUGIN_HOOKS  # NOQA
 
 # Install my stuff
 INSTALLED_APPS.extend(
