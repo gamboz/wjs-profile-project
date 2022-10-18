@@ -46,6 +46,13 @@ repos:
     rev: 6.1.1
     hooks:
       - id: pydocstyle
+        args:
+          - --ignore=D101,D104,D106,D212,D203,D213
+        exclude: |
+          (?x)(
+              ^wjs/jcom_profile/migrations/|
+              ^^wjs/jcom_profile/tests/
+          )
   - repo: https://github.com/Riverside-Healthcare/djLint
     rev: v1.18.0
     hooks:

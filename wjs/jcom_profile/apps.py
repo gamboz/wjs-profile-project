@@ -4,9 +4,7 @@ from django.apps import AppConfig
 
 
 class JCOMProfileConfig(AppConfig):
-    """
-    Configuration for this django app.
-    """
+    """Configuration for this django app."""
 
     name = "wjs.jcom_profile"
     verbose_name = "WJS JCOM profile"

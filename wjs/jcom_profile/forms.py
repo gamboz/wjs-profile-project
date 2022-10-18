@@ -84,6 +84,7 @@ class JCOMRegistrationForm(ModelForm, CaptchaForm, GDPRAcceptanceForm):
         return password_2
 
     def save(self, commit=True):
+        """Check and saves user's password."""
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password_1"])
         user.is_active = False

@@ -181,6 +181,7 @@ def journal(press):
 
 @pytest.fixture
 def article_journal(press):
+    """Create a journal for a test article."""
     # FIXME: Can't figure out why the journal fixtures does not work with article submission
     update_xsl_files()
     update_settings()
@@ -194,6 +195,7 @@ def article_journal(press):
 
 @pytest.fixture
 def article(admin, coauthor, article_journal):
+    """Create a test article."""
     with translation.override("en"):
         section = submission_models.Section.objects.create(
             journal=article_journal,
@@ -216,6 +218,7 @@ def article(admin, coauthor, article_journal):
 
 @pytest.fixture
 def coauthors_setting():
+    """Run add_coauthors_submission_email_settings command to install custom settings for coauthors email."""
     management.call_command("add_coauthors_submission_email_settings")
 
 

@@ -1,5 +1,7 @@
+"""Management command to add settings for coauthors' emails."""
+
 from core.models import Setting, SettingGroup, SettingValue
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -69,6 +71,7 @@ class Command(BaseCommand):
             return None
 
     def handle(self, *args, **options):
+        """Command entry point."""
         email_settings_group = self._get_group("email")
         email_subject_settings_group = self._get_group("email_subject")
 

@@ -29,6 +29,7 @@ class UserAdmin(AccountAdmin):
     inlines = (JCOMProfileInline,)
 
     def get_urls(self):
+        """Get admin urls."""
         urls = super().get_urls()
         import_users_url = [
             url(
