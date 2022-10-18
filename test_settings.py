@@ -92,7 +92,7 @@ LOGGING = {
         },
         "coloured": {
             "()": "colorlog.ColoredFormatter",
-            "format": "%(log_color)s%(levelname)s %(asctime)s M:%(module)s: " "%(message)s",
+            "format": "%(log_color)s%(levelname)s %(asctime)s M:%(module)s: %(message)s",
             "log_colors": {
                 "DEBUG": "cyan",
                 "WARNING": "yellow",
