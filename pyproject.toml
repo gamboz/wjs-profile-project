@@ -9,3 +9,6 @@ include = '/((wjs)/.*\.pyi?|.*\.py)$'
 
 [tool.isort]
 profile = "black"
+
+[tool.pydocstyle]
+ignore = ["D101","D104","D106","D212","D203","D213"]

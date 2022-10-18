@@ -46,8 +46,8 @@ repos:
     rev: 6.1.1
     hooks:
       - id: pydocstyle
-        args:
-          - --ignore=D101,D104,D106,D212,D203,D213
+        additional_dependencies:
+          - toml
         exclude: |
           (?x)(
               ^wjs/jcom_profile/migrations/|
