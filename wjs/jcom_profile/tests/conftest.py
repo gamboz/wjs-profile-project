@@ -84,8 +84,8 @@ PROFESSION_SELECT_FRAGMENTS_PRESS = [
 ]
 
 INVITE_BUTTON = """<li>
-    <a href="/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
-</li>"""
+        <a href="/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
+    </li>"""
 
 
 def drop_user():
