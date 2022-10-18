@@ -2,16 +2,16 @@
 
 import os
 
-from core.janeway_global_settings import INSTALLED_APPS, MIDDLEWARE_CLASSES, TEMPLATES, PLUGIN_HOOKS  # NOQA
+from core.janeway_global_settings import *  # NOQA
 
 # Install my stuff
-INSTALLED_APPS.extend(
+INSTALLED_APPS.extend(  # NOQA
     [
         "wjs.jcom_profile",
     ],
 )
 
-MIDDLEWARE_CLASSES += ("wjs.jcom_profile.middleware.PrivacyAcknowledgedMiddleware",)
+MIDDLEWARE_CLASSES += ("wjs.jcom_profile.middleware.PrivacyAcknowledgedMiddleware",)  # NOQA
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # You should change this key before you go live!
@@ -154,7 +154,7 @@ RESET_PASSWORD_BODY = """Dear {} {}, please add your password to complete
 the registration process before first login: click here {}
 """
 
-TEMPLATES[0]["OPTIONS"]["loaders"] = [
+TEMPLATES[0]["OPTIONS"]["loaders"] = [  # NOQA
     "django.template.loaders.app_directories.Loader",
     "utils.template_override_middleware.Loader",
     "django.template.loaders.filesystem.Loader",
