@@ -262,7 +262,7 @@ def start(request, type=None):  # NOQA
     # TODO: See submission.views.start
     #  This view should be added to janeway core, avoiding useless code duplication.
     #  Expected behaviour: check user_automatically_author and user_automatically_main_author settings to eventually
-    #  article main author automatically.
+    #  add article main author automatically.
     form = submission_forms.ArticleStart(journal=request.journal)
 
     if not request.user.is_author(request):
