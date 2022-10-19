@@ -26,6 +26,8 @@ def prova(request):
     """Una prova."""
     user = JCOMProfile.objects.get(pk=request.user.id)
     form = JCOMProfileForm(instance=user)
+    # copied from core.views.py::edit_profile:358ss
+
     if request.POST:
         if "email" in request.POST:
             email_address = request.POST.get("email_address")
