@@ -27,7 +27,7 @@ class Command(BaseCommand):
             SettingValue.objects.create(
                 journal=None,
                 setting=user_main_author_setting,
-                value="on"
+                value=""
             )
             self.stdout.write(
                 self.style.SUCCESS(

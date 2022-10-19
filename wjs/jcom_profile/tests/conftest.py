@@ -1,9 +1,12 @@
 """pytest common stuff and fixtures."""
+import os
+
 import pytest
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls.base import clear_script_prefix
 from django.utils import translation
+from django.conf import settings
 from django.core import management
 
 from core.models import Account
@@ -16,7 +19,6 @@ from utils.install import update_xsl_files, update_settings, update_issue_types
 
 from wjs.jcom_profile.utils import generate_token
 from wjs.jcom_profile.models import JCOMProfile
-
 
 USERNAME = "user"
 JOURNAL_CODE = "CODE"
@@ -213,13 +215,18 @@ def article_journal(press):
 
 
 @pytest.fixture
-def article(admin, coauthor, article_journal):
+def section(article_journal):
     with translation.override("en"):
         section = submission_models.Section.objects.create(
             journal=article_journal,
             name="section",
             public_submissions=False,
         )
+    return section
+
+
+@pytest.fixture
+def article(admin, coauthor, article_journal, section):
     article = submission_models.Article.objects.create(
         abstract="Abstract",
         journal=article_journal,
@@ -237,6 +244,19 @@ def article(admin, coauthor, article_journal):
 @pytest.fixture
 def coauthors_setting():
     management.call_command("add_coauthors_submission_email_settings")
+
+
+@pytest.fixture
+def user_as_main_author_setting():
+    management.call_command("add_user_as_main_author_setting")
+
+
+@pytest.fixture
+def roles():
+    # TODO: Let's discuss this, I  Think we should decide how to deal with tests
+    ROLES_RELATIVE_PATH = 'utils/install/roles.json'
+    roles_path = os.path.join(settings.BASE_DIR, ROLES_RELATIVE_PATH)
+    management.call_command('loaddata', roles_path)
 
 
 @pytest.fixture
