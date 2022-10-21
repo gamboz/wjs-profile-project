@@ -22,68 +22,17 @@ USERNAME = "user"
 JOURNAL_CODE = "CODE"
 
 PROFESSION_SELECT_FRAGMENTS_JOURNAL = [
-    (
-        "clean",
-        (
-            '<select name="profession" class="form-control" title="" required id="id_profession">',
-            '<label class="form-control-label" for="id_profession">Profession</label>',
-        ),
-    ),
-    (
-        "material",
-        (
-            '<select name="profession" required id="id_profession">',
-            "<label>Profession</label>",
-        ),
-    ),
-    (
-        "OLH",
-        (
-            '<select name="profession" required id="id_profession">',
-            '<label for="id_profession">',
-        ),
-    ),
+    '<select name="profession" required id="id_profession">',
+    "<label>Profession</label>",
 ]
 
 GDPR_FRAGMENTS_JOURNAL = [
-    (
-        "clean",
-        ('<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',),
-    ),
-    (
-        "material",
-        ('<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',),
-    ),
-    (
-        "OLH",
-        ('<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',),
-    ),
+    '<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',
 ]
 
 PROFESSION_SELECT_FRAGMENTS_PRESS = [
-    (
-        "clean",
-        (
-            '<select name="profession" class="form-control" title="" required id="id_profession">',
-            '<label class="form-control-label" for="id_profession">Profession</label>',
-        ),
-    ),
-    (
-        "material",
-        (
-            '<select name="profession" required id="id_profession">',
-            "<label>Profession</label>",
-        ),
-    ),
-    (
-        "OLH",
-        (
-            '<select name="profession" required id="id_profession">',
-            """<label for="id_profession">
-                Profession
-                <span class="red">*</span>""",
-        ),
-    ),
+    '<select name="profession" required id="id_profession">',
+    "<label>Profession</label>",
 ]
 
 INVITE_BUTTON = """<li>
