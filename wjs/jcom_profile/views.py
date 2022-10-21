@@ -279,6 +279,9 @@ def start(request, type=None):  # NOQA
             new_article.article_agreement = submission_logic.get_agreement_text(request.journal)
             new_article.save()
 
+            if type == "preprint":
+                preprint_models.Preprint.objects.create(article=new_article)
+
             user_automatically_author = setting_handler.get_setting(
                 "general",
                 "user_automatically_author",
@@ -289,9 +292,6 @@ def start(request, type=None):  # NOQA
                 "user_automatically_main_author",
                 request.journal,
             ).processed_value
-
-            if type == "preprint":
-                preprint_models.Preprint.objects.create(article=new_article)
 
             if user_automatically_author:
                 submission_logic.add_user_as_author(request.user, new_article)
