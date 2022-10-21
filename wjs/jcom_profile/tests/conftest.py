@@ -1,6 +1,6 @@
 """pytest common stuff and fixtures."""
 import pytest
-from core.models import Account
+from core.models import Account, Setting
 from django.core import management
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls.base import clear_script_prefix
@@ -10,6 +10,7 @@ from journal.tests.utils import make_test_journal
 from press.models import Press
 from submission import models as submission_models
 from submission.models import Article
+from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 
 from wjs.jcom_profile.models import JCOMProfile
@@ -166,6 +167,16 @@ def press():
     apress.delete()
 
 
+def set_jcom_theme(journal):
+    """Set the journal's theme to JCOM-theme."""
+    theme = "JCOM-theme"
+    theme_setting = Setting.objects.get(name="journal_theme")
+    setting_handler.save_setting(theme_setting.group.name, theme_setting.name, journal, theme)
+    base_theme = "material"
+    base_theme_setting = Setting.objects.get(name="journal_base_theme")
+    setting_handler.save_setting(base_theme_setting.group.name, base_theme_setting.name, journal, base_theme)
+
+
 @pytest.fixture
 def journal(press):
     """Prepare a journal."""
@@ -174,6 +185,7 @@ def journal(press):
         "domain": "sitetest.org",
     }
     journal = make_test_journal(**journal_kwargs)
+    set_jcom_theme(journal)
     yield journal
     # probably redundant because of django db transactions rollbacks
     journal.delete()
