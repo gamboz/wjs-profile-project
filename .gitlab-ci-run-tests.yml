@@ -20,7 +20,7 @@
       alias: db
 
   script:
-    - cp test_settings.py /janeway/src/core
+    - cp cicd_testjob_settings.py /janeway/src/core
     - pip install ./[test]
     - cd /janeway/src
     - pytest -c ${CI_PROJECT_DIR}/pytest.ini ${CI_PROJECT_DIR}/ -v -x
