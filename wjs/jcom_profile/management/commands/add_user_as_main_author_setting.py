@@ -41,5 +41,4 @@ class Command(BaseCommand):
         if general_settings_group:
             self._create_user_as_main_author_setting(general_settings_group)
         else:
-            # TODO: Create an ad hoc command to handle this case? I don't know if it could happen.
             self.stdout.write(self.style.ERROR("Check out your groups (general) settings before."))
