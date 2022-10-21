@@ -1,4 +1,4 @@
-"""Install all custom themes into Janewa.."""
+"""Install all custom themes into Janeway."""
 
 import os
 
@@ -18,8 +18,8 @@ class Command(BaseCommand):
         for theme in os.listdir(themes_folder):
             destination = os.path.join(destination_folder, theme)
             self.stdout.write(self.style.NOTICE(f"Linking {theme} to {destination}..."))
+            theme_folder = os.path.join(themes_folder, theme)
             try:
-                theme_folder = os.path.join(themes_folder, theme)
                 os.symlink(theme_folder, destination)
             except FileExistsError:
                 if os.readlink(destination) == theme_folder:
