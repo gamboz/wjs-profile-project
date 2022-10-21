@@ -160,4 +160,15 @@ TEMPLATES[0]["OPTIONS"]["loaders"] = [  # NOQA
     "django.template.loaders.filesystem.Loader",
 ]
 
+# See also CORE_THEMES in janeway_global_settings
+#
+# This tells J. where to go looking for general templates,
+# i.e. templates that are usually not related to a specific theme.
+# This is different from the journal setting journal_base_theme, that
+# must be se to one of the core themes that will act as a fall-back if
+# the theme set in the setting journa_theme is only a "sub-theme"
+# (i.e. it does not contain all the templates).
+#
+INSTALLATION_BASE_THEME = "JCOM-theme"
+
 print("🍠")
