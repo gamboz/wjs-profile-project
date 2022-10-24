@@ -1,17 +1,6 @@
-"""Merge janeway_global_settings and custom settings for pytest."""
+"""Custom django settings for Janeway."""
 
 import os
-
-from core.janeway_global_settings import *  # NOQA
-
-# Install my stuff
-INSTALLED_APPS.extend(  # NOQA
-    [
-        "wjs.jcom_profile",
-    ],
-)
-
-MIDDLEWARE_CLASSES += ("wjs.jcom_profile.middleware.PrivacyAcknowledgedMiddleware",)  # NOQA
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # You should change this key before you go live!
@@ -76,6 +65,17 @@ INTERNAL_IPS = [
 
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
+
+from core.janeway_global_settings import *  # NOQA
+
+# INSTALLED_APPS and MIDDLEWARE_CLASSES defined here are merged by
+# `manage.py` (and `wsgi.py` probably)
+INSTALLED_APPS = [
+    "wjs.jcom_profile",
+]
+
+MIDDLEWARE_CLASSES = ("wjs.jcom_profile.middleware.PrivacyAcknowledgedMiddleware",)
+
 
 # already defined in janeway_global_settings.py (but not visible here...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
