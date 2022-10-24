@@ -23,7 +23,7 @@
     - cp cicd_testjob_settings.py /janeway/src/core
     - pip install ./[test]
     - cd /janeway/src
-    - python3 ./manage.py install_themes
+    - JANEWAY_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE} python3 ./manage.py install_themes
     - pytest -c ${CI_PROJECT_DIR}/pytest.ini ${CI_PROJECT_DIR}/ -v -x
 
 
