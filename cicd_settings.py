@@ -2,6 +2,8 @@
 
 import os
 
+from core import plugin_installed_apps
+
 # SECURITY WARNING: keep the secret key used in production secret!
 # You should change this key before you go live!
 SECRET_KEY = "uxprsdhk^gzd-r=_287byolxn)$k6tsd8_cepl^s^tms2w1qrv"
@@ -66,8 +68,6 @@ INTERNAL_IPS = [
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
-from core.janeway_global_settings import *  # NOQA
-
 # INSTALLED_APPS and MIDDLEWARE_CLASSES defined here are merged by
 # `manage.py` (and `wsgi.py` probably)
 INSTALLED_APPS = [
@@ -88,7 +88,7 @@ LOGGING = {
     },
     "formatters": {
         "default": {
-            "format": "%(levelname)s %(asctime)s %(module)s " "P:%(process)d T:%(thread)d %(message)s",
+            "format": "%(levelname)s %(asctime)s %(module)s P:%(process)d T:%(thread)d %(message)s",
         },
         "coloured": {
             "()": "colorlog.ColoredFormatter",
@@ -154,12 +154,6 @@ RESET_PASSWORD_BODY = """Dear {} {}, please add your password to complete
 the registration process before first login: click here {}
 """
 
-TEMPLATES[0]["OPTIONS"]["loaders"] = [  # NOQA
-    "django.template.loaders.app_directories.Loader",
-    "utils.template_override_middleware.Loader",
-    "django.template.loaders.filesystem.Loader",
-]
-
 # See also CORE_THEMES in janeway_global_settings
 #
 # This tells J. where to go looking for general templates,
@@ -170,5 +164,55 @@ TEMPLATES[0]["OPTIONS"]["loaders"] = [  # NOQA
 # (i.e. it does not contain all the templates).
 #
 INSTALLATION_BASE_THEME = "JCOM-theme"
+
+CORE_PRIVACY_MIDDLEWARE_ALLOWED_URLS = [
+    "/profile/",
+    "/logout/",
+]
+
+
+# issue-25 start
+# https://gitlab.sissamedialab.it/wjs/specs/-/issues/25
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        # "APP_DIRS": True,  # either APP_DIRS or DIRS, not both!
+        "DIRS": (
+            [
+                os.path.join(BASE_DIR, "templates"),
+                os.path.join(BASE_DIR, "templates", "common"),
+                os.path.join(BASE_DIR, "templates", "admin"),
+            ]
+            + plugin_installed_apps.load_plugin_templates(BASE_DIR)
+            + plugin_installed_apps.load_homepage_element_templates(BASE_DIR)
+        ),
+        "OPTIONS": {
+            "string_if_invalid": "INVALID 🡆%s🡄",  # Debug only!
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "core.context_processors.journal",
+                "core.context_processors.journal_settings",
+                "core.context_processors.press",
+                "core.context_processors.active",
+                "core.context_processors.navigation",
+                "django_settings_export.settings_export",
+                "django.template.context_processors.i18n",
+            ],
+            "loaders": [
+                "django.template.loaders.app_directories.Loader",
+                "utils.template_override_middleware.Loader",
+                "django.template.loaders.filesystem.Loader",
+            ],
+            "builtins": [
+                "core.templatetags.fqdn",
+                "django.templatetags.i18n",
+            ],
+        },
+    },
+]
+# issue-25 end
 
 print("🍠")
