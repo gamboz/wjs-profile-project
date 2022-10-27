@@ -156,14 +156,11 @@ the registration process before first login: click here {}
 
 # See also CORE_THEMES in janeway_global_settings
 #
-# This tells J. where to go looking for general templates,
-# i.e. templates that are usually not related to a specific theme.
-# This is different from the journal setting journal_base_theme, that
-# must be se to one of the core themes that will act as a fall-back if
-# the theme set in the setting journa_theme is only a "sub-theme"
-# (i.e. it does not contain all the templates).
+# This is the last place where J. will go look for templates and plays
+# a role if the press uses a non-core theme. It must contain all
+# templates (i.e. be one of the core themes).
 #
-INSTALLATION_BASE_THEME = "JCOM-theme"
+INSTALLATION_BASE_THEME = "material"
 
 CORE_PRIVACY_MIDDLEWARE_ALLOWED_URLS = [
     "/profile/",

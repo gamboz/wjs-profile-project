@@ -109,10 +109,11 @@ def invited_user():
 
 
 @pytest.fixture
-def press():
+def press(install_jcom_theme):
     """Prepare a press."""
     # Copied from journal.tests.test_models
     apress = Press.objects.create(domain="testserver", is_secure=False, name="Medialab")
+    apress.theme = "JCOM-theme"
     apress.save()
     yield apress
     apress.delete()
@@ -152,6 +153,7 @@ def article_journal(press):
     journal_one.title = "Test Journal: A journal of tests"
     journal_one.save()
     update_issue_types(journal_one)
+    set_jcom_theme(journal_one)
 
     return journal_one
 
@@ -200,6 +202,11 @@ def roles():
     roles_relative_path = "utils/install/roles.json"
     roles_path = os.path.join(settings.BASE_DIR, roles_relative_path)
     management.call_command("loaddata", roles_path)
+
+
+def install_jcom_theme():
+    """JCOM-theme must be installed in J. code base for its templates to be found."""
+    management.call_command("install_themes")
 
 
 @pytest.fixture
