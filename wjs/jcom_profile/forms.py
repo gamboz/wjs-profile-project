@@ -119,3 +119,11 @@ class SIForm(forms.ModelForm):
         queryset=SpecialIssue.objects.filter(is_open_for_submission=True),
         initial=0,
     )
+
+
+class TasksExperimentsForm(forms.Form):
+    """Experiments with tasks."""
+
+    x = forms.DecimalField(initial=3, widget=forms.NumberInput(attrs={"autofocus": True}))
+    y = forms.DecimalField(initial=4)
+    sleep = forms.DecimalField(initial=0)

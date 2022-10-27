@@ -29,6 +29,8 @@ urlpatterns = [
         submission_views.submit_info,
         name="submit_info_original",
     ),
+    # experiments with tasks
+    url("tasks", views.TasksExperiments.as_view(), name="tasks_experiments"),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)

@@ -72,3 +72,17 @@ on `.pre-commit-config.yaml` rules basis.
    ```
 
 See https://gitlab.sissamedialab.it/medialab/janeway/-/issues/7
+
+
+### Async tasks for file processing
+
+From [celery tutorial](https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html)
+
+- start a message broker `docker run -d -p 5672:5672 rabbitmq`
+- define tasks [[wjs/jcom_profile/tasks.py]] (here we also point to the broker)
+- start a runner `celery -A wjs.jcom_profile.tasks worker --loglevel=INFO`
+- "keep" results...
+
+TODO:
+- [ ] daemonize broker
+- [ ] daemonize worker(s)

@@ -11,6 +11,7 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
 from submission import models as submission_models
 from utils.logger import get_logger
 
@@ -247,3 +248,18 @@ class SpecialIssues(TemplateView):
             template_name=self.template_name,
             context=context,
         )
+
+
+class TasksExperiments(FormView):
+    """First experiments with celery & co. for async task mgmt."""
+
+    template_name = "tasks.html"
+    form_class = forms.TasksExperimentsForm
+
+    def form_valid(self, form):
+        """Trigger a task and show results."""
+        from .tasks import add
+
+        data = form.cleaned_data
+        result = add.delay(data.get("x"), data.get("y"), data.get("sleep"))
+        return render(self.request, "tasks.html", {"result": result, "form": form})
