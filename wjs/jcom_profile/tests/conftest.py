@@ -21,18 +21,12 @@ from wjs.jcom_profile.utils import generate_token
 USERNAME = "user"
 JOURNAL_CODE = "CODE"
 
-PROFESSION_SELECT_FRAGMENTS_JOURNAL = [
+EXTRAFIELDS_FRAGMENTS = [
+    # Profession - a <select>
     '<select name="profession" required id="id_profession">',
     "<label>Profession</label>",
-]
-
-GDPR_FRAGMENTS_JOURNAL = [
+    # GDPR - a checkbox
     '<input type="checkbox" name="gdpr_checkbox" required id="id_gdpr_checkbox" />',
-]
-
-PROFESSION_SELECT_FRAGMENTS_PRESS = [
-    '<select name="profession" required id="id_profession">',
-    "<label>Profession</label>",
 ]
 
 INVITE_BUTTON = """<li>
