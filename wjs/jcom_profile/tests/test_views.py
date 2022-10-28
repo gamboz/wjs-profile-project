@@ -162,10 +162,7 @@ def test_submitting_user_is_main_author_when_setting_is_on(
     user_as_main_author,
 ):
     setting_handler.save_setting("general", "user_automatically_author", None, "on")
-    if user_as_main_author:
-        setting_handler.save_setting("general", "user_automatically_main_author", None, "on")
-    else:
-        setting_handler.save_setting("general", "user_automatically_main_author", None, "")
+    setting_handler.save_setting("general", "user_automatically_main_author", None, "on" if user_as_main_author else "")
 
     client = Client()
     client.force_login(admin)
