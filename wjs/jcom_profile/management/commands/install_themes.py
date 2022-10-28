@@ -14,7 +14,7 @@ class Command(BaseCommand):
         destination_folder = os.path.realpath(os.path.join(settings.BASE_DIR, "themes"))
         import wjs.jcom_profile as me
 
-        themes_folder = os.path.realpath(os.path.join(me.__file__, "../../..", "themes"))
+        themes_folder = os.path.realpath(os.path.join(me.__file__, "../..", "themes"))
         for theme in os.listdir(themes_folder):
             destination = os.path.join(destination_folder, theme)
             self.stdout.write(self.style.NOTICE(f"Linking {theme} to {destination}..."))
