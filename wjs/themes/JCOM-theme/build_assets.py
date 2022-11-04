@@ -20,8 +20,9 @@ from themes.material.build_assets import copy_file
 def process_journals():
     """Copy css overrides to static/JCOM-theme folder."""
     journals = journal_models.Journal.objects.all()
-    # TODO: rely on journal's theme
-    theme_name = "JCOM-theme"
+    # TODO: rely on journal's base theme
+    # Don't use a sub-theme: the base.html template uses
+    theme_name = "material"
     for journal in journals:
         for file in journal.scss_files:
             if file.endswith("material_override.css"):
