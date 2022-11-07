@@ -14,4 +14,5 @@ profile = "black"
 ignore = ["D101","D104","D106","D212","D203","D213"]
 
 [tool.djlint]
+profile="django"
 ignore="H006"
