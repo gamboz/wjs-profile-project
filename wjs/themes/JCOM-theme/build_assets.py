@@ -21,7 +21,7 @@ def process_journals():
     """Copy css overrides to static/JCOM-theme folder."""
     journals = journal_models.Journal.objects.all()
     # TODO: rely on journal's base theme
-    # Don't use a sub-theme: the base.html template uses
+    # Don't use a sub-theme: the base.html template has "material" hardcoded
     theme_name = "material"
     for journal in journals:
         for file in journal.scss_files:
