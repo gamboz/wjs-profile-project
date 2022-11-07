@@ -57,3 +57,6 @@ repos:
     rev: v1.18.0
     hooks:
       - id: djlint-django
+        args:
+          - --profile
+          - django

@@ -12,3 +12,6 @@ profile = "black"
 
 [tool.pydocstyle]
 ignore = ["D101","D104","D106","D212","D203","D213"]
+
+[tool.djlint]
+ignore="H006"
