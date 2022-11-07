@@ -26,6 +26,12 @@ body {
 	background-color: var(--primary-light);
 }
 
+/* Used in article_listing.html to show publication date and article type (section) in article listings */
+div.left-right {
+  display: flex;
+  justify-content: space-between;
+}
+
 
 /* submission form */
 .button.success {
