@@ -74,11 +74,40 @@ class Correspondence(models.Model):
         unique_together = ("account", "user_cod", "source")
 
 
+def short_name_validator():
+    """Validate the short name field.
+
+    Only [a-zA-Z0-9_-] because the short name is used in OAI-PMH identifiers.
+    See https://gitlab.sissamedialab.it/gamboz/pos/-/commit/a2b4a021c6a39e86e3355eddd6920bef2053a9f2 & co.
+    """
+    # TODO: Write me!
+
+
 class SpecialIssue(models.Model):
     """Stub for a special issue data model."""
 
-    name = models.CharField(max_length=121)
-    is_open_for_submission = models.BooleanField(blank=True, null=False, default=False)
+    name = models.CharField(max_length=121, help_text="Name / title / long name", blank=False, null=False)
+    short_name = models.CharField(
+        max_length=21,
+        help_text="Short name or code (please only [a-zA-Z0-9_-]",
+        validators=short_name_validator,
+        blank=False,
+        null=False,
+    )
+    description = models.TextField(help_text="Description or abstract", blank=False, null=False)
+    documents = "TODO: write me! a list of files with public/not-public flag"
+
+    open_date = models.DateTimeCheckMixin(
+        help_text="Authors can submit to this special issue only after this date",
+        blank=True,
+        null=False,
+        # TODO: default=datetime.datetime.now()
+    )
+    close_date = models.DateTimeCheckMixin(
+        help_text="Authors cannot submit to this special issue after this date",
+        blank=True,
+        null=False,
+    )
 
     def __str__(self):
         """Show representation (used in admin UI)."""
