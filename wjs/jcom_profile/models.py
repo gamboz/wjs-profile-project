@@ -1,9 +1,8 @@
 """The model for a field "profession" for JCOM authors."""
-from core.models import Account, AccountManager
+from core.models import Account, AccountManager, File
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from journal.models import Journal
@@ -78,12 +77,10 @@ class Correspondence(models.Model):
 
 
 class SIQuerySet(models.QuerySet):
-    """Query sets (filters) for Special Issues."""
-
     def open_for_submission(self):
         """Build a queryset of Special Issues open for submission."""
         _now = timezone.now()
-        return self.filter(models.Q(close_date__isnull=True) | models.Q(close_date__gte=_now), open_date__lte=_now)
+        return self.filter(open_date__lte=_now, close_date__gte=_now)
 
     def current_journal(self):
         """Build a queryset of all Special Issues of the "requested" journal."""
@@ -95,17 +92,7 @@ class SIQuerySet(models.QuerySet):
 
 
 class SpecialIssue(models.Model):
-    """A Special Issue.
-
-    A "container" of articles to which authors (maybe directly
-    invited) can direct their submission.
-
-    Special Issues are relative to a single journal and can be set to
-    accept submission only for a limited time span. They may contain
-    also additional material, that can or cannot be made visible to
-    the public.
-
-    """
+    """Stub for a special issue data model."""
 
     objects = SIQuerySet().as_manager()
 
@@ -117,6 +104,20 @@ class SpecialIssue(models.Model):
         null=False,
     )
     description = models.TextField(help_text="Description or abstract", blank=False, null=False)
+
+    # The real "nature" of the documents field would be a one-to-many
+    # relationship from the File to the SI (i.e. each SI can have many
+    # Files, but each File goes into one SI only), but File is
+    # generic, so we fallback to to a many-to-many relationship
+    documents = models.ManyToManyField(
+        File,
+        blank=True,
+        null=True,
+        help_text="By default, these files are internal use, but they can be published (i.e. shown onthe s.i. pages)"
+        ' if the "galley" flag is set on the single file',
+        # through=
+        # --limit_choices_to=...--
+    )
 
     open_date = models.DateTimeField(
         help_text="Authors can submit to this special issue only after this date",
@@ -130,11 +131,6 @@ class SpecialIssue(models.Model):
         null=True,
     )
     journal = models.ForeignKey(to=Journal, on_delete=models.CASCADE)
-    documents = models.ManyToManyField(to="core.File", limit_choices_to={"article_id": None})
-
-    def get_absolute_url(self):
-        """Get the absolute URL (where create-view redirects on success)."""
-        return reverse("si-update", kwargs={"pk": self.pk})
 
     def is_open_for_submission(self):
         """Compute if this special issue is open for submission."""

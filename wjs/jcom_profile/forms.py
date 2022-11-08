@@ -116,19 +116,10 @@ class SIForm(forms.ModelForm):
         fields = ("special_issue",)
 
     special_issue = forms.ModelChoiceField(
-        queryset=None,
-        required=False,
-        # cannot use blank=True,  # django > 1.11
-        empty_label="➙ Normal submission ➙",
-        # TODO: maybe widget=forms.RadioSelect()
+        queryset=SpecialIssue.objects.open_for_submission(),
+        initial=0,
+        empty_label="Normal submission",
     )
-
-    def __init__(self, *args, **kwargs):
-        """Init the query set now, otherwise we are missing a current_journal."""
-        # https://docs.djangoproject.com/en/4.1/ref/forms/fields/#fields-which-handle-relationships
-        super().__init__(*args, **kwargs)
-        self.fields["special_issue"].queryset = SpecialIssue.objects.current_journal().open_for_submission()
-
     # TODO: how do I represent the "no special issue" case?
     # - A1 keep a special issue called "normal submission" always open
     # - A2 dynamically attach a choice called "normal submission" that is not a s.i. and deal with it in the form
