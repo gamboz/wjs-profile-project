@@ -1,11 +1,13 @@
 """The model for a field "profession" for JCOM authors."""
-
-from core.models import Account, AccountManager
+from core.models import Account, AccountManager, File
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from journal.models import Journal
 from submission.models import Article
+from utils import logic as utils_logic
 
 # TODO: use settings.AUTH_USER_MODEL
 
@@ -74,40 +76,67 @@ class Correspondence(models.Model):
         unique_together = ("account", "user_cod", "source")
 
 
-def short_name_validator():
-    """Validate the short name field.
+class SIQuerySet(models.QuerySet):
+    def open_for_submission(self):
+        """Build a queryset of Special Issues open for submission."""
+        _now = timezone.now()
+        return self.filter(open_date__lte=_now, close_date__gte=_now)
 
-    Only [a-zA-Z0-9_-] because the short name is used in OAI-PMH identifiers.
-    See https://gitlab.sissamedialab.it/gamboz/pos/-/commit/a2b4a021c6a39e86e3355eddd6920bef2053a9f2 & co.
-    """
-    # TODO: Write me!
+    def current_journal(self):
+        """Build a queryset of all Special Issues of the "requested" journal."""
+        request = utils_logic.get_current_request()
+        if request and request.journal:
+            return self.filter(journal=request.journal)
+        else:
+            return self.none()
 
 
 class SpecialIssue(models.Model):
     """Stub for a special issue data model."""
 
+    objects = SIQuerySet().as_manager()
+
     name = models.CharField(max_length=121, help_text="Name / title / long name", blank=False, null=False)
-    short_name = models.CharField(
+    short_name = models.SlugField(
         max_length=21,
         help_text="Short name or code (please only [a-zA-Z0-9_-]",
-        validators=short_name_validator,
         blank=False,
         null=False,
     )
     description = models.TextField(help_text="Description or abstract", blank=False, null=False)
-    documents = "TODO: write me! a list of files with public/not-public flag"
 
-    open_date = models.DateTimeCheckMixin(
+    # The real "nature" of the documents field would be a one-to-many
+    # relationship from the File to the SI (i.e. each SI can have many
+    # Files, but each File goes into one SI only), but File is
+    # generic, so we fallback to to a many-to-many relationship
+    documents = models.ManyToManyField(
+        File,
+        blank=True,
+        null=True,
+        help_text="By default, these files are internal use, but they can be published (i.e. shown onthe s.i. pages)"
+        ' if the "galley" flag is set on the single file',
+        # through=
+        # --limit_choices_to=...--
+    )
+
+    open_date = models.DateTimeField(
         help_text="Authors can submit to this special issue only after this date",
         blank=True,
         null=False,
-        # TODO: default=datetime.datetime.now()
+        default=timezone.now,
     )
-    close_date = models.DateTimeCheckMixin(
+    close_date = models.DateTimeField(
         help_text="Authors cannot submit to this special issue after this date",
         blank=True,
-        null=False,
+        null=True,
     )
+    journal = models.ForeignKey(to=Journal, on_delete=models.CASCADE)
+
+    def is_open_for_submission(self):
+        """Compute if this special issue is open for submission."""
+        # WARNING: must be coherent with queryset SIQuerySet
+        now = timezone.now()
+        return self.open_date <= now and self.close_date >= now
 
     def __str__(self):
         """Show representation (used in admin UI)."""

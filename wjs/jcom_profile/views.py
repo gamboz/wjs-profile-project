@@ -235,7 +235,7 @@ class SpecialIssues(TemplateView):
         # of the query string but of the path
         article = get_object_or_404(submission_models.Article, pk=kwargs["article_id"])
         # TODO: this is a stub: SI should be linked to the journal
-        if not SpecialIssue.objects.filter(is_open_for_submission=True).exists():
+        if not SpecialIssue.objects.current_journal().open_for_submission().exists():
             return redirect(
                 reverse(
                     "submit_info_original",

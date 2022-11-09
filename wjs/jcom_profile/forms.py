@@ -116,6 +116,31 @@ class SIForm(forms.ModelForm):
         fields = ("special_issue",)
 
     special_issue = forms.ModelChoiceField(
-        queryset=SpecialIssue.objects.filter(is_open_for_submission=True),
+        queryset=SpecialIssue.objects.open_for_submission(),
         initial=0,
+        empty_label="Normal submission",
     )
+    # TODO: how do I represent the "no special issue" case?
+    # - A1 keep a special issue called "normal submission" always open
+    # - A2 dynamically attach a choice called "normal submission" that is not a s.i. and deal with it in the form
+    # - A3 add a field called "normal submission" to the form
+    # - A4 use a radio-button widget (+reset button) and organize the
+    #   submission form as follows:
+    #    +--------------------------------------------------+
+    #    |     If your submission is not related to any     |
+    #    |     special issue, click here to continue        |
+    #    |                 +------------+                   |
+    #    |                 |  Continue  |                   |
+    #    |                 +------------+                   |
+    #    |                                                  |
+    #    |   ----------------Special Issues---------------  |
+    #    |   +---+                                          |
+    #    |   |   |   Special Issue 1                        |
+    #    |   +---+                                          |
+    #    |   +---+                                          |
+    #    |   |   |   Special Issue 2                        |
+    #    |   +---+                                          |
+    #    |   +---+                                          |
+    #    |   |   |   Special Issue 3                        |
+    #    |   +---+                                          |
+    #    +--------------------------------------------------+
