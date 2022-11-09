@@ -106,6 +106,15 @@ admin.site.unregister(Account)
 admin.site.register(Account, UserAdmin)
 
 
+class PPFileInline(admin.StackedInline):
+    """Helper class to "inline" publishable SI file."""
+
+    model = models.PPFile
+    fields = ["file", "public"]
+
+
 @admin.register(SpecialIssue)
 class SpecialIssueAdmin(admin.ModelAdmin):
     """Helper class to "admin" special issues."""
+
+    inlines = (PPFileInline,)

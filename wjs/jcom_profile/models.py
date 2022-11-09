@@ -1,5 +1,5 @@
 """The model for a field "profession" for JCOM authors."""
-from core.models import Account, AccountManager, File
+from core.models import Account, AccountManager
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
@@ -77,6 +77,8 @@ class Correspondence(models.Model):
 
 
 class SIQuerySet(models.QuerySet):
+    """Query sets (filters) for Special Issues."""
+
     def open_for_submission(self):
         """Build a queryset of Special Issues open for submission."""
         _now = timezone.now()
@@ -92,7 +94,17 @@ class SIQuerySet(models.QuerySet):
 
 
 class SpecialIssue(models.Model):
-    """Stub for a special issue data model."""
+    """A Special Issue.
+
+    A "container" of articles to which authors (maybe directly
+    invited) can direct their submission.
+
+    Special Issues are relative to a single journal and can be set to
+    accept submission only for a limited time span. They may contain
+    also additional material, that can or cannot be made visible to
+    the public.
+
+    """
 
     objects = SIQuerySet().as_manager()
 
@@ -104,20 +116,6 @@ class SpecialIssue(models.Model):
         null=False,
     )
     description = models.TextField(help_text="Description or abstract", blank=False, null=False)
-
-    # The real "nature" of the documents field would be a one-to-many
-    # relationship from the File to the SI (i.e. each SI can have many
-    # Files, but each File goes into one SI only), but File is
-    # generic, so we fallback to to a many-to-many relationship
-    documents = models.ManyToManyField(
-        File,
-        blank=True,
-        null=True,
-        help_text="By default, these files are internal use, but they can be published (i.e. shown onthe s.i. pages)"
-        ' if the "galley" flag is set on the single file',
-        # through=
-        # --limit_choices_to=...--
-    )
 
     open_date = models.DateTimeField(
         help_text="Authors can submit to this special issue only after this date",
@@ -144,6 +142,14 @@ class SpecialIssue(models.Model):
             return self.name
         else:
             return f"{self.name} - closed"
+
+
+class PPFile(models.Model):
+    """A "publishable" file."""
+
+    file = models.FileField()
+    public = models.BooleanField(default=False)
+    special_issue = models.ForeignKey(to=SpecialIssue)
 
 
 # class ArticleWrapper(Article):
