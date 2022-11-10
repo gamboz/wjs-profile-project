@@ -11,6 +11,7 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
+from django.views.generic.edit import UpdateView
 from repository import models as preprint_models
 from security.decorators import submission_authorised
 from submission import decorators
@@ -21,7 +22,11 @@ from utils import setting_handler
 from utils.logger import get_logger
 
 from wjs.jcom_profile import forms
-from wjs.jcom_profile.models import JCOMProfile, SpecialIssue
+from wjs.jcom_profile.models import (
+    EditorAssignmentParameters,
+    JCOMProfile,
+    SpecialIssue,
+)
 
 logger = get_logger(__name__)
 
@@ -305,3 +310,19 @@ def start(request, type=None):  # NOQA
     context = {"form": form}
 
     return render(request, template, context)
+
+
+class EditorAssignmentParametersUpdate(UpdateView):
+    model = EditorAssignmentParameters
+    fields = ["workload"]
+    template_name = "submission/update_editor_parameters.html"
+
+    def get_object(self, queryset=None):  # noqa
+        editor, journal = self.request.user, self.request.journal
+        try:
+            return EditorAssignmentParameters.objects.get(editor=editor)
+        except EditorAssignmentParameters.DoesNotExist:
+            return EditorAssignmentParameters.objects.create(editor=editor, journal=journal)
+
+    def get_success_url(self):  # noqa
+        return reverse("core_edit_profile")

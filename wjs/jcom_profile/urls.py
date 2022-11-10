@@ -30,6 +30,11 @@ urlpatterns = [
         submission_views.submit_info,
         name="submit_info_original",
     ),
+    url(
+        r"^update/parameters/$",
+        views.EditorAssignmentParametersUpdate.as_view(),
+        name="submit_info_original",
+    ),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)
