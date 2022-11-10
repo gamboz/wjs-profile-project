@@ -129,6 +129,7 @@ class SpecialIssue(models.Model):
         null=True,
     )
     journal = models.ForeignKey(to=Journal, on_delete=models.CASCADE)
+    documents = models.ManyToManyField(to="core.File", limit_choices_to={"article_id": None})
 
     def is_open_for_submission(self):
         """Compute if this special issue is open for submission."""
@@ -142,14 +143,6 @@ class SpecialIssue(models.Model):
             return self.name
         else:
             return f"{self.name} - closed"
-
-
-class PPFile(models.Model):
-    """A "publishable" file."""
-
-    file = models.FileField()
-    public = models.BooleanField(default=False)
-    special_issue = models.ForeignKey(to=SpecialIssue)
 
 
 # class ArticleWrapper(Article):
