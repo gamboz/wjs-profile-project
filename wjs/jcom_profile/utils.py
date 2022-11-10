@@ -19,6 +19,11 @@ def generate_token(email: str):
     return base64.b64encode(hashlib.sha256(email.encode("utf-8")).digest()).hex()
 
 
+PATH_PARTS = [
+    "special_issues",
+]
+
+
 # Adapted from core.files.save_file_to_article
 def save_file_to_special_issue(
     file_to_handle,
@@ -47,7 +52,7 @@ def save_file_to_special_issue(
 
     # N.B. os.path.splitext[1] always returns the final file extension, even in a multi-dotted (.txt.html etc.) input
     filename = str(uuid4()) + str(os.path.splitext(original_filename)[1])
-    folder_structure = os.path.join(settings.BASE_DIR, "files", "special_issues", str(special_issue.id))
+    folder_structure = os.path.join(settings.BASE_DIR, "files", *PATH_PARTS, str(special_issue.id))
 
     if not os.path.exists(folder_structure):
         core_files.mkdirs(folder_structure)
