@@ -10,7 +10,7 @@ from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.generic import TemplateView
+from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from repository import models as preprint_models
 from security.decorators import submission_authorised
 from submission import decorators
@@ -305,3 +305,31 @@ def start(request, type=None):  # NOQA
     context = {"form": form}
 
     return render(request, template, context)
+
+
+class SICreate(CreateView):
+    """Create a Special Issue."""
+
+    model = SpecialIssue
+    fields = ["name", "short_name", "description", "open_date", "close_date", "journal", "documents"]
+
+
+class SIDetails(DetailView):
+    """View a Special Issue."""
+
+    model = SpecialIssue
+
+
+class SIUpdate(UpdateView):
+    """Update a Special Issue."""
+
+    model = SpecialIssue
+    fields = ["name", "documents"]
+
+    def get_context_data(self, **kwargs):
+        """Enrich context data for displaying the object."""
+        context = super().get_context_data(**kwargs)
+        special_issue = self.object
+        documents = special_issue.documents.all()
+        context["si_documents"] = documents
+        return context

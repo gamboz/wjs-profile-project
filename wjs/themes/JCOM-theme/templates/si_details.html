@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% load static from staticfiles %}
+{% load hooks %}
+{% load i18n %}
+{% load files %}
+{% block page_title %}
+    {% trans "Special Issues" %}
+{% endblock page_title %}
+{% block body %}
+    <div class="row">
+        <div class="col m12">
+            <div>{{ object.name }}</div>
+            <div>{{ object.short_name }}</div>
+            <div>{{ object.description }}</div>
+            <div>{{ object.open_date }}</div>
+            <div>{{ object.close_date }}</div>
+            <div>{{ object.journal }}</div>
+            <div>{{ object.documents }}</div>
+        </div>
+    </div>
+{% endblock body %}

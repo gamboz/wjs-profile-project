@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+{% load static from staticfiles %}
+{% load hooks %}
+{% load i18n %}
+{% load files %}
+{% block page_title %}
+    {% trans "Special Issues" %}
+{% endblock page_title %}
+{% block css %}
+    <style>
+  div.fixme {
+      padding:.2em;
+      border:1px solid gray;
+      margin:.2em;
+  }
+    </style>
+{% endblock css %}
+{% block body %}
+    <!-- TODO: errors not shown!!! -->
+    <div class="fixme">{{ form.errors }}</div>
+    <div class="row">
+        <div class="col m12">
+            <form method="post">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" value="Save" />
+            </form>
+        </div>
+    </div>
+{% endblock body %}

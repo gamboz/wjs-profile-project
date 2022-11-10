@@ -3,6 +3,7 @@ from core.models import Account, AccountManager
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from journal.models import Journal
@@ -130,6 +131,10 @@ class SpecialIssue(models.Model):
     )
     journal = models.ForeignKey(to=Journal, on_delete=models.CASCADE)
     documents = models.ManyToManyField(to="core.File", limit_choices_to={"article_id": None})
+
+    def get_absolute_url(self):
+        """Get the absolute URL (where create-view redirect on success)."""
+        return reverse("si-details", kwargs={"pk": self.pk})
 
     def is_open_for_submission(self):
         """Compute if this special issue is open for submission."""

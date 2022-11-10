@@ -30,6 +30,10 @@ urlpatterns = [
         submission_views.submit_info,
         name="submit_info_original",
     ),
+    # Special Issues mgmt
+    url(r"^si/new$", views.SICreate.as_view(template_name="si_new.html"), name="si-create"),
+    url(r"^si/(?P<pk>\d+)/$", views.SIDetails.as_view(template_name="si_details.html"), name="si-details"),
+    url(r"^si/(?P<pk>\d+)/edit$", views.SIUpdate.as_view(template_name="si_update.html"), name="si-update"),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)
