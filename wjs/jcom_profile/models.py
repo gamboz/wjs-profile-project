@@ -107,3 +107,17 @@ class ArticleWrapper(models.Model):
         related_name="special_issue",
         null=True,
     )
+
+
+class EditorAssignmentParameters(models.Model):
+    keywords = models.ManyToManyField("EditorKeyword")
+    editor = models.ForeignKey("core.Account")
+    journal = models.ForeignKey("journal.Journal")
+    workload = models.PositiveSmallIntegerField()
+    brake_on = models.PositiveSmallIntegerField()
+
+
+class EditorKeyword(models.Model):
+    editor_parameters = models.ForeignKey(EditorAssignmentParameters)
+    keyword = models.ForeignKey("submission.Keyword")
+    weight = models.PositiveIntegerField()
