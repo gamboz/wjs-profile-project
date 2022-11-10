@@ -42,7 +42,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for file in si_documents %}
+                    {% for file in object.documents.all %}
                         {% can_edit_file file article as can_edit_file_flag %}
                         {% can_view_file file as can_view_file_flag %}
                         {% can_view_file_history file article as can_view_file_history_flag %}
@@ -57,28 +57,28 @@
                             <td class="wrap-long-text">{{ file }}</td>
                             <td>
                                 {% if can_view_file_flag %}
-                                    <a href="{% url 'article_file_download' 'id' article.pk file.pk %}"><i class="fa fa-download">
+                                    <a href="{% url 'special_issue_file_download' object.pk file.pk %}"><i class="fa fa-download">
                                     &nbsp;</i></a>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if can_view_file_history_flag %}
-                                    <a href="{% url 'file_history' article.pk file.pk %}?return={{ request.path|urlencode }}"><i class="fa fa-history">
+                                    <a href=" url 'file_history' article.pk file.pk %}?return={{ request.path|urlencode }}"><i class="fa fa-history">
                                     &nbsp;</i></a>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if can_edit_file_flag %}
-                                    <a href="{% url 'article_file_replace' 'id' article.pk file.pk %}?return={{ request.path|urlencode }}%3Freturn%3D{{ request.GET.return|urlencode }}"><i class="fa fa-cloud-upload">&nbsp;</i></a>
+                                    <a href=" url 'article_file_replace' 'id_FIXME_' article.pk file.pk %}?return={{ request.path|urlencode }}%3Freturn%3D{{ request.GET.return|urlencode }}"><i class="fa fa-cloud-upload">&nbsp;</i></a>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if can_edit_file_flag %}
-                                    <a href="{% url 'file_delete' article.pk file.pk %}?return={{ request.path|urlencode }}%3Freturn%3D{{ request.GET.return|urlencode }}"><i class="fa fa-trash">
+                                    <a href=" url 'file_delete' article.pk file.pk %}?return={{ request.path|urlencode }}%3Freturn%3D{{ request.GET.return|urlencode }}"><i class="fa fa-trash">
                                     &nbsp;</i></a>
                                 {% endif %}
                             </td>
-                            <td>{% file_type article file %}</td>
+                            <td>file_type article file %}</td>
                             {% if request.user.is_admin %}
                                 <td>
                                     <a target="_blank" href="{% url 'admin:core_file_change' file.pk %}"><span class="fa fa-cogs">&nbsp;</span>Edit</a>
@@ -88,6 +88,17 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col m12">
+            <form method="post"
+                  enctype="multipart/form-data"
+                  action="{% url 'special_issue_file_upload' object.id %}">
+                {% csrf_token %}
+                <input type="file" name="new-file"/>
+                <input type="submit" value="Save" />
+            </form>
         </div>
     </div>
     <div class="row">

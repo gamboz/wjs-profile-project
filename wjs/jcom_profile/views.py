@@ -13,6 +13,7 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from repository import models as preprint_models
 from security.decorators import submission_authorised
@@ -25,7 +26,7 @@ from utils.logger import get_logger
 
 from . import forms
 from .models import JCOMProfile, SpecialIssue
-from .utils import PATH_PARTS, save_file_to_special_issue
+from .utils import PATH_PARTS
 
 logger = get_logger(__name__)
 
@@ -330,10 +331,45 @@ class SIUpdate(UpdateView):
     model = SpecialIssue
     fields = ["name", "documents"]
 
-    def get_context_data(self, **kwargs):
-        """Enrich context data for displaying the object."""
-        context = super().get_context_data(**kwargs)
-        special_issue = self.object
-        documents = special_issue.documents.all()
-        context["si_documents"] = documents
-        return context
+
+# Adapted from journal.views.serve_article_file
+# TODO: check and ri-apply authorization logic
+# @has_request
+# @article_stage_accepted_or_later_or_staff_required
+# @file_user_required
+def serve_special_issue_file(request, special_issue_id, file_id):
+    """Serve a special issue file.
+
+    :param request: the request associated with this call
+    :param special_issue_id: the identifier for the special_issue
+    :param file_id: the file ID to serve
+    :return: a streaming response of the requested file or 404
+    """
+    if file_id != "None":
+        file_object = get_object_or_404(core_models.File, pk=file_id)
+        # Ugly: sneakily introduce the special issue's ID in the file path
+        mangled_parts = [
+            *PATH_PARTS,
+            str(special_issue_id),
+        ]
+        return core_files.serve_any_file(
+            request,
+            file_object,
+            path_parts=mangled_parts,
+        )
+    else:
+        raise Http404
+
+
+class SIFileUpload(View):
+    """Upload a special issue document."""
+
+    def post(self, request, special_issue_id):
+        """Upload the given file and redirect to update view."""
+        si = SpecialIssue.objects.get(id=special_issue_id)
+        new_file = request.FILES.get("new-file")
+        from . import utils
+
+        saved_file = utils.save_file_to_special_issue(new_file, si, request.user)
+        si.documents.add(saved_file)
+        return redirect(reverse("si-update", args=(special_issue_id,)))
