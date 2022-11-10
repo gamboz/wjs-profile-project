@@ -3,6 +3,7 @@
 Journal level configuration is made using the 'WJS_ARTICLE_ASSIGNMENT_FUNCTIONS' setting
 """
 from core.settings import WJS_ARTICLE_ASSIGNMENT_FUNCTIONS  # NOQA
+from django.utils.module_loading import import_string
 
 
 def default_assign_editors_to_articles(**kwargs) -> None:
@@ -12,8 +13,8 @@ def default_assign_editors_to_articles(**kwargs) -> None:
 
 def dispatch_assignment(**kwargs) -> None:
     """Dispatch editors assignment on journal basis, selecting the requested assignment algorithm."""
-    journal = kwargs["article"].journal_id  # NOQA
-    # TODO I cannot figure out how to use dotted path function.
-    #  WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(journal, WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(None))(kwargs) noqa
-
-    default_assign_editors_to_articles(**kwargs)
+    journal = kwargs["article"].journal_id
+    if journal in WJS_ARTICLE_ASSIGNMENT_FUNCTIONS:
+        import_string(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(journal))(**kwargs)
+    else:
+        import_string(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(None))(**kwargs)
