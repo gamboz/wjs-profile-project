@@ -2,7 +2,7 @@
 # https://docs.djangoproject.com/en/4.0/ref/applications/
 from django.apps import AppConfig
 
-from wjs.jcom_profile.events.assignment import assign_editors_to_articles
+from wjs.jcom_profile.events.assignment import dispatch_assignment
 
 
 class JCOMProfileConfig(AppConfig):
@@ -43,4 +43,4 @@ class JCOMProfileConfig(AppConfig):
             notify_coauthors_article_submission,
         )
 
-        events_logic.Events.register_for_event(events_logic.Events.ON_ARTICLE_SUBMITTED, assign_editors_to_articles)
+        events_logic.Events.register_for_event(events_logic.Events.ON_ARTICLE_SUBMITTED, dispatch_assignment)
