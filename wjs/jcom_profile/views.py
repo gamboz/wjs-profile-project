@@ -23,7 +23,8 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from . import JCOMProfile, SpecialIssue, forms
+from . import forms
+from .models import JCOMProfile, SpecialIssue
 from .utils import PATH_PARTS
 
 logger = get_logger(__name__)
