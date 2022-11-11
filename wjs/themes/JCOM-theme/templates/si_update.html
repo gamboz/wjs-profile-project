@@ -42,7 +42,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for file in si_documents %}
+                    {% for file in object.documents.all %}
                         {% can_edit_file file article as can_edit_file_flag %}
                         {% can_view_file file as can_view_file_flag %}
                         {% can_view_file_history file article as can_view_file_history_flag %}
@@ -97,8 +97,6 @@
                   action="{% url 'special_issue_file_upload' object.id %}">
                 {% csrf_token %}
                 <input type="file" name="new-file"/>
-                <!-- TODO: ask Iacopo which is better: action="view_name/PK/" or action="view_name" + <input value=PK> -->
-                <input type="hidden" name="special-issue-id" value="{{ object.id }}"/>
                 <input type="submit" value="Save" />
             </form>
         </div>

@@ -12,6 +12,7 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from repository import models as preprint_models
 from security.decorators import submission_authorised
@@ -22,10 +23,7 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from wjs.jcom_profile import forms
-from wjs.jcom_profile.models import JCOMProfile, SpecialIssue
-
-# TODO: ask Iacopo which is better (from . ... OR from wjs.jcom_profile ...)
+from . import JCOMProfile, SpecialIssue, forms
 from .utils import PATH_PARTS
 
 logger = get_logger(__name__)
@@ -331,19 +329,6 @@ class SIUpdate(UpdateView):
     model = SpecialIssue
     fields = ["name", "documents"]
 
-    # TODO: mi sto perdendo qualcosa: nel template dovrei già poter
-    # ciclare sui singoli documenti, ma non funziona... (provato:
-    # {% for doc in object.documents %}
-    # oppure
-    # {% for doc in form.documents %}
-    def get_context_data(self, **kwargs):
-        """Enrich context data for displaying the object."""
-        context = super().get_context_data(**kwargs)
-        special_issue = self.object
-        documents = special_issue.documents.all()
-        context["si_documents"] = documents
-        return context
-
 
 # Adapted from journal.views.serve_article_file
 # TODO: check and ri-apply authorization logic
@@ -374,16 +359,15 @@ def serve_special_issue_file(request, special_issue_id, file_id):
         raise Http404
 
 
-class SIFileUpload(TemplateView):
+class SIFileUpload(View):
     """Upload a special issue document."""
 
-    def post(self, request, special_issue_id=None):
+    def post(self, request, special_issue_id):
         """Upload the given file and redirect to update view."""
-        si_id = request.POST.get("special-issue-id")
-        si = SpecialIssue.objects.get(id=si_id)
+        si = SpecialIssue.objects.get(id=special_issue_id)
         new_file = request.FILES.get("new-file")
         from . import utils
 
         saved_file = utils.save_file_to_special_issue(new_file, si, request.user)
         si.documents.add(saved_file)
-        return redirect(reverse("si-update", args=(si_id,)))
+        return redirect(reverse("si-update", args=(special_issue_id,)))
