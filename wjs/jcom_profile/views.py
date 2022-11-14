@@ -26,7 +26,7 @@ from utils.logger import get_logger
 
 from . import forms
 from .models import JCOMProfile, SpecialIssue
-from .utils import PATH_PARTS
+from .utils import PATH_PARTS, save_file_to_special_issue
 
 logger = get_logger(__name__)
 
@@ -312,11 +312,14 @@ def start(request, type=None):  # NOQA
     return render(request, template, context)
 
 
-class SICreate(CreateView):
+class SICreate(PermissionRequiredMixin, CreateView):
     """Create a Special Issue."""
 
+    permission_required = "jcom_profile.add_specialissue"
+    # see also security.decorators.editor_or_manager
+
     model = SpecialIssue
-    fields = ["name", "short_name", "description", "open_date", "close_date", "journal", "documents"]
+    fields = ["name", "short_name", "description", "open_date", "close_date", "journal"]
 
 
 class SIDetails(DetailView):
@@ -325,11 +328,15 @@ class SIDetails(DetailView):
     model = SpecialIssue
 
 
-class SIUpdate(UpdateView):
+class SIUpdate(PermissionRequiredMixin, UpdateView):
     """Update a Special Issue."""
 
+    # "add" and "update" operations share the same permissions
+    permission_required = "jcom_profile.add_specialissue"
+
     model = SpecialIssue
-    fields = ["name", "documents"]
+    # same fields as SICreate; do not add "documents": they are dealt with "manually"
+    fields = ["name", "short_name", "description", "open_date", "close_date", "journal"]
 
 
 # Adapted from journal.views.serve_article_file
@@ -366,10 +373,25 @@ class SIFileUpload(View):
 
     def post(self, request, special_issue_id):
         """Upload the given file and redirect to update view."""
-        si = SpecialIssue.objects.get(id=special_issue_id)
+        si = get_object_or_404(SpecialIssue, pk=special_issue_id)
         new_file = request.FILES.get("new-file")
-        from . import utils
-
-        saved_file = utils.save_file_to_special_issue(new_file, si, request.user)
+        saved_file = save_file_to_special_issue(new_file, si, request.user)
         si.documents.add(saved_file)
         return redirect(reverse("si-update", args=(special_issue_id,)))
+
+
+class SIFileDelete(PermissionRequiredMixin, View):
+    """Delete a special issue document."""
+
+    permission_required = "core.delete_file"
+
+    def post(self, request, file_id):
+        """Delete the given file and redirect.
+
+        Expect a query parameter named `return` in the `request`. It
+        is used at the redirect URL.
+
+        """
+        file_obj = get_object_or_404(core_models.File, pk=file_id)
+        file_obj.delete()
+        return redirect(request.GET["return"])

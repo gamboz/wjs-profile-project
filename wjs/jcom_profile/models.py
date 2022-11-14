@@ -133,8 +133,8 @@ class SpecialIssue(models.Model):
     documents = models.ManyToManyField(to="core.File", limit_choices_to={"article_id": None})
 
     def get_absolute_url(self):
-        """Get the absolute URL (where create-view redirect on success)."""
-        return reverse("si-details", kwargs={"pk": self.pk})
+        """Get the absolute URL (where create-view redirects on success)."""
+        return reverse("si-update", kwargs={"pk": self.pk})
 
     def is_open_for_submission(self):
         """Compute if this special issue is open for submission."""
