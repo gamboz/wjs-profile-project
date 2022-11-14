@@ -33,7 +33,7 @@ urlpatterns = [
     url(
         r"^update/parameters/$",
         views.EditorAssignmentParametersUpdate.as_view(),
-        name="submit_info_original",
+        name="assignment_parameters",
     ),
 ]
 

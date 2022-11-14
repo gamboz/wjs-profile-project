@@ -111,7 +111,7 @@ class ArticleWrapper(models.Model):
 
 class EditorAssignmentParameters(models.Model):
     keywords = models.ManyToManyField("submission.Keyword", through="EditorKeyword")
-    editor = models.OneToOneField("core.Account")
+    editor = models.ForeignKey("core.Account")
     journal = models.ForeignKey("journal.Journal")
     workload = models.PositiveSmallIntegerField(default=0)
     brake_on = models.PositiveSmallIntegerField(default=0)

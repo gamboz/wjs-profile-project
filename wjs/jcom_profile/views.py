@@ -320,7 +320,7 @@ class EditorAssignmentParametersUpdate(UpdateView):
     def get_object(self, queryset=None):  # noqa
         editor, journal = self.request.user, self.request.journal
         try:
-            return EditorAssignmentParameters.objects.get(editor=editor)
+            return EditorAssignmentParameters.objects.get(editor=editor, journal=journal)
         except EditorAssignmentParameters.DoesNotExist:
             return EditorAssignmentParameters.objects.create(editor=editor, journal=journal)
 

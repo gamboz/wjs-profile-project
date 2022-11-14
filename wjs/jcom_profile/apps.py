@@ -23,6 +23,7 @@ class JCOMProfileConfig(AppConfig):
         """Register my functions to Janeway's hooks."""
         hooks = [
             {"extra_corefields": {"module": "wjs.jcom_profile.hooks", "function": "prova_hook"}},
+            {"button_link": {"module": "wjs.jcom_profile.hooks", "function": "extra_link_hook"}},
         ]
         # NB: do not `import core...` before `ready()`,
         # otherwise django setup process breaks
