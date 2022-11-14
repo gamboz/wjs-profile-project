@@ -83,7 +83,7 @@ class SIQuerySet(models.QuerySet):
     def open_for_submission(self):
         """Build a queryset of Special Issues open for submission."""
         _now = timezone.now()
-        return self.filter(open_date__lte=_now, close_date__gte=_now)
+        return self.filter(models.Q(close_date__isnull=True) | models.Q(close_date__gte=_now), open_date__lte=_now)
 
     def current_journal(self):
         """Build a queryset of all Special Issues of the "requested" journal."""

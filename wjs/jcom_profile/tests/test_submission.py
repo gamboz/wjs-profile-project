@@ -5,6 +5,7 @@ from core.models import Account, Role, Setting, SettingGroup, SettingValue
 from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 from submission import logic
 from submission.models import Article
 
@@ -102,9 +103,9 @@ class TestFilesStage:
         """Test that the SI-choosing page just redirects if there are no _open_ SIs."""
         client = Client()
         client.force_login(admin)
-        SpecialIssue.objects.create(name="Test SI", is_open_for_submission=False)
-        assert not SpecialIssue.objects.filter(is_open_for_submission=True).exists()
-        assert SpecialIssue.objects.filter(is_open_for_submission=False).exists()
+        tomorrow = timezone.now() + timezone.timedelta(1)
+        SpecialIssue.objects.create(name="Test SI", journal=article.journal, open_date=tomorrow)
+        assert not SpecialIssue.objects.open_for_submission().exists()
         url = reverse("submit_info", args=(article.pk,))
         response = client.get(url)
         assert response.status_code == 302
@@ -115,8 +116,9 @@ class TestFilesStage:
         """Test that the SI-choosing page is shown if there are open SIs."""
         client = Client()
         client.force_login(admin)
-        SpecialIssue.objects.create(name="Test SI", is_open_for_submission=True)
-        assert SpecialIssue.objects.filter(is_open_for_submission=True).exists()
+        yesterday = timezone.now() - timezone.timedelta(1)
+        SpecialIssue.objects.create(name="Test SI", journal=article.journal, open_date=yesterday)
+        assert SpecialIssue.objects.open_for_submission().exists()
         # visit the correct page
         url = reverse("submit_info", args=(article.pk,))
         response = client.get(url)
