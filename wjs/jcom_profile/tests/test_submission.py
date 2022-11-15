@@ -100,7 +100,8 @@ class TestFilesStage:
 
     @pytest.mark.django_db
     def test_choose_si_skipped_when_no_open_si(self, admin, article):
-        """Test that the SI-choosing page just redirects if there are no _open_ SIs."""
+        """Test that the SI-choosing page just redirects if there are
+        SIs with open date in the future and no close date."""
         client = Client()
         client.force_login(admin)
         tomorrow = timezone.now() + timezone.timedelta(1)
@@ -113,11 +114,35 @@ class TestFilesStage:
 
     @pytest.mark.django_db
     def test_choose_si_shown_when_si_open(self, admin, article):
-        """Test that the SI-choosing page is shown if there are open SIs."""
+        """Test that the SI-choosing page is shown if there are SIs
+        with open date in the past and no close date."""
         client = Client()
         client.force_login(admin)
         yesterday = timezone.now() - timezone.timedelta(1)
         SpecialIssue.objects.create(name="Test SI", journal=article.journal, open_date=yesterday)
+        assert SpecialIssue.objects.open_for_submission().exists()
+        # visit the correct page
+        url = reverse("submit_info", args=(article.pk,))
+        response = client.get(url)
+
+        assert response.status_code == 200
+        targets = (
+            "<h1>Submission Destination",
+            "Choose Submission Destination",
+        )
+        content = response.content.decode()
+        for target in targets:
+            assert target in content
+
+    @pytest.mark.django_db
+    def test_choose_si_shown_when_si_open_and_not_yet_closed(self, admin, article):
+        """Test that the SI-choosing page is shown if there are SIs
+        with open date in the past and close date in the future."""
+        client = Client()
+        client.force_login(admin)
+        yesterday = timezone.now() - timezone.timedelta(1)
+        tomorrow = timezone.now() + timezone.timedelta(1)
+        SpecialIssue.objects.create(name="Test SI", journal=article.journal, open_date=yesterday, close_date=tomorrow)
         assert SpecialIssue.objects.open_for_submission().exists()
         # visit the correct page
         url = reverse("submit_info", args=(article.pk,))
