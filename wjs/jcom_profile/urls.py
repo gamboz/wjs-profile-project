@@ -5,6 +5,7 @@ from django.conf.urls import url
 from submission import views as submission_views
 
 from wjs.jcom_profile import views
+from wjs.jcom_profile.views import EditorKeywordsAutocomplete
 
 urlpatterns = [
     url(r"^(?P<type>[-\w.]+)/start/$", views.start, name="submission_start"),
@@ -29,6 +30,11 @@ urlpatterns = [
         r"^submit/(?P<article_id>\d+)/info-metadata/$",
         submission_views.submit_info,
         name="submit_info_original",
+    ),
+    url(
+        r'^keywords-autocomplete/$',
+        EditorKeywordsAutocomplete.as_view(),
+        name='keywords-autocomplete',
     ),
     url(
         r"^update/parameters/$",

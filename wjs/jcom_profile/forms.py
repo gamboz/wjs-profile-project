@@ -3,13 +3,14 @@
 import uuid
 
 from core.forms import EditAccountForm
+from dal import autocomplete
 from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from utils.forms import CaptchaForm
 
-from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
+from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue, EditorAssignmentParameters
 
 
 class GDPRAcceptanceForm(forms.Form):
@@ -119,3 +120,12 @@ class SIForm(forms.ModelForm):
         queryset=SpecialIssue.objects.filter(is_open_for_submission=True),
         initial=0,
     )
+
+
+class UpdateAssignmentParametersForm(forms.ModelForm):
+    class Meta:
+        model = EditorAssignmentParameters
+        fields = ("keywords", "workload",)
+        widgets = {
+            'keywords': autocomplete.ModelSelect2Multiple(url='keywords-autocomplete')
+        }
