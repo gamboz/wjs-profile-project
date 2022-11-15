@@ -26,8 +26,9 @@ from wjs.jcom_profile import forms
 from wjs.jcom_profile.forms import UpdateAssignmentParametersForm
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
+    EditorKeyword,
     JCOMProfile,
-    SpecialIssue, EditorKeyword,
+    SpecialIssue,
 )
 
 logger = get_logger(__name__)

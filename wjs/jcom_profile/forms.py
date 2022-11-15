@@ -8,9 +8,16 @@ from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+
+from submission.models import Keyword
 from utils.forms import CaptchaForm
 
-from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue, EditorAssignmentParameters
+from wjs.jcom_profile.models import (
+    ArticleWrapper,
+    EditorAssignmentParameters,
+    JCOMProfile,
+    SpecialIssue,
+)
 
 
 class GDPRAcceptanceForm(forms.Form):
@@ -122,10 +129,17 @@ class SIForm(forms.ModelForm):
     )
 
 
-class UpdateAssignmentParametersForm(forms.ModelForm):
+class UpdateAssignmentParametersForm(autocomplete.FutureModelForm):
+    keywords = forms.ModelMultipleChoiceField(
+        label=_("keywords"),
+        widget=autocomplete.ModelSelect2Multiple(url="keywords-autocomplete"),
+        queryset=Keyword.objects.all(),
+        required=False,
+    )
+
     class Meta:
         model = EditorAssignmentParameters
-        fields = ("keywords", "workload",)
-        widgets = {
-            'keywords': autocomplete.ModelSelect2Multiple(url='keywords-autocomplete')
-        }
+        fields = (
+            "keywords",
+            "workload",
+        )

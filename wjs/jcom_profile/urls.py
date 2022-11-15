@@ -32,9 +32,9 @@ urlpatterns = [
         name="submit_info_original",
     ),
     url(
-        r'^keywords-autocomplete/$',
+        r"^keywords-autocomplete/$",
         EditorKeywordsAutocomplete.as_view(),
-        name='keywords-autocomplete',
+        name="keywords-autocomplete",
     ),
     url(
         r"^update/parameters/$",
