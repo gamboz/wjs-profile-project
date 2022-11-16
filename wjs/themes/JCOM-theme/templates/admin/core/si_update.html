@@ -31,10 +31,11 @@
                         <input type="submit" value="Save" />
                     </div>
                 </div>
+                <div class="row">
+                    <div class="large-6 columns">{{ form.allowed_sections|foundation }}</div>
+                </div>
             </form>
         </div>
-        include "elements/forms/special_issue_sections.html" with possible_sections=possible_sections
-        {% include "elements/forms/special_issue_sections.html" with form=form %}
         <div class="card-section">
             <div class="row">
                 <div class="large-12 columns">

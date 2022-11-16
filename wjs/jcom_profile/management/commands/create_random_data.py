@@ -58,7 +58,7 @@ class Command(BaseCommand):
     def _create_user(self, **options):
         """Create a user, honoring roles."""
         user = UserFactory.create()
-        self.stdout.write(f"Creating {user}...")
+        self.stdout.write(self.style.SUCCESS(f"Creating {user}..."))
         user.save()
 
         # Always add the role "author" because we'll use this user as
@@ -67,17 +67,18 @@ class Command(BaseCommand):
         user.add_account_role("author", journal)
 
         roles = options["roles"]
-        for role_slug in roles.split(","):
-            self.stdout.write(f"  adding role {role_slug}")
-            user.add_account_role(role_slug, journal)
+        if roles:
+            for role_slug in roles.split(","):
+                self.stdout.write(self.style.SUCCESS(f"  adding role {role_slug}"))
+                user.add_account_role(role_slug, journal)
         user.save()
-        self.stdout.write("  ...done")
+        self.stdout.write(self.style.SUCCESS("  ...done"))
         return user
 
     def _create_article(self, user, **options):
         """Create an article on the first journal, set the user as author."""
         article = ArticleFactory.create()
-        self.stdout.write(f"Creating {article}")
+        self.stdout.write(self.style.SUCCESS(f"Creating {article}"))
         article.save()
         article.owner = user
         article.authors = [user]
@@ -89,4 +90,4 @@ class Command(BaseCommand):
         article.close_core_workflow_objects()
         article.date_published = timezone.now() - timedelta(days=1)
         article.save()
-        self.stdout.write("  ...done")
+        self.stdout.write(self.style.SUCCESS("  ...done"))

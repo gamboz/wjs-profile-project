@@ -159,11 +159,13 @@ class SIForm(forms.ModelForm):
 class SIUpdateForm(forms.ModelForm):
     class Meta:
         model = SpecialIssue
+        # same fields as SICreate; do not add "documents": they are dealt with "manually"
+
         fields = ["name", "short_name", "description", "open_date", "close_date", "journal", "allowed_sections"]
 
     def __init__(self, *args, **kwargs):
-        """Fileter allowed section to show only section for the special issue's journal."""
-        super().__init__(self, *args, **kwargs)
+        """Filter sections to show only sections of the special issue's journal."""
+        super().__init__(*args, **kwargs)
         self.fields["allowed_sections"].queryset = submission_models.Section.objects.filter(
-            journal=self.instance.journal
+            journal=self.instance.journal,
         )
