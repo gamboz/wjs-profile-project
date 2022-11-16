@@ -13,10 +13,15 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import translation
 from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from repository import models as preprint_models
-from security.decorators import submission_authorised
+from security.decorators import (
+    article_edit_user_required,
+    article_is_not_submitted,
+    submission_authorised,
+)
 from submission import decorators
 from submission import forms as submission_forms
 from submission import logic as submission_logic
@@ -337,6 +342,76 @@ class SIUpdate(PermissionRequiredMixin, UpdateView):
 
     model = SpecialIssue
     form_class = forms.SIUpdateForm
+
+
+# Overriding submission.views.submit_info
+@login_required
+@decorators.submission_is_enabled
+@article_is_not_submitted
+@article_edit_user_required
+@submission_authorised
+def submit_info(request, article_id):
+    """Presents a form for the user to complete with article information.
+
+    :param request: HttpRequest object
+    :param article_id: Article PK
+    :return: HttpResponse or HttpRedirect
+    """
+    with translation.override(settings.LANGUAGE_CODE):
+        article = get_object_or_404(submission_models.Article, pk=article_id)
+        additional_fields = submission_models.Field.objects.filter(journal=request.journal)
+        submission_summary = setting_handler.get_setting(
+            "general",
+            "submission_summary",
+            request.journal,
+        ).processed_value
+
+        # Determine the form to use depending on whether the user is an editor.
+        article_info_form = submission_forms.ArticleInfoSubmit
+        if request.user.is_editor(request):
+            article_info_form = submission_forms.EditorArticleInfoSubmit
+
+        form = article_info_form(
+            instance=article,
+            additional_fields=additional_fields,
+            submission_summary=submission_summary,
+            journal=request.journal,
+        )
+
+        # Interferring with the form here, because it's __init__ is
+        # huge (mainly because of the management of additional fields.
+        special_issue = article.articlewrapper.special_issue
+        if special_issue:
+            form.fields["section"].queryset = special_issue.allowed_sections
+
+        if request.POST:
+            form = article_info_form(
+                request.POST,
+                instance=article,
+                additional_fields=additional_fields,
+                submission_summary=submission_summary,
+                journal=request.journal,
+            )
+            if form.is_valid():
+                form.save(request=request)
+                article.current_step = 2
+                article.save()
+
+                return redirect(
+                    reverse(
+                        "submit_authors",
+                        kwargs={"article_id": article_id},
+                    ),
+                )
+
+    template = "admin/submission//submit_info.html"
+    context = {
+        "article": article,
+        "form": form,
+        "additional_fields": additional_fields,
+    }
+
+    return render(request, template, context)
 
 
 # Adapted from journal.views.serve_article_file
