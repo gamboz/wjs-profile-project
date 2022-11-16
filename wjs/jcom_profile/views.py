@@ -382,7 +382,12 @@ def submit_info(request, article_id):
         # huge (mainly because of the management of additional fields.
         special_issue = article.articlewrapper.special_issue
         if special_issue:
-            form.fields["section"].queryset = special_issue.allowed_sections
+            section_queryset = special_issue.allowed_sections
+            if form.FILTER_PUBLIC_FIELDS:
+                section_queryset = section_queryset.filter(
+                    public_submissions=True,
+                )
+            form.fields["section"].queryset = section_queryset
 
         if request.POST:
             form = article_info_form(
