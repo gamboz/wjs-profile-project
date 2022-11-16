@@ -8,7 +8,7 @@ from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
+from easy_select2.widgets import Select2Multiple
 from submission.models import Keyword
 from utils.forms import CaptchaForm
 
@@ -131,10 +131,9 @@ class SIForm(forms.ModelForm):
 
 class UpdateAssignmentParametersForm(autocomplete.FutureModelForm):
     keywords = forms.ModelMultipleChoiceField(
-        label=_("keywords"),
-        widget=autocomplete.ModelSelect2Multiple(url="keywords-autocomplete"),
+        label=_("Keywords"),
         queryset=Keyword.objects.all(),
-        required=False,
+        widget=Select2Multiple(select2attrs={"width": "200px"}),
     )
 
     class Meta:
