@@ -87,6 +87,10 @@ class TestFilesStage:
         assert ru is not None
         assert ru.is_authenticated
 
+
+class TestInfoStage:
+    """Tests related to the "info" stage."""
+
     @pytest.mark.django_db
     def test_choose_si_skipped_when_no_si_exist(self, admin, article):
         """Test that the SI-choosing page just redirects if there are no SIs."""
@@ -156,3 +160,20 @@ class TestFilesStage:
         content = response.content.decode()
         for target in targets:
             assert target in content
+
+    def test_section_choices_depend_upon_special_issue(self):
+        """Test which section choices are presented to the author.
+
+        Possibilities:
+        - no SI has been choosen (normal submission)
+          - if manager/editor: all sections
+          - if not manager/editor: only "public" sections
+        - SI has been choosen
+          - SI allows all sections
+            - same as "no SI"
+          - SI allows subset of journal's sections
+            - if manager/editor: all sections allowed by SI
+            - if not manager/editor: only "public" sections allowed by SI
+            - in any case: no section that is not allowed by the SI
+        """
+        assert False
