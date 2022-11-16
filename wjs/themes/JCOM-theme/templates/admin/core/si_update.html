@@ -9,7 +9,7 @@
     {% trans "Edit Special Issue" %} {{ object.name }} — <a href="{% url 'si-details' object.pk %}">view</a>
 {% endblock title-section %}
 {% block body %}
-    {{ forma.media }}
+    {{ form.media }}
     <div class="card">
         <div class="card-section">
             {% include "elements/forms/errors.html" with form=form %}
@@ -33,6 +33,8 @@
                 </div>
             </form>
         </div>
+        include "elements/forms/special_issue_sections.html" with possible_sections=possible_sections
+        {% include "elements/forms/special_issue_sections.html" with form=form %}
         <div class="card-section">
             <div class="row">
                 <div class="large-12 columns">

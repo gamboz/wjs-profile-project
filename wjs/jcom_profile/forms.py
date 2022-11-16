@@ -7,6 +7,7 @@ from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from submission import models as submission_models
 from utils.forms import CaptchaForm
 
 from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
@@ -153,3 +154,16 @@ class SIForm(forms.ModelForm):
     #    |   |   |   Special Issue 3                        |
     #    |   +---+                                          |
     #    +--------------------------------------------------+
+
+
+class SIUpdateForm(forms.ModelForm):
+    class Meta:
+        model = SpecialIssue
+        fields = ["name", "short_name", "description", "open_date", "close_date", "journal", "allowed_sections"]
+
+    def __init__(self, *args, **kwargs):
+        """Fileter allowed section to show only section for the special issue's journal."""
+        super().__init__(self, *args, **kwargs)
+        self.fields["allowed_sections"].queryset = submission_models.Section.objects.filter(
+            journal=self.instance.journal
+        )

@@ -319,6 +319,7 @@ class SICreate(PermissionRequiredMixin, CreateView):
     # see also security.decorators.editor_or_manager
 
     model = SpecialIssue
+    # TODO: let the op set allowed_sections here?
     fields = ["name", "short_name", "description", "open_date", "close_date", "journal"]
 
 
@@ -336,7 +337,22 @@ class SIUpdate(PermissionRequiredMixin, UpdateView):
 
     model = SpecialIssue
     # same fields as SICreate; do not add "documents": they are dealt with "manually"
-    fields = ["name", "short_name", "description", "open_date", "close_date", "journal"]
+    # fields = ["name", "short_name", "description", "open_date", "close_date", "journal", "allowed_sections"]
+    form_class = forms.SIUpdateForm
+
+    # def get_context_data(self, **kwargs):
+    #     """Prepare the context dictionary.
+
+    #     I want to let the template know which sections are available
+    #     to this S.I. (they are all the sections of the journal.
+
+    #     """
+    #     context = super().get_context_data(**kwargs)
+    #     possible_sections = submission_models.Section.objects.filter(journal=self.object.journal)
+    #     if "possible_sections" in context:
+    #         raise Exception("Che succede???")
+    #     context["possible_sections"] = possible_sections
+    #     return context
 
 
 # Adapted from journal.views.serve_article_file

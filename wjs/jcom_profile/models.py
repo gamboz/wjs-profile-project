@@ -131,6 +131,9 @@ class SpecialIssue(models.Model):
     )
     journal = models.ForeignKey(to=Journal, on_delete=models.CASCADE)
     documents = models.ManyToManyField(to="core.File", limit_choices_to={"article_id": None})
+    # A S.I. can impose a filter on submittable article types ("sections")
+    allowed_sections = models.ManyToManyField(to="submission.Section")
+    # cannot limit choices: ManyToManyField(..., limit_choices_to={"journal_id": journal.id})
 
     def get_absolute_url(self):
         """Get the absolute URL (where create-view redirects on success)."""
