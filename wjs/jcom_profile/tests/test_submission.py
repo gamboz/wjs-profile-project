@@ -1,13 +1,15 @@
 """Tests related to the submission process."""
-
+from django.contrib.sessions.middleware import SessionMiddleware
 import pytest
+from core.middleware import SiteSettingsMiddleware
 from core.models import Account, Role, Setting, SettingGroup, SettingValue
 from django.core.cache import cache
-from django.test import Client, RequestFactory
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 from submission import logic
 from submission.models import Article, Section
+import lxml.html
 
 from wjs.jcom_profile import views
 from wjs.jcom_profile.management.commands.create_random_data import ArticleFactory
@@ -170,16 +172,18 @@ def journal_with_three_sections(article_journal):
 
     Two "public" (article and letter) and one not "public" (editorial).
     """
-    Section.objects.create(name="Article", sequence=10, journal=article_journal, public_submissions=True)
-    Section.objects.create(name="Letter", sequence=10, journal=article_journal, public_submissions=True)
-    Section.objects.create(name="Editorial", sequence=10, journal=article_journal, public_submissions=False)
+    # All journals automatically get a section, so there is no need to
+    # Section.objects.create(name="Article",...
+    Section.objects.create(name="Letter", sequence=10, journal=article_journal, public_submissions=True).save()
+    Section.objects.create(name="Editorial", sequence=10, journal=article_journal, public_submissions=False).save()
+    article_journal.save()
     return article_journal
 
 
 @pytest.fixture
 def special_issue_with_one_section(journal_with_three_sections):
     """Make a special issue with only one "section" named "article"."""
-    sections = (Section.objects.get(name="Article", journal=journal_with_three_sections, public_submissions=True),)
+    sections = journal_with_three_sections.section_set.all()
     yesterday = timezone.now() - timezone.timedelta(1)
     special_issue = SpecialIssue.objects.create(
         journal=journal_with_three_sections,
@@ -230,23 +234,53 @@ class TestInfoStage:
     """
 
     @pytest.mark.django_db
-    def test_no_si_choosen_manager_submitting(self, admin, journal_with_three_sections, article_journal):
+    def test_no_si_choosen_manager_submitting(self, rf, admin, journal_with_three_sections):
         """When no SI has been choosen, a manager sees all sections."""
-        url = reverse("submit_info", args=(article_journal.pk,))
-        request = RequestFactory().get(url)
-        # simulate login
-        request.user = admin
-        # simulate J. middleware
-        request.journal = journal_with_three_sections
-        # create an article owner by the user that will do the request (admin)
+        # TODO: check if this gets correctly cleaned after the test
+        # create an article owned by the user that will do the request (admin)
         article = ArticleFactory.create(journal=journal_with_three_sections)
         article.owner = admin
         article.save()
-        response = views.submit_info(request, article.pk)
-        assert response.status_code == 200
-        assert "TODO" == "DONE"
+        # double check
+        xxx = Article.objects.get(
+            pk=article.id,
+            journal=journal_with_three_sections,
+            date_submitted__isnull=True,
+        )
+        assert xxx
+        print(xxx)
 
-    @pytest.mark.django_db
-    def test_no_si_choosen_author_submitting(self, coauthor, journal_with_three_sections):
-        """When no SI has been choosen, a normal author (i.e. not manager) sees only public sections."""
-        assert "TODO" == "DONE"
+        url = reverse("submit_info", args=(article.pk,))
+        request = rf.get(url)
+
+        # simulate login
+        request.user = admin
+        # simulate session middleware (it is needed because the
+        # template of the response uses the templatetag
+        # "hijack_notification")
+        SessionMiddleware().process_request(request)
+        # simulate J. middleware
+        request.journal = journal_with_three_sections
+        SiteSettingsMiddleware.process_request(request)
+        # https://youtu.be/vZraNnWnYXE?t=10
+
+        response = views.submit_info(request, article_id=article.id)
+        # NB: do NOT use unnamed args as in ...submit_info(request, article.id)!!!
+        assert response.status_code == 200
+        html = lxml.html.fromstring(response.content.decode())
+        sections_select = html.get_element_by_id(id="id_section")
+        sections_options = sections_select.findall("option")
+        # expect three section + the empty label
+        assert len(sections_options) == 4
+
+        texts = [e.text for e in sections_options]
+        values = [e.attrib.get('value') for e in sections_options]
+        for section in journal_with_three_sections.section_set.all():
+            assert str(section.id) in values
+            section_text = str(section)
+            assert section_text in texts
+
+    # @pytest.mark.django_db
+    # def test_no_si_choosen_author_submitting(self, coauthor, journal_with_three_sections):
+    #     """When no SI has been choosen, a normal author (i.e. not manager) sees only public sections."""
+    #     assert "TODO" == "DONE"
