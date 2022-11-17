@@ -1,7 +1,6 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
 from core import logic
 from core import models as core_models
-from dal import autocomplete
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -26,7 +25,6 @@ from wjs.jcom_profile import forms
 from wjs.jcom_profile.forms import UpdateAssignmentParametersForm
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
-    EditorKeyword,
     JCOMProfile,
     SpecialIssue,
 )
@@ -313,16 +311,6 @@ def start(request, type=None):  # NOQA
     context = {"form": form}
 
     return render(request, template, context)
-
-
-class EditorKeywordsAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            return submission_models.Keyword.objects.none()
-        qs = submission_models.Keyword.objects.all()
-        if self.q:
-            qs = qs.filter(word__istartswith=self.q)
-        return qs
 
 
 class EditorAssignmentParametersUpdate(UpdateView):

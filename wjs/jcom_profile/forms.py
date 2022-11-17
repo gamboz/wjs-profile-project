@@ -3,7 +3,6 @@
 import uuid
 
 from core.forms import EditAccountForm
-from dal import autocomplete
 from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
@@ -129,11 +128,11 @@ class SIForm(forms.ModelForm):
     )
 
 
-class UpdateAssignmentParametersForm(autocomplete.FutureModelForm):
+class UpdateAssignmentParametersForm(forms.ModelForm):
     keywords = forms.ModelMultipleChoiceField(
         label=_("Keywords"),
         queryset=Keyword.objects.all(),
-        widget=Select2Multiple(select2attrs={"width": "200px"}),
+        widget=Select2Multiple(select2attrs={"width": "500px"}),
     )
 
     class Meta:

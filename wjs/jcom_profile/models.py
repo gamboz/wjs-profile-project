@@ -123,7 +123,10 @@ class EditorAssignmentParameters(models.Model):
 class EditorKeyword(models.Model):
     editor_parameters = models.ForeignKey(EditorAssignmentParameters)
     keyword = models.ForeignKey("submission.Keyword")
-    weight = models.PositiveIntegerField()
+    weight = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        auto_created = True
 
     def __str__(self):  # NOQA: D105
         return f"{self.editor_parameters.editor} - Editor keyword: {self.keyword}"
