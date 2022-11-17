@@ -10,6 +10,7 @@ from submission import logic
 from submission.models import Article, Section
 
 from wjs.jcom_profile import views
+from wjs.jcom_profile.management.commands.create_random_data import ArticleFactory
 from wjs.jcom_profile.models import SpecialIssue
 
 
@@ -237,11 +238,15 @@ class TestInfoStage:
         request.user = admin
         # simulate J. middleware
         request.journal = journal_with_three_sections
-        response = views.submit_info(request, article_journal.pk)
-
+        # create an article owner by the user that will do the request (admin)
+        article = ArticleFactory.create(journal=journal_with_three_sections)
+        article.owner = admin
+        article.save()
+        response = views.submit_info(request, article.pk)
         assert response.status_code == 200
+        assert "TODO" == "DONE"
 
     @pytest.mark.django_db
     def test_no_si_choosen_author_submitting(self, coauthor, journal_with_three_sections):
         """When no SI has been choosen, a normal author (i.e. not manager) sees only public sections."""
-        assert False
+        assert "TODO" == "DONE"
