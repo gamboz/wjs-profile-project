@@ -3,12 +3,13 @@
 import pytest
 from core.models import Account, Role, Setting, SettingGroup, SettingValue
 from django.core.cache import cache
-from django.test import Client
+from django.test import Client, RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 from submission import logic
-from submission.models import Article
+from submission.models import Article, Section
 
+from wjs.jcom_profile import views
 from wjs.jcom_profile.models import SpecialIssue
 
 
@@ -88,7 +89,7 @@ class TestFilesStage:
         assert ru.is_authenticated
 
 
-class TestInfoStage:
+class TestSIStage:
     """Tests related to the "info" stage."""
 
     @pytest.mark.django_db
@@ -161,19 +162,86 @@ class TestInfoStage:
         for target in targets:
             assert target in content
 
-    def test_section_choices_depend_upon_special_issue(self):
-        """Test which section choices are presented to the author.
 
-        Possibilities:
-        - no SI has been choosen (normal submission)
-          - if manager/editor: all sections
-          - if not manager/editor: only "public" sections
-        - SI has been choosen
-          - SI allows all sections
-            - same as "no SI"
-          - SI allows subset of journal's sections
-            - if manager/editor: all sections allowed by SI
-            - if not manager/editor: only "public" sections allowed by SI
-            - in any case: no section that is not allowed by the SI
-        """
+@pytest.fixture
+def journal_with_three_sections(article_journal):
+    """Set three sections to a journal.
+
+    Two "public" (article and letter) and one not "public" (editorial).
+    """
+    Section.objects.create(name="Article", sequence=10, journal=article_journal, public_submissions=True)
+    Section.objects.create(name="Letter", sequence=10, journal=article_journal, public_submissions=True)
+    Section.objects.create(name="Editorial", sequence=10, journal=article_journal, public_submissions=False)
+    return article_journal
+
+
+@pytest.fixture
+def special_issue_with_one_section(journal_with_three_sections):
+    """Make a special issue with only one "section" named "article"."""
+    sections = (Section.objects.get(name="Article", journal=journal_with_three_sections, public_submissions=True),)
+    yesterday = timezone.now() - timezone.timedelta(1)
+    special_issue = SpecialIssue.objects.create(
+        journal=journal_with_three_sections,
+        name="Special Issue One Section",
+        description="SIONE description",
+        short_name="SIONE",
+        open_date=yesterday,
+        allowed_sections=sections,
+    )
+    return special_issue
+
+
+@pytest.fixture
+def special_issue_with_two_sections(journal_with_three_sections):
+    """Make a special issue with two "sections".
+
+    One "public" (article) and one not "public" (editorial)."""
+    sections = (
+        Section.objects.get(name="Article", journal=journal_with_three_sections, public_submissions=True),
+        Section.objects.get(name="Editorial", journal=journal_with_three_sections, public_submissions=False),
+    )
+    yesterday = timezone.now() - timezone.timedelta(1)
+    special_issue = SpecialIssue.objects.create(
+        journal=journal_with_three_sections,
+        name="Special Issue Two Sections",
+        description="SITWO description",
+        short_name="SITWO",
+        open_date=yesterday,
+        allowed_sections=sections,
+    )
+    return special_issue
+
+
+class TestInfoStage:
+    """Test which section choices are presented to the author.
+
+    Possibilities:
+    - no SI has been choosen (normal submission)
+      - if manager/editor: all sections
+      - if not manager/editor: only "public" sections
+    - SI has been choosen
+      - SI allows all sections
+        - same as "no SI"
+      - SI allows subset of journal's sections
+        - if manager/editor: all sections allowed by SI
+        - if not manager/editor: only "public" sections allowed by SI
+        - in any case: no section that is not allowed by the SI
+    """
+
+    @pytest.mark.django_db
+    def test_no_si_choosen_manager_submitting(self, admin, journal_with_three_sections, article_journal):
+        """When no SI has been choosen, a manager sees all sections."""
+        url = reverse("submit_info", args=(article_journal.pk,))
+        request = RequestFactory().get(url)
+        # simulate login
+        request.user = admin
+        # simulate J. middleware
+        request.journal = journal_with_three_sections
+        response = views.submit_info(request, article_journal.pk)
+
+        assert response.status_code == 200
+
+    @pytest.mark.django_db
+    def test_no_si_choosen_author_submitting(self, coauthor, journal_with_three_sections):
+        """When no SI has been choosen, a normal author (i.e. not manager) sees only public sections."""
         assert False
