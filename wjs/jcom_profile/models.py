@@ -126,6 +126,7 @@ class EditorKeyword(models.Model):
     weight = models.PositiveIntegerField(default=0)
 
     class Meta:
+        # TODO: Not sure about this.
         auto_created = True
 
     def __str__(self):  # NOQA: D105
