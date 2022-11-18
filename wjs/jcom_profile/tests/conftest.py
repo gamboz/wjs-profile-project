@@ -5,7 +5,6 @@ import pytest
 from core.models import Account, Setting
 from django.conf import settings
 from django.core import management
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import deserialize
 from django.urls.base import clear_script_prefix
 from django.utils import translation
@@ -40,15 +39,8 @@ INVITE_BUTTON = """<li>
         <a href="/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
     </li>"""
 
-
-def drop_user():
-    """Delete the test user."""
-    try:
-        user_x = Account.objects.get(username=USERNAME)
-    except ObjectDoesNotExist:
-        pass
-    else:
-        user_x.delete()
+ASSIGNMENT_BUTTON = """<a href="/CODE/update/parameters/" class="btn btn-warning button warning" style="text-decoration: none">Assignment
+    parameters</a>"""  # noqa
 
 
 @pytest.fixture
@@ -87,7 +79,6 @@ def user():
     Create both core.models.Account and wjs.jcom_profile.models.JCOMProfile.
     """
     # Delete the test user (just in case...).
-    drop_user()
     user = Account(username=USERNAME, first_name="User", last_name="Ics")
     user.save()
     yield user
@@ -117,7 +108,6 @@ def press(install_jcom_theme):
     apress.theme = "JCOM-theme"
     apress.save()
     yield apress
-    apress.delete()
 
 
 def set_jcom_theme(journal):
@@ -140,8 +130,6 @@ def journal(press):
     journal = make_test_journal(**journal_kwargs)
     set_jcom_theme(journal)
     yield journal
-    # probably redundant because of django db transactions rollbacks
-    journal.delete()
 
 
 @pytest.fixture

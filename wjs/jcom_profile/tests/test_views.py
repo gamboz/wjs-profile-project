@@ -1,5 +1,6 @@
 import pytest
 from core import models as core_models
+from core.models import AccountRole, Role
 from django.conf import settings
 from django.core import mail
 from django.test import Client
@@ -9,7 +10,7 @@ from submission import models as submission_models
 from utils import setting_handler
 
 from wjs.jcom_profile.models import JCOMProfile
-from wjs.jcom_profile.tests.conftest import INVITE_BUTTON
+from wjs.jcom_profile.tests.conftest import ASSIGNMENT_BUTTON, INVITE_BUTTON
 from wjs.jcom_profile.utils import generate_token
 
 
@@ -162,7 +163,12 @@ def test_submitting_user_is_main_author_when_setting_is_on(
     user_as_main_author,
 ):
     setting_handler.save_setting("general", "user_automatically_author", None, "on")
-    setting_handler.save_setting("general", "user_automatically_main_author", None, "on" if user_as_main_author else "")
+    setting_handler.save_setting(
+        "general",
+        "user_automatically_main_author",
+        None,
+        "on" if user_as_main_author else "",
+    )
 
     client = Client()
     client.force_login(admin)
@@ -185,3 +191,34 @@ def test_submitting_user_is_main_author_when_setting_is_on(
         assert article.correspondence_author == admin.janeway_account
     else:
         assert not article.correspondence_author
+
+
+@pytest.mark.parametrize("user_role", ("staff", "editor", "other"))
+@pytest.mark.django_db
+def test_assignment_parameters_button_is_in_edit_profile_interface_if_user_is_staff_or_editor(
+    user,
+    roles,
+    user_role,
+    journal,
+):
+    jcom_user = JCOMProfile(janeway_account=user, email="user@email.it")
+    jcom_user.gdpr_checkbox = True
+    jcom_user.is_active = True
+    # User are staff or editor
+    if user_role == "staff":
+        jcom_user.is_staff = True
+
+    elif user_role == "editor":
+        role = Role.objects.get(slug=user_role)
+        # TODO: Let's discuss this. Why I cannot pass the jcom_user instead of the user?
+        AccountRole.objects.create(user=user, journal=journal, role=role)
+    jcom_user.save()
+
+    jcom_user.refresh_from_db()
+    client = Client()
+    client.force_login(jcom_user)
+    url = f"/{journal.code}/profile/"
+    response = client.get(url)
+    assert response.status_code == 200
+    if user_role in ["staff", "editor"]:
+        assert ASSIGNMENT_BUTTON in response.content.decode()
