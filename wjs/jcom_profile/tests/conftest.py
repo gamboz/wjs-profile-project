@@ -12,6 +12,7 @@ from journal import models as journal_models
 from journal.tests.utils import make_test_journal
 from press.models import Press
 from submission import models as submission_models
+from submission.models import Keyword
 from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 
@@ -212,3 +213,10 @@ def clear_script_prefix_fix():
     clear_script_prefix()
     yield None
     clear_script_prefix()
+
+
+@pytest.fixture
+def keywords():
+    for i in range(3):
+        Keyword.objects.create(word=f"{i}-keyword")
+    return Keyword.objects.all()

@@ -7,9 +7,10 @@ from django.test import Client
 from django.test.client import RequestFactory
 from django.urls import reverse
 from submission import models as submission_models
+from submission.models import Keyword
 from utils import setting_handler
 
-from wjs.jcom_profile.models import JCOMProfile
+from wjs.jcom_profile.models import EditorAssignmentParameters, JCOMProfile
 from wjs.jcom_profile.tests.conftest import ASSIGNMENT_BUTTON, INVITE_BUTTON
 from wjs.jcom_profile.utils import generate_token
 
@@ -222,3 +223,43 @@ def test_assignment_parameters_button_is_in_edit_profile_interface_if_user_is_st
     assert response.status_code == 200
     if user_role in ["staff", "editor"]:
         assert ASSIGNMENT_BUTTON in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_assignment_parameters_button_is_not_without_journal(
+    admin,
+    journal,
+):
+    client = Client()
+    client.force_login(admin)
+    url = reverse("core_edit_profile")
+    response = client.get(url)
+    assert response.status_code == 200
+    assert ASSIGNMENT_BUTTON not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_update_editor_assignment_parameters(user, roles, keywords, journal):
+    jcom_user = JCOMProfile(janeway_account=user, email="user@email.it")
+    jcom_user.gdpr_checkbox = True
+    jcom_user.is_active = True
+    role = Role.objects.get(slug="editor")
+    # TODO: Let's discuss this. Why I cannot pass the jcom_user instead of the user?
+    AccountRole.objects.create(user=user, journal=journal, role=role)
+    jcom_user.save()
+
+    keywords_id = Keyword.objects.all().values_list("id", flat=True)
+    workload = 10
+
+    client = Client()
+    client.force_login(jcom_user)
+    url = f"/{journal.code}/update/parameters/"
+    data = {"keywords": list(keywords_id), "workload": workload}
+    response = client.post(url, data)
+    assert response.status_code == 302
+
+    assignment_parameters = EditorAssignmentParameters.objects.get(editor=jcom_user, journal=journal)
+    editor_keywords = assignment_parameters.editorkeyword_set.all()
+    assert assignment_parameters.workload == workload
+    for keyword in keywords:
+        assert keyword.word in list(editor_keywords.values_list("keyword__word", flat=True))
