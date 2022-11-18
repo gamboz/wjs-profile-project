@@ -7,18 +7,25 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from faker.providers import lorem
 from journal.models import Journal
+from submission import models as submission_models
 from submission.models import STAGE_PUBLISHED, Article
 
 from wjs.jcom_profile.models import JCOMProfile
 
 factory.Faker.add_provider(lorem)
 
+# TODO: move factories to some generic utility module
 
-class UserFactory(factory.Factory):
+# Not using model-baker because I could find a way to define a fake field
+# that depend on another one (since in J. username == email). E.g.:
+# Recipe("core.Account", ...  email=fake.email(),  username=email, ⇒ ERROR!
+
+
+class UserFactory(factory.django.DjangoModelFactory):
     """User factory."""
 
     class Meta:
-        model = JCOMProfile
+        model = JCOMProfile  # ← is this correct? maybe core.Account?
 
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
@@ -28,7 +35,7 @@ class UserFactory(factory.Factory):
     is_active = True
 
 
-class ArticleFactory(factory.Factory):
+class ArticleFactory(factory.django.DjangoModelFactory):
     """Article factory."""
 
     class Meta:
@@ -36,10 +43,12 @@ class ArticleFactory(factory.Factory):
 
     title = factory.Faker("sentence", nb_words=7)
     abstract = factory.Faker("paragraph", nb_sentences=5)
-    # First journal
-    journal_id = 1
-    # Set section to "Article" (usually)
-    section_id = 1
+    # By default, link this article to the first journal
+    # (I think this breaks if there are no journal, but how whould one
+    # create articles in that case anyway 🙂)
+    journal = factory.Iterator((Journal.objects.first(),))
+    # Link to random article type / section
+    section = factory.Iterator(submission_models.Section.objects.all())
     # TODO: use dall.e (https://labs.openai.com) to fill `thumbnail_image_file`
 
 

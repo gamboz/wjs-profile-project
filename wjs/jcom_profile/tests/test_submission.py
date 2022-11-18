@@ -1,18 +1,17 @@
 """Tests related to the submission process."""
-from django.contrib.sessions.middleware import SessionMiddleware
+import lxml.html
 import pytest
 from core.middleware import SiteSettingsMiddleware
 from core.models import Account, Role, Setting, SettingGroup, SettingValue
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 from submission import logic
 from submission.models import Article, Section
-import lxml.html
 
 from wjs.jcom_profile import views
-from wjs.jcom_profile.management.commands.create_random_data import ArticleFactory
 from wjs.jcom_profile.models import SpecialIssue
 
 
@@ -236,19 +235,13 @@ class TestInfoStage:
     @pytest.mark.django_db
     def test_no_si_choosen_manager_submitting(self, rf, admin, journal_with_three_sections):
         """When no SI has been choosen, a manager sees all sections."""
-        # TODO: check if this gets correctly cleaned after the test
-        # create an article owned by the user that will do the request (admin)
-        article = ArticleFactory.create(journal=journal_with_three_sections)
-        article.owner = admin
-        article.save()
-        # double check
-        xxx = Article.objects.get(
-            pk=article.id,
-            journal=journal_with_three_sections,
-            date_submitted__isnull=True,
+        # I had to import here because pytest complains about missing `django_db` mark otherwise
+        from wjs.jcom_profile.management.commands.create_random_data import (
+            ArticleFactory,
         )
-        assert xxx
-        print(xxx)
+
+        # create an article owned by the user that will do the request (admin)
+        article = ArticleFactory.create(journal=journal_with_three_sections, owner=admin)
 
         url = reverse("submit_info", args=(article.pk,))
         request = rf.get(url)
@@ -274,13 +267,14 @@ class TestInfoStage:
         assert len(sections_options) == 4
 
         texts = [e.text for e in sections_options]
-        values = [e.attrib.get('value') for e in sections_options]
+        values = [e.attrib.get("value") for e in sections_options]
         for section in journal_with_three_sections.section_set.all():
             assert str(section.id) in values
             section_text = str(section)
             assert section_text in texts
 
-    # @pytest.mark.django_db
-    # def test_no_si_choosen_author_submitting(self, coauthor, journal_with_three_sections):
-    #     """When no SI has been choosen, a normal author (i.e. not manager) sees only public sections."""
-    #     assert "TODO" == "DONE"
+    @pytest.mark.skip
+    @pytest.mark.django_db
+    def test_no_si_choosen_author_submitting(self, coauthor, journal_with_three_sections):
+        """When no SI has been choosen, a normal author (i.e. not manager) sees only public sections."""
+        assert "TODO" == "DONE"
