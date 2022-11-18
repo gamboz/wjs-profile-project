@@ -232,7 +232,7 @@ def test_assignment_parameters_button_is_not_without_journal(
 ):
     client = Client()
     client.force_login(admin)
-    url = reverse("core_edit_profile")
+    url = "/profile/"
     response = client.get(url)
     assert response.status_code == 200
     assert ASSIGNMENT_BUTTON not in response.content.decode()
@@ -253,7 +253,7 @@ def test_update_editor_assignment_parameters(user, roles, keywords, journal):
 
     client = Client()
     client.force_login(jcom_user)
-    url = f"/{journal.code}/update/parameters/"
+    url = reverse("assignment_parameters")
     data = {"keywords": list(keywords_id), "workload": workload}
     response = client.post(url, data)
     assert response.status_code == 302
