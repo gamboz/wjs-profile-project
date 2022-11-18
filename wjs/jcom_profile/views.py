@@ -33,8 +33,8 @@ logger = get_logger(__name__)
 
 
 @login_required
-def prova(request):
-    """Una prova."""
+def edit_profile(request):
+    """Edit profile view for wjs app."""
     user = JCOMProfile.objects.get(pk=request.user.id)
     form = forms.JCOMProfileForm(instance=user)
     # copied from core.views.py::edit_profile:358ss

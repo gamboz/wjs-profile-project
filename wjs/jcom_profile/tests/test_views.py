@@ -211,7 +211,6 @@ def test_assignment_parameters_button_is_in_edit_profile_interface_if_user_is_st
 
     elif user_role == "editor":
         role = Role.objects.get(slug=user_role)
-        # TODO: Let's discuss this. Why I cannot pass the jcom_user instead of the user?
         AccountRole.objects.create(user=user, journal=journal, role=role)
     jcom_user.save()
 
@@ -244,7 +243,6 @@ def test_update_editor_assignment_parameters(user, roles, keywords, journal):
     jcom_user.gdpr_checkbox = True
     jcom_user.is_active = True
     role = Role.objects.get(slug="editor")
-    # TODO: Let's discuss this. Why I cannot pass the jcom_user instead of the user?
     AccountRole.objects.create(user=user, journal=journal, role=role)
     jcom_user.save()
 
