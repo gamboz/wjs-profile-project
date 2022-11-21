@@ -10,11 +10,14 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
+from django.forms import modelformset_factory
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
+
+from core.models import Account
 from repository import models as preprint_models
 from security.decorators import submission_authorised
 from submission import decorators
@@ -24,11 +27,11 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from wjs.jcom_profile.forms import UpdateAssignmentParametersForm
+from wjs.jcom_profile.forms import UpdateAssignmentParametersForm, EditorKeywordForm
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     JCOMProfile,
-    SpecialIssue,
+    SpecialIssue, EditorKeyword,
 )
 
 from . import forms
@@ -412,6 +415,21 @@ class EditorAssignmentParametersUpdate(UpdateView):
         editor, journal = self.request.user, self.request.journal
         parameters, _ = EditorAssignmentParameters.objects.get_or_create(editor=editor, journal=journal)
         return parameters
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        formset = modelformset_factory(
+            model=EditorKeyword, fields=("keyword", "weight"), extra=0)
+        formset(queryset=self.object.keywords.all())
+
+        context['formset'] = formset
+        return context
+
+    def get_form_kwargs(self):  # noqa
+        kwargs = super().get_form_kwargs()
+        kwargs.update({"user": self.request.user})
+        return kwargs
+
 
     def get_success_url(self):  # noqa
         messages.add_message(

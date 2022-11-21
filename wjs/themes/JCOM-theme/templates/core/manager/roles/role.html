@@ -41,7 +41,7 @@
                                                href="{% url 'core_manager_role_action' role.slug assignment.user.id 'remove' %}"><i
                                     class="fa fa-times"></i> &nbsp;&nbsp;Remove Role</a>
                                 <a class="tiny primary button"
-                                   href="{% url 'assignment_parameters' %}">&nbsp;Assignment Parameters</a></td>
+                                   href="{% url 'assignment_parameters' assignment.user.id %}">&nbsp;Assignment Parameters</a></td>
                         </tr>
                     {% endfor %}</tbody>
                 </table>

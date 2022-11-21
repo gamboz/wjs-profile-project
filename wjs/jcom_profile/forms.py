@@ -4,7 +4,7 @@ import uuid
 
 from core.forms import EditAccountForm
 from django import forms
-from django.forms import ModelForm
+from django.forms import ModelForm, formset_factory
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from easy_select2.widgets import Select2Multiple
@@ -15,7 +15,7 @@ from wjs.jcom_profile.models import (
     ArticleWrapper,
     EditorAssignmentParameters,
     JCOMProfile,
-    SpecialIssue,
+    SpecialIssue, EditorKeyword,
 )
 
 
@@ -182,3 +182,14 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
     class Meta:
         model = EditorAssignmentParameters
         fields = ["keywords", "workload", "brake_on"]
+
+
+class EditorKeywordForm(forms.ModelForm):
+    keyword = forms.CharField(widget=forms.TextInput(attrs={"readonly": "readonly"}))
+    weight = forms.IntegerField
+
+    class Meta:
+        model = EditorKeyword
+        fields = ["keyword", "weight"]
+
+
