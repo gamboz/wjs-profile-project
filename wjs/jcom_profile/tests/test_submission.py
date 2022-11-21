@@ -183,8 +183,8 @@ def journal_with_three_sections(article_journal):
 
 
 @pytest.fixture
-def special_issue_with_one_section(journal_with_three_sections):
-    """Make a special issue with only one "section" named "article"."""
+def special_issue_with_all_sections(journal_with_three_sections):
+    """Make a special issue that allows all journal's "section"s."""
     sections = journal_with_three_sections.section_set.all()
     yesterday = timezone.now() - timezone.timedelta(1)
     special_issue = SpecialIssue.objects.create(
@@ -193,8 +193,8 @@ def special_issue_with_one_section(journal_with_three_sections):
         description="SIONE description",
         short_name="SIONE",
         open_date=yesterday,
-        allowed_sections=sections,
     )
+    special_issue.allowed_sections = sections
     return special_issue
 
 
@@ -225,15 +225,16 @@ class TestInfoStage:
 
     Possibilities:
     - no SI has been choosen (normal submission)
-      - if manager/editor: all sections
-      - if not manager/editor: only "public" sections
+      - [x] if manager/editor: all sections
+      - [x] if not manager/editor: only "public" sections
     - SI has been choosen
       - SI allows all sections
-        - same as "no SI"
+        - [ ] if manager/editor: same as "no SI"
+        - [x] if not manager/editor: same as "no SI"
       - SI allows subset of journal's sections
-        - if manager/editor: all sections allowed by SI
-        - if not manager/editor: only "public" sections allowed by SI
-        - in any case: no section that is not allowed by the SI
+        - [x] if manager/editor: all sections allowed by SI
+        - [x] if not manager/editor: only "public" sections allowed by SI
+        - [-] in any case: no section that is not allowed by the SI
     """
 
     @pytest.mark.django_db
@@ -288,6 +289,75 @@ class TestInfoStage:
         # expect all journal sections + the empty label
         journal_public_sections = journal_with_three_sections.section_set.filter(public_submissions=True)
         self.compare(got=got, expected=journal_public_sections)
+
+    @pytest.mark.django_db
+    def test_si_with_no_limits_and_author_submitting(
+        self,
+        rf,
+        coauthor,
+        journal_with_three_sections,
+        article_factory,
+        special_issue_with_all_sections,
+    ):
+        """The choosen SI allows all sections; a normal user sees all the public sections."""
+        # create an article owned by the user that will do the request (coauthor)
+        article = article_factory.create(
+            journal=journal_with_three_sections,
+            owner=coauthor.janeway_account,
+        )
+        article.articlewrapper.special_issue = special_issue_with_all_sections
+        article.articlewrapper.save()
+
+        url = reverse("submit_info", args=(article.pk,))
+        request = rf.get(url)
+        self.simulate_middleware(request, user=coauthor.janeway_account, journal=journal_with_three_sections)
+
+        response = views.submit_info(request, article_id=article.id)
+        assert response.status_code == 200
+        got = self.sections_in_the_form(response)
+
+        # double check: si's sections must be the same as the journal's sections
+        assert (
+            len(
+                set(article.articlewrapper.special_issue.allowed_sections.all())
+                - set(journal_with_three_sections.section_set.all()),
+            )
+            == 0
+        )
+
+        # expect only si's public sections + the empty label
+        si_public_sections = special_issue_with_all_sections.allowed_sections.filter(public_submissions=True)
+        self.compare(got=got, expected=si_public_sections)
+
+    @pytest.mark.django_db
+    def test_si_with_limited_sections_and_manager_submitting(
+        self,
+        rf,
+        admin,
+        journal_with_three_sections,
+        article_factory,
+        special_issue_with_two_sections,
+    ):
+        """When the SI limits the possible sections, a manager sees all sections in the subset."""
+        # create an article owned by the user that will do the request (coauthor)
+        article = article_factory.create(
+            journal=journal_with_three_sections,
+            owner=admin,
+        )
+        article.articlewrapper.special_issue = special_issue_with_two_sections
+        article.articlewrapper.save()
+
+        url = reverse("submit_info", args=(article.pk,))
+        request = rf.get(url)
+        self.simulate_middleware(request, user=admin, journal=journal_with_three_sections)
+
+        response = views.submit_info(request, article_id=article.id)
+        assert response.status_code == 200
+        got = self.sections_in_the_form(response)
+
+        # expect all si's sections + the empty label
+        si_sections = special_issue_with_two_sections.allowed_sections.all()
+        self.compare(got=got, expected=si_sections)
 
     @pytest.mark.django_db
     def test_si_with_limited_sections_and_author_submitting(
