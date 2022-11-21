@@ -248,7 +248,7 @@ def test_update_editor_assignment_parameters(user, roles, keywords, journal):
 
     client = Client()
     client.force_login(jcom_user)
-    url = reverse("assignment_parameters")
+    url = reverse("assignment_parameters", kwargs={"editor_pk": user.pk})
     data = {"keywords": list(keywords_id), "workload": workload}
     response = client.post(url, data)
     assert response.status_code == 302

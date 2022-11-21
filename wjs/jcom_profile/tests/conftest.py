@@ -42,6 +42,7 @@ INVITE_BUTTON = """<li>
 
 ASSIGNMENT_PARAMETERS_SPAN = """<span class="card-title">Edit assignment parameters</span>"""  # noqa
 
+ASSIGNMENT_PARAMS = """<span class="card-title">Edit assignment parameters</span>"""
 
 @pytest.fixture
 def admin():
