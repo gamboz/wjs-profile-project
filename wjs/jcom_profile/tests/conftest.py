@@ -17,7 +17,7 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 
-from wjs.jcom_profile.management.commands.create_random_data import ArticleFactory
+from wjs.jcom_profile.factories import ArticleFactory
 from wjs.jcom_profile.models import JCOMProfile
 from wjs.jcom_profile.utils import generate_token
 
