@@ -2,6 +2,7 @@
 import os
 
 import pytest
+import pytest_factoryboy
 from core.models import Account, Setting
 from django.conf import settings
 from django.core import management
@@ -16,6 +17,7 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 
+from wjs.jcom_profile.management.commands.create_random_data import ArticleFactory
 from wjs.jcom_profile.models import JCOMProfile
 from wjs.jcom_profile.utils import generate_token
 
@@ -224,3 +226,10 @@ def clear_script_prefix_fix():
     clear_script_prefix()
     yield None
     clear_script_prefix()
+
+
+# Name the fixture a bit differently. This code, without the second
+# option, would produce a "article_factory" fixture (i.e. a factory of
+# article objects) and a fixture named "article" (i.e. one article
+# object) that would clash with the one defined above.
+pytest_factoryboy.register(ArticleFactory, "fb_article")
