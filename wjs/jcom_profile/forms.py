@@ -167,11 +167,18 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
         label=_("Keywords"),
         queryset=Keyword.objects.all(),
         widget=Select2Multiple(select2attrs={"width": "500px"}),
+        required=False,
     )
+
+    def __init__(self, *args, **kwargs):  # noqa
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user:
+            if not user.is_staff:
+                del self.fields["brake_on"]
+            else:
+                self.fields["workload"].widget.attrs["readonly"] = True
 
     class Meta:
         model = EditorAssignmentParameters
-        fields = (
-            "keywords",
-            "workload",
-        )
+        fields = ["keywords", "workload", "brake_on"]
