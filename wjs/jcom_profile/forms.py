@@ -4,7 +4,7 @@ import uuid
 
 from core.forms import EditAccountForm
 from django import forms
-from django.forms import ModelForm, formset_factory
+from django.forms import ModelForm
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from easy_select2.widgets import Select2Multiple
@@ -14,8 +14,9 @@ from utils.forms import CaptchaForm
 from wjs.jcom_profile.models import (
     ArticleWrapper,
     EditorAssignmentParameters,
+    EditorKeyword,
     JCOMProfile,
-    SpecialIssue, EditorKeyword,
+    SpecialIssue,
 )
 
 
@@ -191,5 +192,3 @@ class EditorKeywordForm(forms.ModelForm):
     class Meta:
         model = EditorKeyword
         fields = ["keyword", "weight"]
-
-

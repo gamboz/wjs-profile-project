@@ -2,6 +2,7 @@
 from core import files as core_files
 from core import logic
 from core import models as core_models
+from core.models import Account
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -16,8 +17,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
-
-from core.models import Account
 from repository import models as preprint_models
 from security.decorators import submission_authorised
 from submission import decorators
@@ -27,11 +26,12 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from wjs.jcom_profile.forms import UpdateAssignmentParametersForm, EditorKeywordForm
+from wjs.jcom_profile.forms import UpdateAssignmentParametersForm
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
+    EditorKeyword,
     JCOMProfile,
-    SpecialIssue, EditorKeyword,
+    SpecialIssue,
 )
 
 from . import forms
@@ -416,20 +416,17 @@ class EditorAssignmentParametersUpdate(UpdateView):
         parameters, _ = EditorAssignmentParameters.objects.get_or_create(editor=editor, journal=journal)
         return parameters
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):  # noqa
         context = super().get_context_data()
-        formset = modelformset_factory(
-            model=EditorKeyword, fields=("keyword", "weight"), extra=0)
+        formset = modelformset_factory(model=EditorKeyword, fields=("keyword", "weight"), extra=0)
         formset(queryset=self.object.keywords.all())
-
-        context['formset'] = formset
+        context["formset"] = formset
         return context
 
     def get_form_kwargs(self):  # noqa
         kwargs = super().get_form_kwargs()
         kwargs.update({"user": self.request.user})
         return kwargs
-
 
     def get_success_url(self):  # noqa
         messages.add_message(
