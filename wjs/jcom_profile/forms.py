@@ -186,17 +186,6 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
 
 
 class EditorKeywordForm(forms.ModelForm):
-    keyword = forms.ModelChoiceField(
-        queryset=Keyword.objects.all(),
-        widget=forms.TextInput(
-            attrs={"readonly": "readonly"},
-        ),
-    )
-
     class Meta:
         model = EditorKeyword
-        fields = ["keyword", "weight"]
-
-    def __init__(self, *args, **kwargs):  # noqa
-        super().__init__(*args, **kwargs)
-        self.initial["keyword"] = self.instance.keyword.word
+        fields = ["weight"]
