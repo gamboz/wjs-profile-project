@@ -3,11 +3,6 @@
 {% load static %}
 
 {% block body %}
-    {% if messages %}
-        {% for message in messages %}
-            {{ message }}
-        {% endfor %}
-    {% endif %}
     <div>
         <form method="post">
             {% csrf_token %}

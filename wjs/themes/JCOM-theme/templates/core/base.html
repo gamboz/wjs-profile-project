@@ -93,6 +93,13 @@
 {% if request.repository and request.repository.custom_js_code %}
 <script></script>
 {% endif %}
+<script>
+    {% if messages %}
+        {% for message in messages %}
+            Materialize.toast('{{ message|linebreaksbr }}', 4000);
+        {% endfor %}
+    {% endif %}
+</script>
 
 </body>
 </html>
