@@ -410,10 +410,8 @@ class EditorAssignmentParametersUpdate(UpdateView):
 
     def get_object(self, queryset=None):  # noqa
         editor, journal = self.request.user, self.request.journal
-        try:
-            return EditorAssignmentParameters.objects.get(editor=editor, journal=journal)
-        except EditorAssignmentParameters.DoesNotExist:
-            return EditorAssignmentParameters.objects.create(editor=editor, journal=journal)
+        parameters, _ = EditorAssignmentParameters.objects.get_or_create(editor=editor, journal=journal)
+        return parameters
 
     def get_success_url(self):  # noqa
         return reverse("core_edit_profile")
