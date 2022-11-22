@@ -140,13 +140,18 @@ class SpecialIssue(models.Model):
 
     def save(self, *args, **kwargs):
         """Set the default for field allowed_sections."""
-        # see https://stackoverflow.com/a/32068983/1581629
+        # Cannot simply do `if not self.allowed_sections.exists()...`
+        # because `ValueError: "<SpecialIssue>" needs to have a value
+        # for field "id" before this many-to-many relationship can be
+        # used.`
+        #
+        # Approach from https://stackoverflow.com/a/32068983/1581629
         created_flag = False
         if not self.pk:
             created_flag = True
         super().save(*args, **kwargs)
         if created_flag:
-            self.allowed_sections = Section.objects.filter(journal=self.journal)
+            self.allowed_sections.set(Section.objects.filter(journal=self.journal))
 
     def is_open_for_submission(self):
         """Compute if this special issue is open for submission."""
