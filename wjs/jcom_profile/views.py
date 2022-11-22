@@ -434,13 +434,13 @@ class EditorAssignmentParametersUpdate(UpdateView):
         return kwargs
 
     def post(self, request, *args, **kwargs):  # noqa
-        editor_keywords_formset_class = modelformset_factory(
-            model=EditorKeyword,
-            fields=("keyword", "weight"),
-            extra=0,
-            form=EditorKeywordForm,
-        )
         if self.request.user.is_staff:
+            editor_keywords_formset_class = modelformset_factory(
+                model=EditorKeyword,
+                fields=("keyword", "weight"),
+                extra=0,
+                form=EditorKeywordForm,
+            )
             formset = editor_keywords_formset_class(request.POST, request.FILES)
             if formset.is_valid():
                 formset.save()
