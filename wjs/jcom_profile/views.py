@@ -26,7 +26,7 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from wjs.jcom_profile.forms import UpdateAssignmentParametersForm
+from wjs.jcom_profile.forms import EditorKeywordForm, UpdateAssignmentParametersForm
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
@@ -418,15 +418,33 @@ class EditorAssignmentParametersUpdate(UpdateView):
 
     def get_context_data(self, **kwargs):  # noqa
         context = super().get_context_data()
-        formset = modelformset_factory(model=EditorKeyword, fields=("keyword", "weight"), extra=0)
-        formset(queryset=self.object.keywords.all())
-        context["formset"] = formset
+        editor_keywords_formset_class = modelformset_factory(
+            model=EditorKeyword,
+            fields=("keyword", "weight"),
+            extra=0,
+            form=EditorKeywordForm,
+        )
+        editor_keywords_formset_class(queryset=self.object.keywords.all())
+        context["formset"] = editor_keywords_formset_class
         return context
 
     def get_form_kwargs(self):  # noqa
         kwargs = super().get_form_kwargs()
         kwargs.update({"user": self.request.user})
         return kwargs
+
+    def post(self, request, *args, **kwargs):  # noqa
+        editor_keywords_formset_class = modelformset_factory(
+            model=EditorKeyword,
+            fields=("keyword", "weight"),
+            extra=0,
+            form=EditorKeywordForm,
+        )
+        if self.request.user.is_staff:
+            formset = editor_keywords_formset_class(request.POST, request.FILES)
+            if formset.is_valid():
+                formset.save()
+        return super().post(request, **kwargs)
 
     def get_success_url(self):  # noqa
         messages.add_message(

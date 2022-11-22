@@ -171,6 +171,10 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
         required=False,
     )
 
+    class Meta:
+        model = EditorAssignmentParameters
+        fields = ["keywords", "workload", "brake_on"]
+
     def __init__(self, *args, **kwargs):  # noqa
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
@@ -178,17 +182,21 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
             if not user.is_staff:
                 del self.fields["brake_on"]
             else:
-                self.fields["workload"].widget.attrs["readonly"] = True
-
-    class Meta:
-        model = EditorAssignmentParameters
-        fields = ["keywords", "workload", "brake_on"]
+                self.fields["workload"].widget.attrs["readonly"] = "readonly"
 
 
 class EditorKeywordForm(forms.ModelForm):
-    keyword = forms.CharField(widget=forms.TextInput(attrs={"readonly": "readonly"}))
-    weight = forms.IntegerField
+    keyword = forms.ModelChoiceField(
+        queryset=Keyword.objects.all(),
+        widget=forms.TextInput(
+            attrs={"readonly": "readonly"},
+        ),
+    )
 
     class Meta:
         model = EditorKeyword
         fields = ["keyword", "weight"]
+
+    def __init__(self, *args, **kwargs):  # noqa
+        super().__init__(*args, **kwargs)
+        self.initial["keyword"] = self.instance.keyword.word

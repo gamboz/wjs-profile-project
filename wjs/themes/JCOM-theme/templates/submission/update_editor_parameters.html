@@ -7,6 +7,7 @@
         <form method="post">
             {% csrf_token %}
             {% if request.user.is_staff %}
+                {{ formset.management_form }}
                 {{ formset.as_p }}
                 <div class="input-field col s12">
                     {{ form.brake_on }}

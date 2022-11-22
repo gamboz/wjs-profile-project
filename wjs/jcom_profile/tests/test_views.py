@@ -9,7 +9,11 @@ from submission import models as submission_models
 from submission.models import Keyword
 from utils import setting_handler
 
-from wjs.jcom_profile.models import EditorAssignmentParameters, JCOMProfile
+from wjs.jcom_profile.models import (
+    EditorAssignmentParameters,
+    EditorKeyword,
+    JCOMProfile,
+)
 from wjs.jcom_profile.tests.conftest import ASSIGNMENT_PARAMETERS_SPAN, INVITE_BUTTON
 from wjs.jcom_profile.utils import generate_token
 
@@ -236,25 +240,48 @@ def test_assignment_parameters_button_is_not_without_journal(
 
 
 @pytest.mark.django_db
-def test_update_editor_assignment_parameters(user, roles, keywords, journal):
-    user.add_account_role("editor", journal)
-    jcom_user = JCOMProfile.objects.get(janeway_account=user)
-    jcom_user.gdpr_checkbox = True
-    jcom_user.is_active = True
-    jcom_user.save()
-
+def test_update_editor_assignment_parameters(editor, roles, keywords, journal):
     keywords_id = Keyword.objects.all().values_list("id", flat=True)
     workload = 10
 
     client = Client()
-    client.force_login(jcom_user)
-    url = reverse("assignment_parameters", kwargs={"editor_pk": user.pk})
+    client.force_login(editor)
+    url = reverse("assignment_parameters", kwargs={"editor_pk": editor.janeway_account.pk})
     data = {"keywords": list(keywords_id), "workload": workload}
     response = client.post(url, data)
     assert response.status_code == 302
 
-    assignment_parameters = EditorAssignmentParameters.objects.get(editor=jcom_user, journal=journal)
+    assignment_parameters = EditorAssignmentParameters.objects.get(editor=editor, journal=journal)
     editor_keywords = assignment_parameters.editorkeyword_set.all()
     assert assignment_parameters.workload == workload
     for keyword in keywords:
         assert keyword.word in list(editor_keywords.values_list("keyword__word", flat=True))
+
+
+@pytest.mark.django_db
+def test_assignment_parameter_button_is_present_in_editors_interface(admin, editor, journal, keywords):
+    client = Client()
+    client.force_login(admin)
+    url = f"/{journal.code}/manager/roles/editor/"
+    response = client.get(url)
+    assert response.status_code == 200
+    # TODO: This check must be better handled; moreover, I should check this behaviour when more editors exist.
+    assert (
+        f"""<a class="tiny primary button"
+                                   href="/{journal.code}/update/parameters/{editor.janeway_account.pk}/">&nbsp;Assignment Parameters</a>"""  # noqa
+        in response.content.decode()
+    )
+
+
+@pytest.mark.django_db
+def test_director_can_change_editor_keywords(admin, editor, journal, keywords):
+    editor_parameters = EditorAssignmentParameters.objects.create(editor=editor.janeway_account, journal=journal)
+    for k in keywords:
+        EditorKeyword.objects.create(editor_parameters=editor_parameters, keyword=k)
+
+    client = Client()
+    client.force_login(admin)
+    url = f"/{journal.code}/update/parameters/{editor.janeway_account.pk}/"
+    response = client.get(url)
+
+    assert response.status_code == 200

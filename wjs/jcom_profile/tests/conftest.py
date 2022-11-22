@@ -2,7 +2,7 @@
 import os
 
 import pytest
-from core.models import Account, Setting
+from core.models import Account, AccountRole, Role, Setting
 from django.conf import settings
 from django.core import management
 from django.core.serializers import deserialize
@@ -45,6 +45,16 @@ ASSIGNMENT_PARAMETERS_SPAN = """<span class="card-title">Edit assignment paramet
 ASSIGNMENT_PARAMS = """<span class="card-title">Edit assignment parameters</span>"""
 
 @pytest.fixture
+def roles():
+    roles_relative_path = "utils/install/roles.json"
+    roles_path = os.path.join(settings.BASE_DIR, roles_relative_path)
+    with open(roles_path, encoding="utf-8") as f:
+        roles = f.read()
+        for role in deserialize("json", roles):
+            role.save()
+
+
+@pytest.fixture
 def admin():
     """Create admin user."""
     return JCOMProfile.objects.create(
@@ -83,6 +93,17 @@ def user():
     user = Account(username=USERNAME, first_name="User", last_name="Ics")
     user.save()
     yield user
+
+
+@pytest.fixture()
+def editor(user, roles, journal):
+    editor = JCOMProfile(janeway_account=user, email="user@email.it")
+    editor.gdpr_checkbox = True
+    editor.is_active = True
+    role = Role.objects.get(slug="editor")
+    AccountRole.objects.create(user=user, journal=journal, role=role)
+    editor.save()
+    return editor
 
 
 @pytest.fixture()
@@ -184,16 +205,6 @@ def coauthors_setting():
 @pytest.fixture
 def user_as_main_author_setting():
     management.call_command("add_user_as_main_author_setting")
-
-
-@pytest.fixture
-def roles():
-    roles_relative_path = "utils/install/roles.json"
-    roles_path = os.path.join(settings.BASE_DIR, roles_relative_path)
-    with open(roles_path, encoding="utf-8") as f:
-        roles = f.read()
-        for role in deserialize("json", roles):
-            role.save()
 
 
 @pytest.fixture
