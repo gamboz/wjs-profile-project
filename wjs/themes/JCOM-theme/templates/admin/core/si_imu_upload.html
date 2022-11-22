@@ -1,0 +1,31 @@
+{% extends "admin/core/base.html" %}
+{% load foundation %}
+{% load i18n %}
+{% load static from staticfiles %}
+{% load hooks %}
+{% load files %}
+{% load securitytags %}
+{% block title-section %}
+    {% trans "Insert Users" %}
+{% endblock title-section %}
+{% block body %}
+    {{ forma.media }}
+    <div class="card">
+        <div class="card-section">
+            {% include "elements/forms/errors.html" with form=form %}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="large-12 columns">{{ form.data_file|foundation }}</div>
+                    <div class="large-6 columns">{{ form.create_articles_on_import|foundation }}</div>
+                    <div class="large-6 columns">{{ form.match_euristic|foundation }}</div>
+                </div>
+                <div class="row">
+                    <div class="large-6 columns">
+                        <input type="submit" value="Upload..." />
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock body %}

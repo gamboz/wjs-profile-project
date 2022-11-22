@@ -487,3 +487,22 @@ class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
             "Parameters updated successfully",
         )
         return reverse("assignment_parameters", args=(self.kwargs.get("editor_pk"),))
+
+
+class IMUStep1(TemplateView):
+    """Insert Many Users - first step.
+
+    Manage the data file upload form.
+    """
+
+    form_class = forms.IMUForm
+
+    def get(self, *args, **kwargs):
+        """Show a form to start the IMU process - upload data."""
+        form = self.form_class()
+        context = {"form": form}
+        return render(
+            self.request,
+            template_name=self.template_name,
+            context=context,
+        )

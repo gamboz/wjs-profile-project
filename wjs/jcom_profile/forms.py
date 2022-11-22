@@ -219,3 +219,33 @@ EditorKeywordFormset = inlineformset_factory(
     can_delete=False,
     form=EditorKeywordForm,
 )
+
+
+class IMUForm(forms.Form):
+    """Import Many Users.
+
+    Let the op upload a spreadsheet with author/title data.
+    """
+
+    # This feature was called "IMU" on PoS (:nostalgic:)
+
+    data_file = forms.FileField(
+        allow_empty_file=False,
+        required=True,
+        help_text="Upload odt file with first, middle, last name, email, affiliation, paper title; one per row.",
+    )
+    create_articles_on_import = forms.BooleanField(
+        required=True,
+        initial=True,
+        help_text="If set to false, articles are not created. The authors must start a submission themselves.",
+    )
+    EURISTICS = (
+        ("optimistic", "Optimistic - risk to merge different people"),
+        ("convervative", "Conservative - risk multiple accounts for the same person"),
+    )
+    match_euristic = forms.ChoiceField(
+        choices=EURISTICS,
+        required=True,
+        initial="optimistic",
+        help_text="Being optimistic ... TODO WRITE ME!",
+    )
