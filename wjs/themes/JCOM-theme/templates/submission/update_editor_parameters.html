@@ -3,11 +3,16 @@
 {% load static %}
 
 {% block body %}
+    {% if messages %}
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    {% endif %}
     <div>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <input type="submit" />
+            <input type="submit"/>
         </form>
     </div>
 {% endblock body %}

@@ -414,4 +414,9 @@ class EditorAssignmentParametersUpdate(UpdateView):
         return parameters
 
     def get_success_url(self):  # noqa
-        return reverse("core_edit_profile")
+        messages.add_message(
+            self.request,
+            messages.SUCCESS,
+            "Parameters updated successfully",
+        )
+        return reverse("assignment_parameters")
