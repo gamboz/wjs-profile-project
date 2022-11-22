@@ -201,7 +201,7 @@ def test_assignment_parameters_button_is_in_edit_profile_interface_if_user_is_st
     user_role,
     journal,
 ):
-    jcom_user = JCOMProfile(janeway_account=user, email="user@email.it")
+    jcom_user = JCOMProfile.objects.get(janeway_account=user)
     jcom_user.gdpr_checkbox = True
     jcom_user.is_active = True
     # User are staff or editor
@@ -238,7 +238,7 @@ def test_assignment_parameters_button_is_not_without_journal(
 @pytest.mark.django_db
 def test_update_editor_assignment_parameters(user, roles, keywords, journal):
     user.add_account_role("editor", journal)
-    jcom_user = JCOMProfile(janeway_account=user, email="user@email.it")
+    jcom_user = JCOMProfile.objects.get(janeway_account=user)
     jcom_user.gdpr_checkbox = True
     jcom_user.is_active = True
     jcom_user.save()
