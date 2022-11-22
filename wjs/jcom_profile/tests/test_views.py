@@ -1,6 +1,5 @@
 import pytest
 from core import models as core_models
-from core.models import AccountRole, Role
 from django.conf import settings
 from django.core import mail
 from django.test import Client
@@ -210,8 +209,7 @@ def test_assignment_parameters_button_is_in_edit_profile_interface_if_user_is_st
         jcom_user.is_staff = True
 
     elif user_role == "editor":
-        role = Role.objects.get(slug=user_role)
-        AccountRole.objects.create(user=user, journal=journal, role=role)
+        user.add_account_role("editor", journal)
     jcom_user.save()
 
     jcom_user.refresh_from_db()
@@ -239,11 +237,10 @@ def test_assignment_parameters_button_is_not_without_journal(
 
 @pytest.mark.django_db
 def test_update_editor_assignment_parameters(user, roles, keywords, journal):
+    user.add_account_role("editor", journal)
     jcom_user = JCOMProfile(janeway_account=user, email="user@email.it")
     jcom_user.gdpr_checkbox = True
     jcom_user.is_active = True
-    role = Role.objects.get(slug="editor")
-    AccountRole.objects.create(user=user, journal=journal, role=role)
     jcom_user.save()
 
     keywords_id = Keyword.objects.all().values_list("id", flat=True)
