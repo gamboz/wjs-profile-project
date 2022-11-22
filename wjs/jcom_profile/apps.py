@@ -23,7 +23,12 @@ class JCOMProfileConfig(AppConfig):
         """Register my functions to Janeway's hooks."""
         hooks = [
             {"extra_corefields": {"module": "wjs.jcom_profile.hooks", "function": "prova_hook"}},
-            {"button_link": {"module": "wjs.jcom_profile.hooks", "function": "extra_link_hook"}},
+            {
+                "extra_edit_profile_parameters": {
+                    "module": "wjs.jcom_profile.hooks",
+                    "function": "extra_edit_profile_parameters_hook",
+                },
+            },
         ]
         # NB: do not `import core...` before `ready()`,
         # otherwise django setup process breaks
@@ -44,4 +49,7 @@ class JCOMProfileConfig(AppConfig):
             notify_coauthors_article_submission,
         )
 
-        events_logic.Events.register_for_event(events_logic.Events.ON_ARTICLE_SUBMITTED, dispatch_assignment)
+        events_logic.Events.register_for_event(
+            events_logic.Events.ON_ARTICLE_SUBMITTED,
+            dispatch_assignment,
+        )

@@ -11,8 +11,12 @@ def prova_hook(request_context):
     return rendered
 
 
-def extra_link_hook(request_context):
+def extra_edit_profile_parameters_hook(request_context):
     """Add hook to add assignment parameter button."""
-    template_name = "button_link.html"
-    rendered = render_to_string(template_name, {})
+    user = request_context.request.user
+    journal = request_context.request.journal
+    rendered = ""
+    if user and journal and request_context.request.user.check_role(journal, "editor"):
+        template_name = "extra_edit_profile_parameters.html"
+        rendered = render_to_string(template_name, {})
     return rendered

@@ -118,9 +118,9 @@ class SpecialIssueAdmin(admin.ModelAdmin):
 
 @admin.register(EditorAssignmentParameters)
 class EditorAssignmentParametersAdmin(admin.ModelAdmin):
-    """Helper class to "admin" special issues."""
+    """Helper class to "admin" editor assignment parameters."""
 
 
 @admin.register(EditorKeyword)
 class EditorKeywordAdmin(admin.ModelAdmin):
-    """Helper class to "admin" special issues."""
+    """Helper class to "admin" editor keyword."""

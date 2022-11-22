@@ -1,6 +1,5 @@
 {% load i18n roles %}
 {% user_has_role request 'reader' as reader %}
-{% user_has_role request 'editor' as editor %}
 {% load hooks %}
 
 <div class="row">
@@ -17,7 +16,7 @@
                     <p><strong>{% trans "Current Email Address" %}:</strong> {{ request.user.email }}</p>
                     <div class="input-field">
                         <input type="email" name="email_address" class="form-control"
-                               placeholder="janeway@voyager.com" />
+                               placeholder="janeway@voyager.com"/>
                         <label for="email_address">{% trans "New Email Address" %}</label>
                     </div>
                     <button type="submit" name="email"
@@ -72,15 +71,15 @@
                     {% csrf_token %}
                     <div class="row">
                         <div class="input-field col m4">
-                            <input type="password" name="current_password" />
+                            <input type="password" name="current_password"/>
                             <label for="current_password">{% trans "Current Password" %}</label>
                         </div>
                         <div class="input-field col m4">
-                            <input type="password" name="new_password_one" />
+                            <input type="password" name="new_password_one"/>
                             <label for="new_password_one">{% trans "New Password" %}</label>
                         </div>
                         <div class="input-field col m4">
-                            <input type="password" name="new_password_two" />
+                            <input type="password" name="new_password_two"/>
                             <label for="new_password_two">{% trans "Enter Password Again" %}</label>
                         </div>
                     </div>
@@ -92,19 +91,7 @@
         </div>
     </div>
 </div>
-{% if editor and request.journal %}
-    <div class="row">
-        <div class="col m12">
-            <div class="card">
-                <div class="card-content">
-                    <span class="card-title">{% trans "Edit assignment parameters" %}</span>
-                    <p>{% trans "Go to your your assignment parameters by clicking the button below." %}</p>
-                    {% hook "button_link" %}
-                </div>
-            </div>
-        </div>
-    </div>
-{% endif %}
+{% hook "extra_edit_profile_parameters" %}
 <div class="row">
     <div class="col m12">
         <div class="card">

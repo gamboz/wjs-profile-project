@@ -2,7 +2,7 @@
 
 Journal level configuration is made using the 'WJS_ARTICLE_ASSIGNMENT_FUNCTIONS' setting
 """
-from django.conf import settings  # NOQA
+from django.conf import settings
 from django.utils.module_loading import import_string
 
 

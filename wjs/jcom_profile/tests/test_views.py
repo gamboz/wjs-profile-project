@@ -11,7 +11,7 @@ from submission.models import Keyword
 from utils import setting_handler
 
 from wjs.jcom_profile.models import EditorAssignmentParameters, JCOMProfile
-from wjs.jcom_profile.tests.conftest import ASSIGNMENT_BUTTON, INVITE_BUTTON
+from wjs.jcom_profile.tests.conftest import ASSIGNMENT_PARAMETERS_SPAN, INVITE_BUTTON
 from wjs.jcom_profile.utils import generate_token
 
 
@@ -221,7 +221,7 @@ def test_assignment_parameters_button_is_in_edit_profile_interface_if_user_is_st
     response = client.get(url)
     assert response.status_code == 200
     if user_role in ["staff", "editor"]:
-        assert ASSIGNMENT_BUTTON in response.content.decode()
+        assert ASSIGNMENT_PARAMETERS_SPAN in response.content.decode()
 
 
 @pytest.mark.django_db
@@ -234,7 +234,7 @@ def test_assignment_parameters_button_is_not_without_journal(
     url = "/profile/"
     response = client.get(url)
     assert response.status_code == 200
-    assert ASSIGNMENT_BUTTON not in response.content.decode()
+    assert ASSIGNMENT_PARAMETERS_SPAN not in response.content.decode()
 
 
 @pytest.mark.django_db

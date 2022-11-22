@@ -40,8 +40,7 @@ INVITE_BUTTON = """<li>
         <a href="/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
     </li>"""
 
-ASSIGNMENT_BUTTON = """<a href="/CODE/update/parameters/" class="btn btn-warning button warning" style="text-decoration: none">Assignment
-    parameters</a>"""  # noqa
+ASSIGNMENT_PARAMETERS_SPAN = """<span class="card-title">Edit assignment parameters</span>"""  # noqa
 
 
 @pytest.fixture
