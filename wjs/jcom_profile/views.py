@@ -1,6 +1,7 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
 from collections import namedtuple
 from dataclasses import dataclass
+from math import isnan
 from typing import Iterable
 
 import pandas as pd
@@ -12,7 +13,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import UploadedFile
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
@@ -503,10 +503,9 @@ class PartitionLine:
     """
 
     name: str
-
-    def __init__(self, line):
-        """Take an odt line and make into a PartitionLine."""
-        self.name = line.colums[0]
+    # something to ease discriminating between PartitionLinse and
+    # ContributionLines in templates
+    is_just_a_name = True
 
 
 @dataclass
@@ -595,12 +594,15 @@ class IMUStep1(TemplateView):
             sheet_name=sheet_index,
             header=None,
             names=columns_names,
+            # dtype=???object???,
             engine="odf",
         )
+        # df = df.astype(str) NOPE: empty values become "nan" strings
         # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.itertuples.html#pandas.DataFrame.itertuples
         for row in df.itertuples(index=False):
             line = self.examine_row(row)
             result_lines.append(line)
+        return result_lines
 
     def examine_row(self, row: namedtuple) -> ContributionLine:
         """Parse a odt row (pandas namedtuple) into a Line.
@@ -610,33 +612,19 @@ class IMUStep1(TemplateView):
         # Allow for dirty data: if I'm missing lastname and email,
         # I'll consider this a PartitionLine and just use the
         # firstname column as the partition name.
-        if not row.last and not row.email:
+        if self.is_empty_value(row.last) and self.is_empty_value(row.email):
             return PartitionLine(name=row.first)
         line = ContributionLine(row)
         line.suggestions = self.make_suggestion(line)
         return line
 
-    def save_to_tmp(self, infile: UploadedFile) -> None:
-        """Save the given uploaded file to a temporary file.
-
-        Used to pass a path to pandas' `read_ods`.
-        """
-        path = f"/tmp/{infile.name}"
-        with open(path, "wb+") as destination:
-            for chunk in infile.chunks():
-                destination.write(chunk)
-        return path
-
-    def author_p(self, line):
-        """Take an odt line and check if it is valid "contribution line".
-
-        Basically just count the columns.
-        Also, fill all missing columns with None.
-        """
-        expected_column_count = 5
-        for i in range(expected_column_count):
-            if i > line.column_count:
-                line.add_column(None)
+    def is_empty_value(self, value):
+        """Odio pandas e i dataframe e i bradipi e tutti quanti..."""
+        # NB: this check depends on how pandas interprets missing data
+        # (still a mistery to me...)
+        if isinstance(value, float) and isnan(value):
+            return True
+        return False
 
     def make_suggestion(self, line: ContributionLine) -> Iterable[SuggestionLine]:
         """Take a contribution line and find similar users in the DB."""
@@ -651,11 +639,8 @@ class IMUStep1(TemplateView):
 
     def make_more_suggestions(self, line: ContributionLine) -> Iterable[SuggestionLine]:
         """Take a contribution line and find similar users in the DB by euristics."""
-        suggestions = []
-        suggestions.append(
-            core_models.Account.objects.filter(
-                last_name=line.last,
-                first_name__istartswith=f"{line.first[0]}%",
-            ),
+        # TODO: use self.form.cleaned_data.match_euristic
+        return core_models.Account.objects.filter(
+            last_name__iexact=line.last,
+            first_name__istartswith=line.first,
         )
-        return suggestions

@@ -6,18 +6,58 @@
 {% endblock title-section %}
 {% block body %}
     <div class="card">
-        <p>lines: {{ lines }}.</p>
-        {% for line in lines %}
-            <div class="card-section">
-                <div class="row">
-                    <div class="large-6 columns">{{ line.first }}</div>
-                </div>
-                {% for suggestion in line.suggestions %}
-                    <div class="row">
-                        <div class="large-6 columns">{{ suggestion.first }} {{ suggestion.type }}</div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
+        <div class="card-section">
+            <table>
+                <thead>
+                    <th>first</th>
+                    <th>middle</th>
+                    <th>last</th>
+                    <th>email</th>
+                    <th>affiliation</th>
+                    <th>title</th>
+                    <th>&nbsp</th>
+                </thead>
+                <tbody>
+                    {% for line in lines %}
+                        {% if line.is_just_a_name %}
+                            <tr>
+                                <td colspan="7">{{ line.name }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td>{{ line.first }}</td>
+                                <td>{{ line.middle }}</td>
+                                <td>{{ line.last }}</td>
+                                <td>{{ line.email }}</td>
+                                <td>{{ line.affiliation }}</td>
+                                <td>{{ line.title }}</td>
+                                <td>
+                                    <input type="radio" name="line-WRITEME" value="new"/>
+                                    new
+                                    <input type="radio" name="line-WRITEME" value="skip"/>
+                                    skip (ignore line)
+                                </td>
+                            </tr>
+                            {% for suggestion in line.suggestions %}
+                                <tr>
+                                    <td class="suggestion">{{ suggestion.first_name }}</td>
+                                    <td class="suggestion">{{ suggestion.middle_name }}</td>
+                                    <td class="suggestion">{{ suggestion.last_name }}</td>
+                                    <td class="suggestion">{{ suggestion.email }}</td>
+                                    <td class="suggestion">{{ suggestion.affiliation }}</td>
+                                    <td class="suggestion">{{ suggestion.id }}</td>
+                                    <td>
+                                        <input type="radio" name="line-WRITEME" value="DB"/>
+                                        DB
+                                        <input type="radio" name="line-WRITEME" value="edit"/>
+                                        edit...
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock body %}
