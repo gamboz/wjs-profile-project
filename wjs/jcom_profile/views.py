@@ -6,12 +6,11 @@ from core.models import Account
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
-from django.forms import modelformset_factory
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -26,7 +25,7 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from wjs.jcom_profile.forms import EditorKeywordForm, UpdateAssignmentParametersForm
+from wjs.jcom_profile.forms import UpdateAssignmentParametersForm, EditorKeywordFormset
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
@@ -406,45 +405,20 @@ class SIFileDelete(PermissionRequiredMixin, View):
         return redirect(request.GET["return"])
 
 
-class EditorAssignmentParametersUpdate(UpdateView):
+class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
     model = EditorAssignmentParameters
     form_class = UpdateAssignmentParametersForm
     template_name = "submission/update_editor_parameters.html"
+
+    def test_func(self):
+        user = self.request.user
+        journal = self.request.journal
+        return user.check_role(journal, "editor", )
 
     def get_object(self, queryset=None):  # noqa
         editor, journal = self.request.user, self.request.journal
         parameters, _ = EditorAssignmentParameters.objects.get_or_create(editor=editor, journal=journal)
         return parameters
-
-    def get_context_data(self, **kwargs):  # noqa
-        context = super().get_context_data()
-        editor_keywords_formset_class = modelformset_factory(
-            model=EditorKeyword,
-            fields=("keyword", "weight"),
-            extra=0,
-            form=EditorKeywordForm,
-        )
-        editor_keywords_formset_class(queryset=self.object.keywords.all())
-        context["formset"] = editor_keywords_formset_class
-        return context
-
-    def get_form_kwargs(self):  # noqa
-        kwargs = super().get_form_kwargs()
-        kwargs.update({"user": self.request.user})
-        return kwargs
-
-    def post(self, request, *args, **kwargs):  # noqa
-        if self.request.user.is_staff:
-            editor_keywords_formset_class = modelformset_factory(
-                model=EditorKeyword,
-                fields=("keyword", "weight"),
-                extra=0,
-                form=EditorKeywordForm,
-            )
-            formset = editor_keywords_formset_class(request.POST, request.FILES)
-            if formset.is_valid():
-                formset.save()
-        return super().post(request, **kwargs)
 
     def get_success_url(self):  # noqa
         messages.add_message(
@@ -453,3 +427,42 @@ class EditorAssignmentParametersUpdate(UpdateView):
             "Parameters updated successfully",
         )
         return reverse("assignment_parameters")
+
+
+class DirectorEditorAssignmentParametersUpdate(UpdateView):
+    model = EditorAssignmentParameters
+    template_name = "submission/director_update_editor_parameters.html"
+    fields = "__all__"
+
+    def get_object(self, queryset=None):
+        editor_pk, journal = self.kwargs.get("editor_pk"), self.request.journal
+        editor = JCOMProfile.objects.get(pk=editor_pk)
+        if not editor.check_role(journal, "editor"):
+            raise Http404()
+        parameters, _ = EditorAssignmentParameters.objects.get_or_create(editor=editor, journal=journal)
+        return parameters
+
+    def get_context_data(self, **kwargs):  # noqa
+        context = super().get_context_data()
+        if self.request.POST:
+            formset = EditorKeywordFormset(data=self.request.POST, instance=self.object)
+            formset.is_valid()
+        else:
+            formset = EditorKeywordFormset(instance=self.object)
+        context["formset"] = formset
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context.get("formset")
+        if formset.is_valid():
+            formset.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):  # noqa
+        messages.add_message(
+            self.request,
+            messages.SUCCESS,
+            "Parameters updated successfully",
+        )
+        return reverse("assignment_parameters", args=(self.kwargs.get("editor_pk"),))

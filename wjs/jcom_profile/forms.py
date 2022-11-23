@@ -6,10 +6,12 @@ from core.forms import EditAccountForm
 from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
+
 from django.utils.translation import ugettext_lazy as _
 from easy_select2.widgets import Select2Multiple
 from submission.models import Keyword
 from utils.forms import CaptchaForm
+from django.forms import inlineformset_factory
 
 from wjs.jcom_profile.models import (
     ArticleWrapper,
@@ -173,19 +175,13 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
 
     class Meta:
         model = EditorAssignmentParameters
-        fields = ["keywords", "workload", "brake_on"]
-
-    def __init__(self, *args, **kwargs):  # noqa
-        user = kwargs.pop("user", None)
-        super().__init__(*args, **kwargs)
-        if user:
-            if not user.is_staff:
-                del self.fields["brake_on"]
-            else:
-                self.fields["workload"].widget.attrs["readonly"] = "readonly"
+        fields = ["keywords", "workload", ]
 
 
-class EditorKeywordForm(forms.ModelForm):
-    class Meta:
-        model = EditorKeyword
-        fields = ["weight"]
+EditorKeywordFormset = inlineformset_factory(
+    EditorAssignmentParameters,
+    EditorKeyword,
+    fk_name="editor_parameters",
+    fields=("keyword", "weight"),
+    extra=0,
+)

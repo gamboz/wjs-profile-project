@@ -1,28 +1,11 @@
 {% extends "core/base.html" %}
-{# Don't forget that one ! #}
 {% load static %}
 
 {% block body %}
     <div>
         <form method="post">
             {% csrf_token %}
-            {% if request.user.is_staff %}
-                {{ formset.management_form }}
-                {{ formset.as_p }}
-                <div class="input-field col s12">
-                    {{ form.brake_on }}
-                    <label for={{ form.brake_on.id }}>Brake On</label>
-                </div>
-                <div class="input-field col s12">
-                    {{ form.workload }}
-                    <label for={{ form.workload.id }}>Workload</label>
-                </div>
-                <div class="input-field col s12" hidden>
-                    {{ form.keywords }}
-                </div>
-            {% else %}
-                {{ form.as_p }}
-            {% endif %}
+            {{ form.as_p }}
             <input type="submit"/>
         </form>
     </div>
