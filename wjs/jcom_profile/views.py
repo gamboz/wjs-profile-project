@@ -25,7 +25,7 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from wjs.jcom_profile.forms import UpdateAssignmentParametersForm, EditorKeywordFormset
+from wjs.jcom_profile.forms import EditorKeywordFormset, UpdateAssignmentParametersForm
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
@@ -413,7 +413,10 @@ class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
     def test_func(self):
         user = self.request.user
         journal = self.request.journal
-        return user.check_role(journal, "editor", )
+        return user.check_role(
+            journal,
+            "editor",
+        )
 
     def get_object(self, queryset=None):  # noqa
         editor, journal = self.request.user, self.request.journal

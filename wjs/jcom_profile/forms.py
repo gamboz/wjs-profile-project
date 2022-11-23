@@ -4,14 +4,12 @@ import uuid
 
 from core.forms import EditAccountForm
 from django import forms
-from django.forms import ModelForm
+from django.forms import ModelForm, inlineformset_factory
 from django.utils import timezone
-
 from django.utils.translation import ugettext_lazy as _
 from easy_select2.widgets import Select2Multiple
 from submission.models import Keyword
 from utils.forms import CaptchaForm
-from django.forms import inlineformset_factory
 
 from wjs.jcom_profile.models import (
     ArticleWrapper,
@@ -175,7 +173,10 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
 
     class Meta:
         model = EditorAssignmentParameters
-        fields = ["keywords", "workload", ]
+        fields = [
+            "keywords",
+            "workload",
+        ]
 
 
 EditorKeywordFormset = inlineformset_factory(
