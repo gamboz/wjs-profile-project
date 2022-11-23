@@ -1,4 +1,9 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
+from collections import namedtuple
+from dataclasses import dataclass
+from typing import Iterable
+
+import pandas as pd
 from core import files as core_files
 from core import logic
 from core import models as core_models
@@ -7,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
@@ -489,6 +495,61 @@ class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
         return reverse("assignment_parameters", args=(self.kwargs.get("editor_pk"),))
 
 
+@dataclass
+class PartitionLine:
+    """A line representing a collection partition.
+
+    Or the section of a conference.
+    """
+
+    name: str
+
+    def __init__(self, line):
+        """Take an odt line and make into a PartitionLine."""
+        self.name = line.colums[0]
+
+
+@dataclass
+class SuggestionLine:
+    """A create / merge / merge+edit / ignore suggestion."""
+
+    suggestion_type: str
+    first: str
+    middle: str
+    last: str
+    email: str  # TODO: use some kind of email type like Type(email_address)
+    affiliation: str
+    title: str
+    pk: int
+
+
+@dataclass
+class ContributionLine:
+    """A line representing a contribution.
+
+    Here we also keep "suggestions" of similar authors from the database.
+    """
+
+    first: str
+    middle: str
+    last: str
+    email: str  # TODO: use some kind of email type like Type(email_address)
+    affiliation: str
+    title: str
+    suggestions: Iterable[SuggestionLine]
+
+    def __init__(self, row: namedtuple):
+        """Build a ContributionLine from a Pandas namedtuple."""
+        # TODO: map me more elegantly: can I unpack the namedtuple
+        # directly into the default __init__ of the dataclass?
+        self.first = row.first
+        self.middle = row.middle
+        self.last = row.last
+        self.email = row.email
+        self.affiliation = row.affiliation
+        self.title = row.title
+
+
 class IMUStep1(TemplateView):
     """Insert Many Users - first step.
 
@@ -498,11 +559,103 @@ class IMUStep1(TemplateView):
     form_class = forms.IMUForm
 
     def get(self, *args, **kwargs):
-        """Show a form to start the IMU process - upload data."""
+        """Show a form to start the IMU process - upload the data file."""
         form = self.form_class()
-        context = {"form": form}
         return render(
             self.request,
             template_name=self.template_name,
+            context={"form": form},
+        )
+
+    def post(self, *args, **kwargs):
+        """Receive the data file, process it and redirect along to the next step."""
+        form = self.form_class(self.request.POST, self.request.FILES)
+        if not form.is_valid:
+            return render(
+                self.request,
+                template_name=self.template_name,
+                context={"form": form},
+            )
+        data_file = form.files["data_file"]
+        context = {"lines": self.process_data_file(data_file)}
+        return render(
+            self.request,
+            template_name="admin/core/si_imu_check.html",
             context=context,
         )
+
+    def process_data_file(self, data_file) -> Iterable[ContributionLine]:
+        """Prepare data file to be presented in the input/merge form."""
+        result_lines = []
+
+        columns_names = ("first", "middle", "last", "email", "affiliation", "title")
+        sheet_index = 0
+        df = pd.read_excel(
+            data_file.read(),
+            sheet_name=sheet_index,
+            header=None,
+            names=columns_names,
+            engine="odf",
+        )
+        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.itertuples.html#pandas.DataFrame.itertuples
+        for row in df.itertuples(index=False):
+            line = self.examine_row(row)
+            result_lines.append(line)
+
+    def examine_row(self, row: namedtuple) -> ContributionLine:
+        """Parse a odt row (pandas namedtuple) into a Line.
+
+        Line can be a PartitionLine or a ContributionLine with its suggestions.
+        """
+        # Allow for dirty data: if I'm missing lastname and email,
+        # I'll consider this a PartitionLine and just use the
+        # firstname column as the partition name.
+        if not row.last and not row.email:
+            return PartitionLine(name=row.first)
+        line = ContributionLine(row)
+        line.suggestions = self.make_suggestion(line)
+        return line
+
+    def save_to_tmp(self, infile: UploadedFile) -> None:
+        """Save the given uploaded file to a temporary file.
+
+        Used to pass a path to pandas' `read_ods`.
+        """
+        path = f"/tmp/{infile.name}"
+        with open(path, "wb+") as destination:
+            for chunk in infile.chunks():
+                destination.write(chunk)
+        return path
+
+    def author_p(self, line):
+        """Take an odt line and check if it is valid "contribution line".
+
+        Basically just count the columns.
+        Also, fill all missing columns with None.
+        """
+        expected_column_count = 5
+        for i in range(expected_column_count):
+            if i > line.column_count:
+                line.add_column(None)
+
+    def make_suggestion(self, line: ContributionLine) -> Iterable[SuggestionLine]:
+        """Take a contribution line and find similar users in the DB."""
+        suggestions = []
+        try:
+            # Find similar users in the DB by email
+            # expect at most one and when one is found that is sufficient
+            suggestions.append(core_models.Account.objects.get(email=line.email))
+        except core_models.Account.DoesNotExist:
+            suggestions = self.make_more_suggestions(line)
+        return suggestions
+
+    def make_more_suggestions(self, line: ContributionLine) -> Iterable[SuggestionLine]:
+        """Take a contribution line and find similar users in the DB by euristics."""
+        suggestions = []
+        suggestions.append(
+            core_models.Account.objects.filter(
+                last_name=line.last,
+                first_name__istartswith=f"{line.first[0]}%",
+            ),
+        )
+        return suggestions

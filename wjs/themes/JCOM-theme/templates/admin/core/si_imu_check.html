@@ -1,0 +1,23 @@
+{% extends "admin/core/base.html" %}
+{% load foundation %}
+{% load i18n %}
+{% block title-section %}
+    {% trans "Insert Users" %} — {% trans "Step 2/3" %}
+{% endblock title-section %}
+{% block body %}
+    <div class="card">
+        <p>lines: {{ lines }}.</p>
+        {% for line in lines %}
+            <div class="card-section">
+                <div class="row">
+                    <div class="large-6 columns">{{ line.first }}</div>
+                </div>
+                {% for suggestion in line.suggestions %}
+                    <div class="row">
+                        <div class="large-6 columns">{{ suggestion.first }} {{ suggestion.type }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock body %}
