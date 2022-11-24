@@ -30,27 +30,19 @@
                                             <td colspan="7">{{ line.name }}</td>
                                         </tr>
                                         <input type="hidden"
-                                               name="just_the_name_{{ forloop.counter0 }}"
+                                               name="just_the_name_{{ line.index }}"
                                                value="{{ line.name }}"/>
                                     {% else %}
+                                        <input type="hidden" name="first_{{ line.index }}" value="{{ line.first }}"/>
                                         <input type="hidden"
-                                               name="first_{{ forloop.counter0 }}"
-                                               value="{{ line.first }}"/>
-                                        <input type="hidden"
-                                               name="middle_{{ forloop.counter0 }}"
+                                               name="middle_{{ line.index }}"
                                                value="{{ line.middle }}"/>
+                                        <input type="hidden" name="last_{{ line.index }}" value="{{ line.last }}"/>
+                                        <input type="hidden" name="email_{{ line.index }}" value="{{ line.email }}"/>
                                         <input type="hidden"
-                                               name="last_{{ forloop.counter0 }}"
-                                               value="{{ line.last }}"/>
-                                        <input type="hidden"
-                                               name="email_{{ forloop.counter0 }}"
-                                               value="{{ line.email }}"/>
-                                        <input type="hidden"
-                                               name="institution_{{ forloop.counter0 }}"
+                                               name="institution_{{ line.index }}"
                                                value="{{ line.institution }}"/>
-                                        <input type="hidden"
-                                               name="title_{{ forloop.counter0 }}"
-                                               value="{{ line.title }}"/>
+                                        <input type="hidden" name="title_{{ line.index }}" value="{{ line.title }}"/>
                                         <tr>
                                             <td>{{ line.first }}</td>
                                             <td>{{ line.middle }}</td>
@@ -76,12 +68,14 @@
                                                 <td class="suggestion">{{ suggestion.email }}</td>
                                                 <td class="suggestion">{{ suggestion.institution }}</td>
                                                 <td class="suggestion">{{ suggestion.pk }}</td>
-                                                <td>line index? x{{ line.index }}x
-                                                    <input type="radio" name="action-{{ suggestion.line_index }}" value="DB"/>
+                                                <td>
+                                                    <input type="radio"
+                                                           name="action-{{ line.index }}"
+                                                           value="DB_{{ suggestion.pk }}"/>
                                                     DB
                                                     <input type="radio"
-                                                           name="action-{{ suggestion.line_index }}"
-                                                           value="edit"
+                                                           name="action-{{ line.index }}"
+                                                           value="edit_{{ suggestion.pk }}"
                                                            {% if suggestion.is_best_suggestion %}checked="checked"{% endif %}/>
                                                     edit...
                                                 </td>

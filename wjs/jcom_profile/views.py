@@ -504,6 +504,7 @@ class PartitionLine:
     """
 
     name: str
+    index: int
     # something to ease discriminating between PartitionLinse and
     # ContributionLines in templates
     is_just_a_name = True
@@ -520,7 +521,6 @@ class SuggestionLine:
     institution: str
     title: str
     pk: int
-    line_index: int
     is_best_suggestion: bool = False
 
     # TODO: def __init__(line: ContributionLine... come si fa se ho definizioni incrociate?
@@ -534,7 +534,6 @@ class SuggestionLine:
         self.email = core_account.email
         self.institution = core_account.institution
         self.pk = core_account.id
-        self.line_index = line.index
         if line.email == core_account.email:
             self.is_best_suggestion = True
 
@@ -632,7 +631,7 @@ class IMUStep1(TemplateView):
         # I'll consider this a PartitionLine and just use the
         # firstname column as the partition name.
         if self.is_empty_value(row.last) and self.is_empty_value(row.email):
-            return PartitionLine(name=row.first)
+            return PartitionLine(name=row.first, index=row.Index)
         line = ContributionLine(row)
         line.suggestions = self.make_suggestion(line)
         return line
@@ -671,6 +670,9 @@ class IMUStep1(TemplateView):
         ]
 
 
+ODTLine = namedtuple("ODTLine", ["first", "middle", "last", "email", "institution"])
+
+
 # TODO: protect me!
 class IMUStep2(TemplateView):
     """Insert Many Users - second step.
@@ -687,7 +689,7 @@ class IMUStep2(TemplateView):
         - prepare existing accounts for editing if necessary
         """
         # TODO: validate... single fields? somthing else???
-        self.extra_context = {"lines": []}
+        self.extra_context = {"lines": [], "edit_suggestions": {}}
         for i in range(int(self.request.POST["tot_lines"])):
             if f"just_the_name_{i}" in self.request.POST:
                 # this is just a partition, nothing to do
@@ -700,12 +702,22 @@ class IMUStep2(TemplateView):
 
     def process(self, index: int):
         """Process line "index"."""
-        action = self.request.POST.get(f"action-{index}", "unspecified")
+        # actions come in these forms:
+        # - action-1_skip
+        # - action-1_new
+        # - action-1_db_123
+        # - action-1_edit_123
+        # Here we just find to where we should dispatch the processing to.
+        action_suggestion = self.request.POST.get(f"action-{index}", "unspecified")
+        action, *suggestion = action_suggestion.split("_")
         func = getattr(self, f"action_{action}")
         try:
-            func(index)
+            if suggestion:
+                func(index, int(suggestion[0]))
+            else:
+                func(index)
         except Exception as e:
-            self.extra_context["lines"].append(f"{index} - ERROR - {action.upper()} - {e}")
+            self.add_line(index, msg=f"ERROR - {action.upper()} - {e}")
 
     def action_new(self, index):
         """Create a contribution and a new core.Account."""
@@ -716,6 +728,44 @@ class IMUStep2(TemplateView):
             email=self.request.POST[f"email_{index}"],
             institution=self.request.POST[f"institution_{index}"],
         )
+        article = self.create_article(index, author)
+        self.add_line(index, msg=f"NEW - {article}")
+
+    def action_skip(self, index):
+        """Skip."""
+        self.add_line(index, msg="SKIP")
+
+    def action_db(self, index, pk):
+        """Create a contribution and using the suggested author (core.Account) as-is."""
+        author = core_models.Account.objects.get(pk=pk)
+        article = self.create_article(index, author)
+        self.add_line(index, msg=f"DB - {article} by {author}")
+
+    def action_edit(self, index, pk):
+        """Create a contribution and prepare the suggested author (core.Account) for editing."""
+        author = core_models.Account.objects.get(pk=pk)
+        article = self.create_article(index, author)
+        form = forms.AAA(instance=author)
+        odtline = ODTLine(
+            first=self.request.POST[f"first_{index}"],
+            middle=self.request.POST[f"middle_{index}"],
+            last=self.request.POST[f"last_{index}"],
+            email=self.request.POST[f"email_{index}"],
+            institution=self.request.POST[f"institution_{index}"],
+        )
+        self.add_line(index, msg=f"EDIT - {article} by {author}", form=form, odtline=odtline)
+
+    def action_unspecified(self, index):
+        """Report 💩."""
+        self.add_line(index, msg="UNSPECIFIED - 💩")
+
+    def add_line(self, index, **kwargs):
+        """Add a line of data in extra_context."""
+        kwargs["index"] = index
+        self.extra_context["lines"].append(kwargs)
+
+    def create_article(self, index, author):
+        """Create an article with data from the given index and author."""
         article = submission_models.Article(
             # do I need this? last_modified=now()
             journal=self.request.journal,
@@ -734,20 +784,4 @@ class IMUStep2(TemplateView):
         article.save()  # why doesn't it get saved using `create`?!?
         article.authors.set([author])
         article.save()
-        self.extra_context["lines"].append(f"{index} - NEW - {article}")
-
-    def action_skip(self, index):
-        """Skip."""
-        self.extra_context["lines"].append(f"{index} - SKIP")
-
-    def action_db(self, index):
-        """Create a contribution and using the suggested author (core.Account) as-is."""
-        self.extra_context["lines"].append(f"{index} - DB")
-
-    def action_edit(self, index):
-        """Create a contribution and prepare the suggested author (core.Account) for editing."""
-        self.extra_context["lines"].append(f"{index} - EDIT")
-
-    def action_unspecified(self, index):
-        """Report 💩."""
-        self.extra_context["lines"].append(f"{index} - UNSPECIFIED - 💩")
+        return article

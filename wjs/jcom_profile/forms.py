@@ -2,6 +2,7 @@
 
 import uuid
 
+from core import models as core_models
 from core.forms import EditAccountForm
 from django import forms
 from django.forms import ModelForm, inlineformset_factory
@@ -249,3 +250,17 @@ class IMUForm(forms.Form):
         initial="optimistic",
         help_text="Being optimistic ... TODO WRITE ME!",
     )
+
+
+class AAA(forms.ModelForm):
+    """Form to keep existing user data and new data for update."""
+
+    class Meta:
+        model = core_models.Account
+        fields = [
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "institution",
+        ]
