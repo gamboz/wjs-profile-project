@@ -8,14 +8,16 @@
             {{ formset.management_form }}
             {{ formset.as_p }}
             <div class="input-field col s12">
+                {{ form.workload }}
+                <label for={{ form.workload.id }}>Workload</label>
+            </div>
+            <div class="input-field col s12">
                 {{ form.brake_on }}
                 <label for={{ form.brake_on.id }}>Brake On</label>
             </div>
             <div class="input-field col s12">
-                {{ form.workload }}
-                <label for={{ form.workload.id }}>Workload</label>
+                <input type="submit"/>
             </div>
-            <input type="submit"/>
         </form>
     </div>
 {% endblock body %}

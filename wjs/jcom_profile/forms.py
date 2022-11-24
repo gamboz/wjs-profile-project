@@ -178,11 +178,41 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
             "workload",
         ]
 
+class DirectorEditorAssignmentParametersForm(forms.ModelForm):
+    class Meta:
+        model = EditorAssignmentParameters
+        fields = [
+            "brake_on",
+            "workload",
+        ]
+        widgets = {
+            'workload': forms.TextInput(attrs={"readonly": True}),
+        }
+
+class EditorKeywordForm(forms.ModelForm):
+    # this is a "fake" field added only to have a proper rendering of the keyword value, but without any link
+    # to the model field
+    keyword_str = forms.CharField(widget=forms.TextInput(attrs={"readonly": True}), label=_("Keyword"))
+    field_order = ["keyword_str", "weight"]
+
+    class Meta:
+        model = EditorKeyword
+        fields = ["weight"]
+
+    def __init__(self, *args, **kwargs):
+        if "initial" not in kwargs:
+            kwargs["initial"] = {}
+        # forcing the keyword content in the "fake" field allowed the field to be rendered, but it's disconnected
+        # from the model field and is ignored on save
+        kwargs["initial"]["keyword_str"] = kwargs["instance"].keyword.word
+        super().__init__(*args, **kwargs)
+
 
 EditorKeywordFormset = inlineformset_factory(
     EditorAssignmentParameters,
     EditorKeyword,
     fk_name="editor_parameters",
-    fields=("keyword", "weight"),
     extra=0,
+    can_delete=False,
+    form=EditorKeywordForm
 )
