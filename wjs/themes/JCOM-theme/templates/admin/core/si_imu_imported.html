@@ -1,0 +1,18 @@
+{% extends "admin/core/base.html" %}
+{% load foundation %}
+{% load i18n %}
+{% block title-section %}
+    {% trans "Insert Users" %} — {% trans "Step 3/3" %}
+{% endblock title-section %}
+{% block body %}
+    {{ forma.media }}
+    <div class="card">
+        <div class="card-section">
+            {% for line in view.extra_context.lines %}
+                <div class="row">
+                    <div class="large-12 columns">{{ line }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock body %}

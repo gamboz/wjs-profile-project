@@ -512,14 +512,30 @@ class PartitionLine:
 class SuggestionLine:
     """A create / merge / merge+edit / ignore suggestion."""
 
-    suggestion_type: str
     first: str
     middle: str
     last: str
     email: str  # TODO: use some kind of email type like Type(email_address)
-    affiliation: str
+    institution: str
     title: str
     pk: int
+    line_index: int
+    is_best_suggestion: bool = False
+
+    # TODO: def __init__(line: ContributionLine... come si fa se ho definizioni incrociate?
+    def __init__(self, core_account, line):
+        """Build a SuggestionLine from an item of a queryset."""
+        # TODO: map me more elegantly: can I unpack the namedtuple
+        # directly into the default __init__ of the dataclass?
+        self.first = core_account.first_name
+        self.middle = core_account.middle_name
+        self.last = core_account.last_name
+        self.email = core_account.email
+        self.institution = core_account.institution
+        self.pk = core_account.id
+        self.line_index = line.index
+        if line.email == core_account.email:
+            self.is_best_suggestion = True
 
 
 @dataclass
@@ -533,7 +549,7 @@ class ContributionLine:
     middle: str
     last: str
     email: str  # TODO: use some kind of email type like Type(email_address)
-    affiliation: str
+    institution: str
     title: str
     suggestions: Iterable[SuggestionLine]
 
@@ -545,8 +561,9 @@ class ContributionLine:
         self.middle = row.middle
         self.last = row.last
         self.email = row.email
-        self.affiliation = row.affiliation
+        self.institution = row.institution
         self.title = row.title
+        self.index = row.Index  # watch out for "Index" uppercase "I"
 
 
 class IMUStep1(TemplateView):
@@ -576,7 +593,7 @@ class IMUStep1(TemplateView):
                 context={"form": form},
             )
         data_file = form.files["data_file"]
-        context = {"lines": self.process_data_file(data_file)}
+        context = {"lines": self.process_data_file(data_file), "special_issue_id": kwargs["pk"]}
         return render(
             self.request,
             template_name="admin/core/si_imu_check.html",
@@ -587,7 +604,7 @@ class IMUStep1(TemplateView):
         """Prepare data file to be presented in the input/merge form."""
         result_lines = []
 
-        columns_names = ("first", "middle", "last", "email", "affiliation", "title")
+        columns_names = ("first", "middle", "last", "email", "institution", "title")
         sheet_index = 0
         df = pd.read_excel(
             data_file.read(),
@@ -599,7 +616,7 @@ class IMUStep1(TemplateView):
         )
         # df = df.astype(str) NOPE: empty values become "nan" strings
         # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.itertuples.html#pandas.DataFrame.itertuples
-        for row in df.itertuples(index=False):
+        for row in df.itertuples(index=True):
             line = self.examine_row(row)
             result_lines.append(line)
         return result_lines
@@ -632,15 +649,73 @@ class IMUStep1(TemplateView):
         try:
             # Find similar users in the DB by email
             # expect at most one and when one is found that is sufficient
-            suggestions.append(core_models.Account.objects.get(email=line.email))
+            user_with_same_email = core_models.Account.objects.get(email=line.email)
         except core_models.Account.DoesNotExist:
             suggestions = self.make_more_suggestions(line)
+        else:
+            suggestions.append(SuggestionLine(user_with_same_email, line))
+
         return suggestions
 
     def make_more_suggestions(self, line: ContributionLine) -> Iterable[SuggestionLine]:
         """Take a contribution line and find similar users in the DB by euristics."""
         # TODO: use self.form.cleaned_data.match_euristic
-        return core_models.Account.objects.filter(
-            last_name__iexact=line.last,
-            first_name__istartswith=line.first,
-        )
+        return [
+            SuggestionLine(suggestion, line)
+            for suggestion in core_models.Account.objects.filter(
+                last_name__iexact=line.last,
+                first_name__istartswith=line.first[0],
+            )
+        ]
+
+
+# TODO: protect me!
+class IMUStep2(TemplateView):
+    """Insert Many Users - second step.
+
+    We should receive a "list" of users/contributions to process.
+    """
+
+    def post(self, *args, **kwargs):
+        """Process things an necessary.
+
+        We will:
+        - create users accounts
+        - create articles (linked to the given special issue) if necessary
+        - prepare existing accounts for editing if necessary
+        """
+        # TODO: validate... single fields? somthing else???
+        self.extra_context = {"lines": []}
+        for i in range(int(self.request.POST["tot_lines"])):
+            if f"just_the_name_{i}" in self.request.POST:
+                # this is just a partition, nothing to do
+                self.extra_context["lines"].append(f"{i} - PARTITION")
+                continue
+            self.process(i)
+        return self.render_to_response(context=self.get_context_data())
+
+    def process(self, index: int):
+        """Process line "index"."""
+        action = self.request.POST.get(f"action-{index}", "unspecified")
+        func = getattr(self, f"action_{action}")
+        func(index)
+
+    def action_new(self, index):
+        """Create a contribution and a new core.Account."""
+        self.extra_context["lines"].append(f"{index} - NEW")
+
+    def action_skip(self, index):
+        """Skip."""
+        self.extra_context["lines"].append(f"{index} - SKIP")
+
+    def action_db(self, index):
+        """Create a contribution and using the suggested author (core.Account) as-is."""
+        self.extra_context["lines"].append(f"{index} - DB")
+
+    def action_edit(self, index):
+        """Create a contribution and prepare the suggested author (core.Account) for editing."""
+        self.extra_context["lines"].append(f"{index} - EDIT")
+
+    def action_unspecified(self, index):
+        """Report 💩."""
+        self.extra_context["lines"].append(f"{index} - UNSPECIFIED - 💩")

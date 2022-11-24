@@ -68,6 +68,11 @@ urlpatterns = [
         views.IMUStep1.as_view(template_name="admin/core/si_imu_upload.html"),
         name="si-imu-1",
     ),
+    url(
+        r"^si/(?P<pk>\d+)/imu2-import$",
+        views.IMUStep2.as_view(template_name="admin/core/si_imu_imported.html"),
+        name="si-imu-2",
+    ),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)

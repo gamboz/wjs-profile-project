@@ -7,57 +7,98 @@
 {% block body %}
     <div class="card">
         <div class="card-section">
-            <table>
-                <thead>
-                    <th>first</th>
-                    <th>middle</th>
-                    <th>last</th>
-                    <th>email</th>
-                    <th>affiliation</th>
-                    <th>title</th>
-                    <th>&nbsp</th>
-                </thead>
-                <tbody>
-                    {% for line in lines %}
-                        {% if line.is_just_a_name %}
-                            <tr>
-                                <td colspan="7">{{ line.name }}</td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td>{{ line.first }}</td>
-                                <td>{{ line.middle }}</td>
-                                <td>{{ line.last }}</td>
-                                <td>{{ line.email }}</td>
-                                <td>{{ line.affiliation }}</td>
-                                <td>{{ line.title }}</td>
-                                <td>
-                                    <input type="radio" name="line-WRITEME" value="new"/>
-                                    new
-                                    <input type="radio" name="line-WRITEME" value="skip"/>
-                                    skip (ignore line)
-                                </td>
-                            </tr>
-                            {% for suggestion in line.suggestions %}
-                                <tr>
-                                    <td class="suggestion">{{ suggestion.first_name }}</td>
-                                    <td class="suggestion">{{ suggestion.middle_name }}</td>
-                                    <td class="suggestion">{{ suggestion.last_name }}</td>
-                                    <td class="suggestion">{{ suggestion.email }}</td>
-                                    <td class="suggestion">{{ suggestion.affiliation }}</td>
-                                    <td class="suggestion">{{ suggestion.id }}</td>
-                                    <td>
-                                        <input type="radio" name="line-WRITEME" value="DB"/>
-                                        DB
-                                        <input type="radio" name="line-WRITEME" value="edit"/>
-                                        edit...
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
+            {% include "elements/forms/errors.html" with form=form %}
+            <form method="post" action="{% url 'si-imu-2' pk=special_issue_id %}">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="large-12 columns">
+                        <input type="hidden" name="tot_lines" value="{{ lines|length }}"/>
+                        <table>
+                            <thead>
+                                <th>first</th>
+                                <th>middle</th>
+                                <th>last</th>
+                                <th>email</th>
+                                <th>affiliation</th>
+                                <th>title</th>
+                                <th>&nbsp</th>
+                            </thead>
+                            <tbody>
+                                {% for line in lines %}
+                                    {% if line.is_just_a_name %}
+                                        <tr>
+                                            <td colspan="7">{{ line.name }}</td>
+                                        </tr>
+                                        <input type="hidden"
+                                               name="just_the_name_{{ forloop.counter0 }}"
+                                               value="{{ line.name }}"/>
+                                    {% else %}
+                                        <input type="hidden"
+                                               name="first_{{ forloop.counter0 }}"
+                                               value="{{ line.first }}"/>
+                                        <input type="hidden"
+                                               name="middle_{{ forloop.counter0 }}"
+                                               value="{{ line.middle }}"/>
+                                        <input type="hidden"
+                                               name="last_{{ forloop.counter0 }}"
+                                               value="{{ line.last }}"/>
+                                        <input type="hidden"
+                                               name="email_{{ forloop.counter0 }}"
+                                               value="{{ line.email }}"/>
+                                        <input type="hidden"
+                                               name="institution_{{ forloop.counter0 }}"
+                                               value="{{ line.institution }}"/>
+                                        <input type="hidden"
+                                               name="title_{{ forloop.counter0 }}"
+                                               value="{{ line.title }}"/>
+                                        <tr>
+                                            <td>{{ line.first }}</td>
+                                            <td>{{ line.middle }}</td>
+                                            <td>{{ line.last }}</td>
+                                            <td>{{ line.email }}</td>
+                                            <td>{{ line.institution }}</td>
+                                            <td>{{ line.title }}</td>
+                                            <td>
+                                                <input type="radio"
+                                                       name="action-{{ line.index }}"
+                                                       value="new"
+                                                       {% if not line.suggestions %}checked="checked"{% endif %}/>
+                                                new
+                                                <input type="radio" name="action-{{ line.index }}" value="skip"/>
+                                                skip (ignore line)
+                                            </td>
+                                        </tr>
+                                        {% for suggestion in line.suggestions %}
+                                            <tr>
+                                                <td class="suggestion">{{ suggestion.first }}</td>
+                                                <td class="suggestion">{{ suggestion.middle }}</td>
+                                                <td class="suggestion">{{ suggestion.last }}</td>
+                                                <td class="suggestion">{{ suggestion.email }}</td>
+                                                <td class="suggestion">{{ suggestion.institution }}</td>
+                                                <td class="suggestion">{{ suggestion.pk }}</td>
+                                                <td>line index? x{{ line.index }}x
+                                                    <input type="radio" name="action-{{ suggestion.line_index }}" value="DB"/>
+                                                    DB
+                                                    <input type="radio"
+                                                           name="action-{{ suggestion.line_index }}"
+                                                           value="edit"
+                                                           {% if suggestion.is_best_suggestion %}checked="checked"{% endif %}/>
+                                                    edit...
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="large-12 columns">
+                        <input type="submit" value="Import..." />
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 {% endblock body %}
