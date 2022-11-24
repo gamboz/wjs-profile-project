@@ -19,6 +19,7 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from repository import models as preprint_models
@@ -593,6 +594,7 @@ class IMUStep1(TemplateView):
                 context={"form": form},
             )
         data_file = form.files["data_file"]
+        # TODO: shoul I dynamically create forms?
         context = {"lines": self.process_data_file(data_file), "special_issue_id": kwargs["pk"]}
         return render(
             self.request,
@@ -692,17 +694,47 @@ class IMUStep2(TemplateView):
                 self.extra_context["lines"].append(f"{i} - PARTITION")
                 continue
             self.process(i)
+        # TODO: is this correct??? in the template I have to use `view.extra_context.lines`
+        #       (I expected that extra_context would be "merged" into context to let me address just `lines`)
         return self.render_to_response(context=self.get_context_data())
 
     def process(self, index: int):
         """Process line "index"."""
         action = self.request.POST.get(f"action-{index}", "unspecified")
         func = getattr(self, f"action_{action}")
-        func(index)
+        try:
+            func(index)
+        except Exception as e:
+            self.extra_context["lines"].append(f"{index} - ERROR - {action.upper()} - {e}")
 
     def action_new(self, index):
         """Create a contribution and a new core.Account."""
-        self.extra_context["lines"].append(f"{index} - NEW")
+        author = core_models.Account.objects.create(
+            first_name=self.request.POST[f"first_{index}"],
+            middle_name=self.request.POST[f"middle_{index}"],
+            last_name=self.request.POST[f"last_{index}"],
+            email=self.request.POST[f"email_{index}"],
+            institution=self.request.POST[f"institution_{index}"],
+        )
+        article = submission_models.Article(
+            # do I need this? last_modified=now()
+            journal=self.request.journal,
+            title=self.request.POST[f"title_{index}"],
+            owner=author,
+            # TODO: enable choosing a section in the first step
+            section=submission_models.Section.objects.get(journal=self.request.journal, name="Article"),
+            # TODO: enable choosing a license in the first step
+            license=submission_models.Licence.objects.filter(journal=self.request.journal).first(),
+            date_started=timezone.now(),
+            # date_submitted=... NOPE! this indicates when the submission has been "finished"
+            # TODO: find out which "steps" we can choose from and their relation with "stages"
+            current_step=1,
+            stage=submission_models.STAGE_UNSUBMITTED,
+        )
+        article.save()  # why doesn't it get saved using `create`?!?
+        article.authors.set([author])
+        article.save()
+        self.extra_context["lines"].append(f"{index} - NEW - {article}")
 
     def action_skip(self, index):
         """Skip."""
