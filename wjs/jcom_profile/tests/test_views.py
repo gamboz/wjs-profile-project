@@ -246,7 +246,7 @@ def test_update_editor_assignment_parameters(editor, roles, keywords, journal):
 
     client = Client()
     client.force_login(editor)
-    url = reverse("assignment_parameters", kwargs={"editor_pk": editor.janeway_account.pk})
+    url = f"/{journal.code}/update/parameters/"
     data = {"keywords": list(keywords_id), "workload": workload}
     response = client.post(url, data)
     assert response.status_code == 302
