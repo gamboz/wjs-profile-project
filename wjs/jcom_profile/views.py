@@ -25,7 +25,11 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
-from wjs.jcom_profile.forms import EditorKeywordFormset, UpdateAssignmentParametersForm, DirectorEditorAssignmentParametersForm
+from wjs.jcom_profile.forms import (
+    DirectorEditorAssignmentParametersForm,
+    EditorKeywordFormset,
+    UpdateAssignmentParametersForm,
+)
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
@@ -432,10 +436,14 @@ class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
         return reverse("assignment_parameters")
 
 
-class DirectorEditorAssignmentParametersUpdate(UpdateView):
+class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
     model = EditorAssignmentParameters
     form_class = DirectorEditorAssignmentParametersForm
     template_name = "submission/director_update_editor_parameters.html"
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_staff
 
     def get_object(self, queryset=None):
         editor_pk, journal = self.kwargs.get("editor_pk"), self.request.journal
