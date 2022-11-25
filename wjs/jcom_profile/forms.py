@@ -236,7 +236,7 @@ class IMUForm(forms.Form):
         help_text="Upload odt file with first, middle, last name, email, affiliation, paper title; one per row.",
     )
     create_articles_on_import = forms.BooleanField(
-        required=True,
+        required=False,
         initial=True,
         help_text="If set to false, articles are not created. The authors must start a submission themselves.",
     )

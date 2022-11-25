@@ -595,7 +595,11 @@ class IMUStep1(TemplateView):
             )
         data_file = form.files["data_file"]
         # TODO: shoul I dynamically create forms?
-        context = {"lines": self.process_data_file(data_file), "special_issue_id": kwargs["pk"]}
+        context = {
+            "lines": self.process_data_file(data_file),
+            "special_issue_id": kwargs["pk"],
+            "create_articles_on_import": form.data.get("create_articles_on_import", ""),
+        }
         return render(
             self.request,
             template_name="admin/core/si_imu_check.html",
@@ -812,6 +816,8 @@ class IMUStep2(TemplateView):
 
     def create_article(self, index, author):
         """Create an article with data from the given index and author."""
+        if not self.request.POST.get("create_articles_on_import", False):
+            return
         article = submission_models.Article(
             # do I need this? last_modified=now()
             journal=self.request.journal,
