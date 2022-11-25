@@ -5,11 +5,12 @@
 {% load hooks %}
 {% load files %}
 {% load securitytags %}
+{% load wjs_tags %}
 {% block title-section %}
     {% trans "Edit Special Issue" %} {{ object.name }} — <a href="{% url 'si-details' object.pk %}">view</a>
 {% endblock title-section %}
 {% block body %}
-    {{ forma.media }}
+    {{ form.media }}
     <div class="card">
         <div class="card-section">
             {% include "elements/forms/errors.html" with form=form %}
@@ -112,6 +113,49 @@
                         <input type="file" name="new-file"/>
                         <input type="submit" value="Upload" />
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h2>Articles</h2>
+    <div class="card">
+        <div class="card-section">
+            <div class="row">
+                <div class="large-12 columns">
+                    <a href="{% url 'si-imu-1' pk=object.pk %}">Bulk-insert users</a> (create multiple authors/article by uploading a spreadsheed).
+                </div>
+            </div>
+        </div>
+        <div class="card-section">
+            <div class="row">
+                <div class="large-12 columns">
+                    <ol>
+                        {% for wrapper in object.articles.all %}
+                            {% with article=wrapper|article %}
+                                <li>
+                                    {{ article.title }} {{ article.id }} by {{ article.author_list }}
+                                </li>
+                            {% endwith %}
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h2>
+        Invitees
+    </h2>
+    <div class="card">
+        <div class="card-section">
+            <div class="row">
+                <div class="large-12 columns">
+                    <ol>
+                        {% for user in object.invitees.all %}
+                            <li>
+                                {{ user.get_full_name }}
+                            </li>
+                        {% endfor %}
+                    </ol>
                 </div>
             </div>
         </div>

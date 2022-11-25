@@ -252,8 +252,8 @@ class IMUForm(forms.Form):
     )
 
 
-class AAA(forms.ModelForm):
-    """Form to keep existing user data and new data for update."""
+class IMUEditExistingAccounts(forms.ModelForm):
+    """Form to allow the modification of exising account during IMU process."""
 
     apply_changes = forms.BooleanField(required=False, initial=False, help_text="Apply changes to this user account")
 

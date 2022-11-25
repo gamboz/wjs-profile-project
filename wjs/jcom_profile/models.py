@@ -131,6 +131,7 @@ class SpecialIssue(models.Model):
     )
     journal = models.ForeignKey(to=Journal, on_delete=models.CASCADE)
     documents = models.ManyToManyField(to="core.File", limit_choices_to={"article_id": None})
+    invitees = models.ManyToManyField(to="core.Account")
 
     def get_absolute_url(self):
         """Get the absolute URL (where create-view redirects on success)."""
@@ -166,7 +167,7 @@ class ArticleWrapper(models.Model):
     special_issue = models.ForeignKey(
         to=SpecialIssue,
         on_delete=models.DO_NOTHING,  # TODO: check me!
-        related_name="special_issue",
+        related_name="articles",
         null=True,
     )
 

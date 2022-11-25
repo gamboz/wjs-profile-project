@@ -587,7 +587,7 @@ class IMUStep1(TemplateView):
     def post(self, *args, **kwargs):
         """Receive the data file, process it and redirect along to the next step."""
         form = self.form_class(self.request.POST, self.request.FILES)
-        if not form.is_valid:
+        if not form.is_valid():
             return render(
                 self.request,
                 template_name=self.template_name,
@@ -674,7 +674,7 @@ class IMUStep1(TemplateView):
 ODTLine = namedtuple("ODTLine", ["first", "middle", "last", "email", "institution"])
 imu_edit_formset_factory = modelformset_factory(
     model=core_models.Account,
-    form=forms.AAA,
+    form=forms.IMUEditExistingAccounts,
     extra=0,
 )
 
@@ -708,6 +708,10 @@ class IMUStep2(TemplateView):
         #     - layout the ODT data
         #     - layout the form
 
+        # fetch the special issue object; it will be used by all
+        # methods that create an article
+        self.special_issue = SpecialIssue.objects.get(pk=kwargs["pk"])
+
         # collect accounts we should present for editing and the
         # relative new possible data
         self.accounts_to_edit = []
@@ -722,6 +726,8 @@ class IMUStep2(TemplateView):
                 continue
             self.process(i)
 
+        # save the special issue because invitees have probably been added
+        self.special_issue.save()
         formset = imu_edit_formset_factory(queryset=core_models.Account.objects.filter(pk__in=self.accounts_to_edit))
         return self.render_to_response(
             context=self.get_context_data(
@@ -759,6 +765,9 @@ class IMUStep2(TemplateView):
             email=self.request.POST[f"email_{index}"],
             institution=self.request.POST[f"institution_{index}"],
         )
+        # No need to check if `author` is already in
+        # `special_issue.invitees` (django takes care) 🎉
+        self.special_issue.invitees.add(author)
         article = self.create_article(index, author)
         self.add_line(index, msg=f"NEW - {article}")
 
@@ -769,12 +778,14 @@ class IMUStep2(TemplateView):
     def action_db(self, index, pk):
         """Create a contribution and using the suggested author (core.Account) as-is."""
         author = core_models.Account.objects.get(pk=pk)
+        self.special_issue.invitees.add(author)
         article = self.create_article(index, author)
         self.add_line(index, msg=f"DB - {article} by {author}")
 
     def action_edit(self, index, pk):
         """Create a contribution and prepare the suggested author (core.Account) for editing."""
         author = core_models.Account.objects.get(pk=pk)
+        self.special_issue.invitees.add(author)
         article = self.create_article(index, author)
         # I'd prefer to use the author directly, but the formset wants
         # a queryset, not a list...
@@ -818,6 +829,8 @@ class IMUStep2(TemplateView):
         )
         article.save()  # why doesn't it get saved using `create`?!?
         article.authors.set([author])
+        article.articlewrapper.special_issue = self.special_issue
+        article.articlewrapper.save()
         article.save()
         return article
 
