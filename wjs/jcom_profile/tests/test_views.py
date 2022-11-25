@@ -9,11 +9,7 @@ from submission import models as submission_models
 from submission.models import Keyword
 from utils import setting_handler
 
-from wjs.jcom_profile.models import (
-    EditorAssignmentParameters,
-    EditorKeyword,
-    JCOMProfile,
-)
+from wjs.jcom_profile.models import EditorAssignmentParameters, JCOMProfile
 from wjs.jcom_profile.tests.conftest import ASSIGNMENT_PARAMETERS_SPAN, INVITE_BUTTON
 from wjs.jcom_profile.utils import generate_token
 
@@ -274,14 +270,26 @@ def test_assignment_parameter_button_is_present_in_editors_interface(admin, edit
 
 
 @pytest.mark.django_db
-def test_director_can_change_editor_keywords(admin, editor, journal, keywords):
-    editor_parameters = EditorAssignmentParameters.objects.create(editor=editor.janeway_account, journal=journal)
-    for k in keywords:
-        EditorKeyword.objects.create(editor_parameters=editor_parameters, keyword=k)
-
+@pytest.mark.parametrize("user_role", ("staff", "editor"))
+def test_director_can_change_editor_keywords(journal, roles, user_role, user):
     client = Client()
-    client.force_login(admin)
-    url = f"/{journal.code}/update/parameters/{editor.janeway_account.pk}/"
+    jcom_user = JCOMProfile.objects.get(janeway_account=user)
+    jcom_user.gdpr_checkbox = True
+    jcom_user.is_active = True
+    # User are staff or editor
+    if user_role == "staff":
+        jcom_user.is_staff = True
+
+    elif user_role == "editor":
+        user.add_account_role("editor", journal)
+    jcom_user.save()
+
+    client.force_login(jcom_user)
+
+    url = f"/{journal.code}/update/parameters/{jcom_user.janeway_account.pk}/"
     response = client.get(url)
 
-    assert response.status_code == 200
+    if user_role == "staff":
+        assert response.status_code == 200
+    else:
+        assert response.status_code == 403

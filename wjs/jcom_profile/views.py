@@ -2,7 +2,6 @@
 from core import files as core_files
 from core import logic
 from core import models as core_models
-from core.models import Account
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -32,7 +31,6 @@ from wjs.jcom_profile.forms import (
 )
 from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
-    EditorKeyword,
     JCOMProfile,
     SpecialIssue,
 )
@@ -413,8 +411,9 @@ class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
     model = EditorAssignmentParameters
     form_class = UpdateAssignmentParametersForm
     template_name = "submission/update_editor_parameters.html"
+    raise_exception = True
 
-    def test_func(self):
+    def test_func(self):  # noqa
         user = self.request.user
         journal = self.request.journal
         return user.check_role(
@@ -440,12 +439,13 @@ class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
     model = EditorAssignmentParameters
     form_class = DirectorEditorAssignmentParametersForm
     template_name = "submission/director_update_editor_parameters.html"
+    raise_exception = True
 
-    def test_func(self):
+    def test_func(self):  # noqa
         user = self.request.user
         return user.is_staff
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset=None):  # noqa
         editor_pk, journal = self.kwargs.get("editor_pk"), self.request.journal
         editor = JCOMProfile.objects.get(pk=editor_pk)
         if not editor.check_role(journal, "editor"):
@@ -463,7 +463,7 @@ class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
         context["formset"] = formset
         return context
 
-    def form_valid(self, form):
+    def form_valid(self, form):  # noqa
         context = self.get_context_data()
         formset = context.get("formset")
         if formset.is_valid():
