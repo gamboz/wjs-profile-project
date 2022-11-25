@@ -9,7 +9,11 @@ from submission import models as submission_models
 from submission.models import Keyword
 from utils import setting_handler
 
-from wjs.jcom_profile.models import EditorAssignmentParameters, JCOMProfile
+from wjs.jcom_profile.models import (
+    EditorAssignmentParameters,
+    EditorKeyword,
+    JCOMProfile,
+)
 from wjs.jcom_profile.tests.conftest import ASSIGNMENT_PARAMETERS_SPAN, INVITE_BUTTON
 from wjs.jcom_profile.utils import generate_token
 
@@ -223,7 +227,7 @@ def test_assignment_parameters_button_is_in_edit_profile_interface_if_user_is_st
 
 
 @pytest.mark.django_db
-def test_assignment_parameters_button_is_not_without_journal(
+def test_assignment_parameters_button_is_not_present_without_journal(
     admin,
     journal,
 ):
@@ -233,6 +237,30 @@ def test_assignment_parameters_button_is_not_without_journal(
     response = client.get(url)
     assert response.status_code == 200
     assert ASSIGNMENT_PARAMETERS_SPAN not in response.content.decode()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("user_role", ("other", "editor"))
+def test_editor_can_change_his_parameters(journal, roles, user_role, user):
+    client = Client()
+    jcom_user = JCOMProfile.objects.get(janeway_account=user)
+    jcom_user.gdpr_checkbox = True
+    jcom_user.is_active = True
+    # User are staff or editor
+
+    if user_role == "editor":
+        user.add_account_role("editor", journal)
+    jcom_user.save()
+
+    client.force_login(jcom_user)
+
+    url = f"/{journal.code}/update/parameters/"
+    response = client.get(url)
+
+    if user_role == "editor":
+        assert response.status_code == 200
+    else:
+        assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -255,7 +283,7 @@ def test_update_editor_assignment_parameters(editor, roles, keywords, journal):
 
 
 @pytest.mark.django_db
-def test_assignment_parameter_button_is_present_in_editors_interface(admin, editor, journal, keywords):
+def test_assignment_parameter_button_is_present_in_editors_interface(admin, editor, journal):
     client = Client()
     client.force_login(admin)
     url = f"/{journal.code}/manager/roles/editor/"
@@ -293,3 +321,43 @@ def test_director_can_change_editor_keywords(journal, roles, user_role, user):
         assert response.status_code == 200
     else:
         assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_director_can_change_editor_parameters(journal, roles, admin, editor, keywords):
+    editor_parameters = EditorAssignmentParameters.objects.create(editor=editor, journal=journal)
+    for keyword in keywords:
+        EditorKeyword.objects.create(keyword=keyword, editor_parameters=editor_parameters)
+    brake_on = 10
+    weight = 7
+    client = Client()
+    client.force_login(admin)
+    url = f"/{journal.code}/update/parameters/{editor.janeway_account.pk}/"
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    data = {"workload": editor_parameters.workload, "brake_on": brake_on, "csrf_token": response.context["csrf_token"]}
+
+    formset = response.context["formset"]
+    for i in "TOTAL_FORMS", "INITIAL_FORMS", "MIN_NUM_FORMS", "MAX_NUM_FORMS":
+        data[f"{formset.management_form.prefix}-{i}"] = formset.management_form[i].value()
+
+    for i in range(formset.total_form_count()):
+        current_form = formset.forms[i]
+
+        # retrieve all the fields
+        for field_name in current_form.fields:
+            value = current_form[field_name].value()
+            data[f"{current_form.prefix}-{field_name}"] = value if value else ""
+            if field_name == "weight":
+                data[f"{current_form.prefix}-{field_name}"] = weight
+
+    response_post = client.post(url, data)
+    assert response_post.status_code == 302
+
+    editor_parameters.refresh_from_db()
+
+    assert editor_parameters.brake_on == brake_on
+    for keyword in EditorKeyword.objects.filter(editor_parameters=editor_parameters):
+        assert keyword.weight == weight

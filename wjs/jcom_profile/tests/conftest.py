@@ -2,7 +2,7 @@
 import os
 
 import pytest
-from core.models import Account, AccountRole, Role, Setting
+from core.models import Account, Setting
 from django.conf import settings
 from django.core import management
 from django.core.serializers import deserialize
@@ -43,6 +43,7 @@ INVITE_BUTTON = """<li>
 ASSIGNMENT_PARAMETERS_SPAN = """<span class="card-title">Edit assignment parameters</span>"""  # noqa
 
 ASSIGNMENT_PARAMS = """<span class="card-title">Edit assignment parameters</span>"""
+
 
 @pytest.fixture
 def roles():
@@ -96,12 +97,11 @@ def user():
 
 
 @pytest.fixture()
-def editor(user, roles, journal):
-    editor = JCOMProfile(janeway_account=user, email="user@email.it")
+def editor(user, roles, journal, keywords):
+    editor = JCOMProfile.objects.get(janeway_account=user)
     editor.gdpr_checkbox = True
     editor.is_active = True
-    role = Role.objects.get(slug="editor")
-    AccountRole.objects.create(user=user, journal=journal, role=role)
+    editor.add_account_role("editor", journal)
     editor.save()
     return editor
 
