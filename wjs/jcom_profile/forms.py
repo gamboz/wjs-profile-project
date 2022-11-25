@@ -255,6 +255,8 @@ class IMUForm(forms.Form):
 class AAA(forms.ModelForm):
     """Form to keep existing user data and new data for update."""
 
+    apply_changes = forms.BooleanField(required=False, initial=False, help_text="Apply changes to this user account")
+
     class Meta:
         model = core_models.Account
         fields = [

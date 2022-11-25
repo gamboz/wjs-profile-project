@@ -4,17 +4,55 @@
 {% block title-section %}
     {% trans "Insert Users" %} — {% trans "Step 3/3" %}
 {% endblock title-section %}
+{% block css %}
+    <style>
+  table.merge {
+      border: 1px solid gray;
+  }
+    </style>
+{% endblock css %}
 {% block body %}
-    {{ form.media }}
     <div class="card">
         <div class="card-section">
             {% for line in view.extra_context.lines %}
                 <div class="row">
-                    <div class="large-12 columns">{{ line.index }}</div>
-                    <div class="large-12 columns">{{ line.msg }}</div>
-                    <div class="large-12 columns">{{ line.form }}</div>
-                    <div class="large-12 columns">{{ line.odtline }}</div>
+                    <div class="large-1 columns">{{ line.index }}</div>
+                    <div class="large-11 columns">{{ line.msg }}</div>
                 </div>
+                {% if line.form %}
+                    <div class="row">
+                        <div class="large-12 columns">
+                            <table class="merge">
+                                <tbody>
+                                    <tr>
+                                        <th>ODT</th>
+                                        <td>{{ line.odtline.first }}</td>
+                                        <td>{{ line.odtline.middle }}</td>
+                                        <td>{{ line.odtline.last }}</td>
+                                        <td>{{ line.odtline.email }}</td>
+                                        <td>{{ line.odtline.institution }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>DB</th>
+                                        <td>{{ line.form.first_name.value }}</td>
+                                        <td>{{ line.form.middle_name.value }}</td>
+                                        <td>{{ line.form.last_name.value }}</td>
+                                        <td>{{ line.form.email.value }}</td>
+                                        <td>{{ line.form.institution.value }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{{ line.form.apply_changes }}</td>
+                                        <td>{{ line.form.first_name }}</td>
+                                        <td>{{ line.form.middle_name }}</td>
+                                        <td>{{ line.form.last_name }}</td>
+                                        <td>{{ line.form.email }}</td>
+                                        <td>{{ line.form.institution }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
             {% endfor %}
         </div>
     </div>
