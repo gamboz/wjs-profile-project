@@ -13,3 +13,9 @@ def journal_has_open_si(journal):
     # necessary.
     has_open_si = SpecialIssue.objects.current_journal().open_for_submission().exists()
     return has_open_si
+
+
+@register.filter
+def keyvalue(dictionary, key):
+    """Return the value of dict[key]."""
+    return dictionary[key]

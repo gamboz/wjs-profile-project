@@ -1,6 +1,7 @@
 {% extends "admin/core/base.html" %}
 {% load foundation %}
 {% load i18n %}
+{% load wjs_tags %}
 {% block title-section %}
     {% trans "Insert Users" %} — {% trans "Step 3/3" %}
 {% endblock title-section %}
@@ -19,41 +20,58 @@
                     <div class="large-1 columns">{{ line.index }}</div>
                     <div class="large-11 columns">{{ line.msg }}</div>
                 </div>
-                {% if line.form %}
-                    <div class="row">
-                        <div class="large-12 columns">
-                            <table class="merge">
-                                <tbody>
-                                    <tr>
-                                        <th>ODT</th>
-                                        <td>{{ line.odtline.first }}</td>
-                                        <td>{{ line.odtline.middle }}</td>
-                                        <td>{{ line.odtline.last }}</td>
-                                        <td>{{ line.odtline.email }}</td>
-                                        <td>{{ line.odtline.institution }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>DB</th>
-                                        <td>{{ line.form.first_name.value }}</td>
-                                        <td>{{ line.form.middle_name.value }}</td>
-                                        <td>{{ line.form.last_name.value }}</td>
-                                        <td>{{ line.form.email.value }}</td>
-                                        <td>{{ line.form.institution.value }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>{{ line.form.apply_changes }}</td>
-                                        <td>{{ line.form.first_name }}</td>
-                                        <td>{{ line.form.middle_name }}</td>
-                                        <td>{{ line.form.last_name }}</td>
-                                        <td>{{ line.form.email }}</td>
-                                        <td>{{ line.form.institution }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
             {% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-section">
+            {% include "elements/forms/errors.html" with form=form %}
+            <form method="post" action="{% url 'si-imu-3' pk=special_issue_id %}">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                {% for form in formset %}
+                    {{ form.id }}
+                    {% with odtline=accounts_new_data|keyvalue:form.instance.id %}
+                        <div class="row">
+                            <div class="large-12 columns">
+                                <table class="merge">
+                                    <tbody>
+                                        <tr>
+                                            <th>ODT</th>
+                                            <td>{{ odtline.first }}</td>
+                                            <td>{{ odtline.middle }}</td>
+                                            <td>{{ odtline.last }}</td>
+                                            <td>{{ odtline.email }}</td>
+                                            <td>{{ odtline.institution }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>DB</th>
+                                            <td>{{ form.first_name.value }}</td>
+                                            <td>{{ form.middle_name.value }}</td>
+                                            <td>{{ form.last_name.value }}</td>
+                                            <td>{{ form.email.value }}</td>
+                                            <td>{{ form.institution.value }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>{{ form.apply_changes }}</td>
+                                            <td>{{ form.first_name }}</td>
+                                            <td>{{ form.middle_name }}</td>
+                                            <td>{{ form.last_name }}</td>
+                                            <td>{{ form.email }}</td>
+                                            <td>{{ form.institution }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endwith %}
+                {% endfor %}
+                <div class="row">
+                    <div class="large-12 columns">
+                        <input type="submit" value="Update selected users" />
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 {% endblock body %}

@@ -16,6 +16,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
+from django.forms import modelformset_factory
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -671,6 +672,11 @@ class IMUStep1(TemplateView):
 
 
 ODTLine = namedtuple("ODTLine", ["first", "middle", "last", "email", "institution"])
+imu_edit_formset_factory = modelformset_factory(
+    model=core_models.Account,
+    form=forms.AAA,
+    extra=0,
+)
 
 
 # TODO: protect me!
@@ -688,6 +694,25 @@ class IMUStep2(TemplateView):
         - create articles (linked to the given special issue) if necessary
         - prepare existing accounts for editing if necessary
         """
+        # Procedure
+        # - while scanning received lines
+        #   - accumulate instances of core.Accounts to edit
+        #   - also accumulate ODT data, paired with the Accounts
+        # - after scanning all lines
+        #   - build a queryset ...filter(pk__in( [pk for pk in line] ) )
+        #   - use the suggestion pk as key in a dictionary of ODT lines
+        # - in the template
+        #   - layout all lines (i.e. give a feedback on how the import went)
+        #   - cycle for form in formset
+        #     - layout the DB data
+        #     - layout the ODT data
+        #     - layout the form
+
+        # collect accounts we should present for editing and the
+        # relative new possible data
+        self.accounts_to_edit = []
+        self.accounts_new_data = {}
+
         # TODO: validate... single fields? somthing else???
         self.extra_context = {"lines": [], "edit_suggestions": {}}
         for i in range(int(self.request.POST["tot_lines"])):
@@ -696,13 +721,19 @@ class IMUStep2(TemplateView):
                 self.extra_context["lines"].append(f"{i} - PARTITION")
                 continue
             self.process(i)
-        # TODO: is this correct??? in the template I have to use `view.extra_context.lines`
-        #       (I expected that extra_context would be "merged" into context to let me address just `lines`)
-        return self.render_to_response(context=self.get_context_data())
+
+        formset = imu_edit_formset_factory(queryset=core_models.Account.objects.filter(pk__in=self.accounts_to_edit))
+        return self.render_to_response(
+            context=self.get_context_data(
+                formset=formset,
+                accounts_new_data=self.accounts_new_data,
+                special_issue_id=kwargs["pk"],
+            ),
+        )
 
     def process(self, index: int):
         """Process line "index"."""
-        # actions come in these forms:
+        # Actions come in these forms:
         # - action-1_skip
         # - action-1_new
         # - action-1_db_123
@@ -745,7 +776,10 @@ class IMUStep2(TemplateView):
         """Create a contribution and prepare the suggested author (core.Account) for editing."""
         author = core_models.Account.objects.get(pk=pk)
         article = self.create_article(index, author)
-        form = forms.AAA(instance=author)
+        # I'd prefer to use the author directly, but the formset wants
+        # a queryset, not a list...
+        # ...accounts_to_edit.append(author)
+        self.accounts_to_edit.append(pk)
         odtline = ODTLine(
             first=self.request.POST[f"first_{index}"],
             middle=self.request.POST[f"middle_{index}"],
@@ -753,7 +787,8 @@ class IMUStep2(TemplateView):
             email=self.request.POST[f"email_{index}"],
             institution=self.request.POST[f"institution_{index}"],
         )
-        self.add_line(index, msg=f"EDIT - {article} by {author}", form=form, odtline=odtline)
+        self.accounts_new_data[pk] = odtline
+        self.add_line(index, msg=f"EDIT - {article} by {author}", must_edit=True)
 
     def action_unspecified(self, index):
         """Report 💩."""
@@ -785,3 +820,17 @@ class IMUStep2(TemplateView):
         article.authors.set([author])
         article.save()
         return article
+
+
+# TODO: protect me!
+class IMUStep3(TemplateView):
+    """Insert Many Users - last step.
+
+    Edit existing accounts and redirect to special issue ? update / detail ?.
+    """
+
+    def post(self, *args, **kwargs):
+        """Edit existing accounts."""
+        formset = imu_edit_formset_factory(self.request.POST)
+        formset.save()
+        return redirect(to=reverse("si-update", kwargs={"pk": kwargs["pk"]}))
