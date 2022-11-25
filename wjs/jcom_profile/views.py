@@ -13,6 +13,7 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from repository import models as preprint_models
@@ -417,6 +418,6 @@ class EditorAssignmentParametersUpdate(UpdateView):
         messages.add_message(
             self.request,
             messages.SUCCESS,
-            "Parameters updated successfully",
+            _("Parameters updated successfully"),
         )
         return reverse("assignment_parameters")

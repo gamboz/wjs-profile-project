@@ -166,7 +166,7 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
     keywords = forms.ModelMultipleChoiceField(
         label=_("Keywords"),
         queryset=Keyword.objects.all(),
-        widget=Select2Multiple(select2attrs={"width": "500px"}),
+        widget=Select2Multiple(select2attrs={"width": "100%"}),
     )
 
     class Meta:
