@@ -340,11 +340,11 @@ def test_director_can_change_editor_parameters(journal, roles, admin, editor, ke
     data = {"workload": editor_parameters.workload, "brake_on": brake_on, "csrf_token": response.context["csrf_token"]}
 
     formset = response.context["formset"]
-    for i in "TOTAL_FORMS", "INITIAL_FORMS", "MIN_NUM_FORMS", "MAX_NUM_FORMS":
-        data[f"{formset.management_form.prefix}-{i}"] = formset.management_form[i].value()
+    for field in "TOTAL_FORMS", "INITIAL_FORMS", "MIN_NUM_FORMS", "MAX_NUM_FORMS":
+        data[f"{formset.management_form.prefix}-{field}"] = formset.management_form[field].value()
 
-    for i in range(formset.total_form_count()):
-        current_form = formset.forms[i]
+    for form_id in range(formset.total_form_count()):
+        current_form = formset.forms[form_id]
 
         # retrieve all the fields
         for field_name in current_form.fields:

@@ -178,6 +178,7 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
             "workload",
         ]
 
+
 class DirectorEditorAssignmentParametersForm(forms.ModelForm):
     class Meta:
         model = EditorAssignmentParameters
@@ -186,8 +187,9 @@ class DirectorEditorAssignmentParametersForm(forms.ModelForm):
             "workload",
         ]
         widgets = {
-            'workload': forms.TextInput(attrs={"readonly": True}),
+            "workload": forms.TextInput(attrs={"readonly": True}),
         }
+
 
 class EditorKeywordForm(forms.ModelForm):
     # this is a "fake" field added only to have a proper rendering of the keyword value, but without any link
@@ -199,7 +201,7 @@ class EditorKeywordForm(forms.ModelForm):
         model = EditorKeyword
         fields = ["weight"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # noqa
         if "initial" not in kwargs:
             kwargs["initial"] = {}
         # forcing the keyword content in the "fake" field allowed the field to be rendered, but it's disconnected
@@ -214,5 +216,5 @@ EditorKeywordFormset = inlineformset_factory(
     fk_name="editor_parameters",
     extra=0,
     can_delete=False,
-    form=EditorKeywordForm
+    form=EditorKeywordForm,
 )

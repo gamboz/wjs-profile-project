@@ -408,6 +408,8 @@ class SIFileDelete(PermissionRequiredMixin, View):
 
 
 class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
+    """Change editor's own submission parameters."""
+
     model = EditorAssignmentParameters
     form_class = UpdateAssignmentParametersForm
     template_name = "submission/update_editor_parameters.html"
@@ -436,6 +438,12 @@ class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
 
 
 class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
+    """Change editors parameters as journal director.
+
+    Use formsets to update EditorKeyword instances weights.
+
+    """
+
     model = EditorAssignmentParameters
     form_class = DirectorEditorAssignmentParametersForm
     template_name = "submission/director_update_editor_parameters.html"
