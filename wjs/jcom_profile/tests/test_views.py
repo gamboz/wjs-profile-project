@@ -292,7 +292,8 @@ def test_assignment_parameter_button_is_present_in_editors_interface(admin, edit
     # TODO: This check must be better handled; moreover, I should check this behaviour when more editors exist.
     assert (
         f"""<a class="tiny primary button"
-                                   href="/{journal.code}/update/parameters/{editor.janeway_account.pk}/">&nbsp;Assignment Parameters</a>"""  # noqa
+                                       href="/{journal.code}/update/parameters/{editor.janeway_account.pk}/">&nbsp;Assignment
+                                        Parameters</a>"""  # noqa
         in response.content.decode()
     )
 
