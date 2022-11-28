@@ -1,7 +1,6 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
 from collections import namedtuple
 from dataclasses import dataclass
-from math import isnan
 from typing import Iterable
 
 import pandas as pd
@@ -504,11 +503,25 @@ class PartitionLine:
     Or the section of a conference.
     """
 
-    name: str
     index: int
+    name: str
     # something to ease discriminating between PartitionLinse and
     # ContributionLines in templates
     is_just_a_name = True
+
+
+@dataclass
+class ErrorLine:
+    """An error in the input."""
+
+    index: int
+    first: str
+    middle: str
+    last: str
+    email: str  # TODO: use some kind of email type like Type(email_address)
+    institution: str
+    title: str
+    error: str
 
 
 @dataclass
@@ -617,7 +630,8 @@ class IMUStep1(TemplateView):
             sheet_name=sheet_index,
             header=None,
             names=columns_names,
-            # dtype=???object???,
+            dtype="string",
+            na_filter=False,
             engine="odf",
         )
         # df = df.astype(str) NOPE: empty values become "nan" strings
@@ -635,19 +649,16 @@ class IMUStep1(TemplateView):
         # Allow for dirty data: if I'm missing lastname and email,
         # I'll consider this a PartitionLine and just use the
         # firstname column as the partition name.
-        if self.is_empty_value(row.last) and self.is_empty_value(row.email):
-            return PartitionLine(name=row.first, index=row.Index)
+        if not row.last and not row.email:
+            return PartitionLine(index=row.Index, name=row.first)
+        # But filter untreatable errors: if the title is missing and
+        # the flag `create_articles_on_import` is True, treat the line
+        # as an error
+        if self.request.POST["create_articles_on_import"] and not row.title:
+            return ErrorLine(*[*row], error="Missing title!")
         line = ContributionLine(row)
         line.suggestions = self.make_suggestion(line)
         return line
-
-    def is_empty_value(self, value):
-        """Odio pandas e i dataframe e i bradipi e tutti quanti..."""
-        # NB: this check depends on how pandas interprets missing data
-        # (still a mistery to me...)
-        if isinstance(value, float) and isnan(value):
-            return True
-        return False
 
     def make_suggestion(self, line: ContributionLine) -> Iterable[SuggestionLine]:
         """Take a contribution line and find similar users in the DB."""
@@ -770,7 +781,7 @@ class IMUStep2(TemplateView):
             institution=self.request.POST[f"institution_{index}"],
         )
         # No need to check if `author` is already in
-        # `special_issue.invitees` (django takes care) 🎉
+        # `special_issue.invitees` (django takes care 🎉)
         self.special_issue.invitees.add(author)
         article = self.create_article(index, author)
         self.add_line(index, msg=f"NEW - {article}")

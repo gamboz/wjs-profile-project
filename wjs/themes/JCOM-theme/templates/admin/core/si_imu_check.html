@@ -4,6 +4,20 @@
 {% block title-section %}
     {% trans "Insert Users" %} — {% trans "Step 2/3" %}
 {% endblock title-section %}
+{% block css %}
+    <style>
+td.suggestion {
+    color: gray;
+}
+tr.error td {
+    color: red;
+}
+tr.error td.error {
+    background-color: red;
+    color: white;
+}
+    </style>
+{% endblock css %}
 {% block body %}
     <div class="card">
         <div class="card-section">
@@ -13,9 +27,12 @@
                 <div class="row">
                     <div class="large-12 columns">
                         <input type="hidden" name="tot_lines" value="{{ lines|length }}"/>
-                        <input type="hidden" name="create_articles_on_import" value="{{ create_articles_on_import }}"/>
+                        <input type="hidden"
+                               name="create_articles_on_import"
+                               value="{{ create_articles_on_import }}"/>
                         <table>
                             <thead>
+                                <th>&nbsp</th>
                                 <th>first</th>
                                 <th>middle</th>
                                 <th>last</th>
@@ -28,11 +45,22 @@
                                 {% for line in lines %}
                                     {% if line.is_just_a_name %}
                                         <tr>
-                                            <td colspan="7">{{ line.name }}</td>
+                                            <td colspan="8">{{ line.name }}</td>
                                         </tr>
                                         <input type="hidden"
                                                name="just_the_name_{{ line.index }}"
                                                value="{{ line.name }}"/>
+                                    {% elif line.error %}
+                                        <tr class="error">
+                                            <td>{{ line.index }}</td>
+                                            <td>{{ line.first }}</td>
+                                            <td>{{ line.middle }}</td>
+                                            <td>{{ line.last }}</td>
+                                            <td>{{ line.email }}</td>
+                                            <td>{{ line.institution }}</td>
+                                            <td>{{ line.title }}</td>
+                                            <td class="error">{{ line.error }}</td>
+                                        </tr>
                                     {% else %}
                                         <input type="hidden" name="first_{{ line.index }}" value="{{ line.first }}"/>
                                         <input type="hidden"
@@ -45,6 +73,7 @@
                                                value="{{ line.institution }}"/>
                                         <input type="hidden" name="title_{{ line.index }}" value="{{ line.title }}"/>
                                         <tr>
+                                            <td>{{ line.index }}</td>
                                             <td>{{ line.first }}</td>
                                             <td>{{ line.middle }}</td>
                                             <td>{{ line.last }}</td>
@@ -63,6 +92,7 @@
                                         </tr>
                                         {% for suggestion in line.suggestions %}
                                             <tr>
+                                                <td class="suggestion">&nbsp;</td>
                                                 <td class="suggestion">{{ suggestion.first }}</td>
                                                 <td class="suggestion">{{ suggestion.middle }}</td>
                                                 <td class="suggestion">{{ suggestion.last }}</td>
