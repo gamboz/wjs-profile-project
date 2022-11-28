@@ -40,9 +40,10 @@
                             <td width="20%"><a class="tiny alert button"
                                                href="{% url 'core_manager_role_action' role.slug assignment.user.id 'remove' %}"><i
                                     class="fa fa-times"></i> &nbsp;&nbsp;Remove Role</a>
-                                {% if user.is_staff %}
-                                <a class="tiny primary button"
-                                   href="{% url 'assignment_parameters' assignment.user.id %}">&nbsp;Assignment Parameters</a>
+                                {% if user.is_staff and role.slug == "editor" %}
+                                    <a class="tiny primary button"
+                                       href="{% url 'assignment_parameters' assignment.user.id %}">&nbsp;Assignment
+                                        Parameters</a>
                                 {% endif %}
                             </td>
                         </tr>
