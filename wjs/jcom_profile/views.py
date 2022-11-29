@@ -13,7 +13,6 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from repository import models as preprint_models
@@ -433,7 +432,7 @@ class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
         messages.add_message(
             self.request,
             messages.SUCCESS,
-            _("Parameters updated successfully"),
+            "Parameters updated successfully",
         )
         return reverse("assignment_parameters")
 
@@ -477,6 +476,8 @@ class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
         formset = context.get("formset")
         if formset.is_valid():
             formset.save()
+        else:
+            return self.render_to_response(self.get_context_data())
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
