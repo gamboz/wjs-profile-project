@@ -769,20 +769,45 @@ class IMUStep2(TemplateView):
             else:
                 func(index)
         except Exception as e:
-            self.add_line(index, msg=f"ERROR - {action.upper()} - {e}")
+            self.add_line(index, msg=f"ERROR - {action.upper()} - {e}", css_class="error")
 
     def action_new(self, index):
         """Create a contribution and a new core.Account."""
-        author = core_models.Account.objects.create(
-            first_name=self.request.POST[f"first_{index}"],
-            middle_name=self.request.POST[f"middle_{index}"],
-            last_name=self.request.POST[f"last_{index}"],
-            email=self.request.POST[f"email_{index}"],
-            institution=self.request.POST[f"institution_{index}"],
-        )
-        # No need to check if `author` is already in
-        # `special_issue.invitees` (django takes care 🎉)
-        self.special_issue.invitees.add(author)
+        # It is possible that a new author has multiple entries in the
+        # spreadsheet. The first time that we encounter him, it's easy
+        # and we create him, but, subsequent encounters should trigger
+        # an IntegrityError wrt the email is constrained as unique. If
+        # this happens, to be safe, we must assume that there might be
+        # some differences between the two lines of this contributor
+        # (misspelled name, different affiliation,...), and so we
+        # check.
+        try:
+            author = core_models.Account.objects.create(
+                first_name=self.request.POST[f"first_{index}"],
+                middle_name=self.request.POST[f"middle_{index}"],
+                last_name=self.request.POST[f"last_{index}"],
+                email=self.request.POST[f"email_{index}"],
+                institution=self.request.POST[f"institution_{index}"],
+            )
+        except IntegrityError:
+            email = self.request.POST[f"email_{index}"]
+            author = core_models.Account.objects.get(email=email)
+            if (
+                author.first_name != self.request.POST[f"first_{index}"]
+                or author.middle_name != self.request.POST[f"middle_{index}"]
+                or author.last_name != self.request.POST[f"last_{index}"]
+                or author.institution != self.request.POST[f"institution_{index}"]
+            ):
+                self.add_line(
+                    index,
+                    msg=f"ERROR - multiple new accounts with different data for {email}.",
+                    css_class="error",
+                )
+                return
+        else:
+            # No need to check if `author` is already in
+            # `special_issue.invitees` (django takes care 🎉)
+            self.special_issue.invitees.add(author)
         article = self.create_article(index, author)
         self.add_line(index, msg=f"NEW - {article}")
 
@@ -818,7 +843,7 @@ class IMUStep2(TemplateView):
 
     def action_unspecified(self, index):
         """Report 💩."""
-        self.add_line(index, msg="UNSPECIFIED - 💩")
+        self.add_line(index, msg="UNSPECIFIED - 💩", css_class="error")
 
     def add_line(self, index, **kwargs):
         """Add a line of data in extra_context."""

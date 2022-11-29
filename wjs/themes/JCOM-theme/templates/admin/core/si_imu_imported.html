@@ -10,13 +10,16 @@
   table.merge {
       border: 1px solid gray;
   }
+  .error {
+      color: red;
+  }
     </style>
 {% endblock css %}
 {% block body %}
     <div class="card">
         <div class="card-section">
-            {% for line in view.extra_context.lines %}
-                <div class="row">
+          {% for line in view.extra_context.lines %}
+                <div class="row {{ line.css_class }}">
                     <div class="large-1 columns">{{ line.index }}</div>
                     <div class="large-11 columns">{{ line.msg }}</div>
                 </div>
