@@ -1,6 +1,6 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Iterable
 
 import pandas as pd
@@ -579,6 +579,19 @@ class ContributionLine:
         self.title = row.title
         self.index = row.Index  # watch out for "Index" uppercase "I"
 
+    def __eq__(self, other):
+        """Two lines are equal if the name and title are the same."""
+        return (
+            self.first == other.first
+            and self.middle == other.middle
+            and self.last == other.last
+            and self.title == other.title
+        )
+
+    def __hash__(self):
+        """Let's say these suffice..."""
+        return hash(f"{self.first}{self.middle}{self.last}{self.title}")
+
 
 class IMUStep1(TemplateView):
     """Insert Many Users - first step.
@@ -634,10 +647,20 @@ class IMUStep1(TemplateView):
             na_filter=False,
             engine="odf",
         )
-        # df = df.astype(str) NOPE: empty values become "nan" strings
-        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.itertuples.html#pandas.DataFrame.itertuples
+        # Check for extra copy paste: two lines with same author and
+        # title are bad.
+        seen = {}
         for row in df.itertuples(index=True):
             line = self.examine_row(row)
+            if not isinstance(line, ContributionLine):
+                result_lines.append(line)
+                continue
+            if line in seen:
+                kwargs = asdict(line)
+                kwargs.pop("suggestions")
+                line = ErrorLine(index=line.index, **kwargs, error=f"Line {line.index} is the same as {seen[line]}")
+            else:
+                seen[line] = line.index
             result_lines.append(line)
         return result_lines
 
