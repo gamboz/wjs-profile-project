@@ -4,13 +4,20 @@ import uuid
 
 from core.forms import EditAccountForm
 from django import forms
-from django.forms import ModelForm
+from django.forms import ModelForm, inlineformset_factory
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from submission import models as submission_models
+from easy_select2.widgets import Select2Multiple
+from submission.models import Keyword, Section
 from utils.forms import CaptchaForm
 
-from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
+from wjs.jcom_profile.models import (
+    ArticleWrapper,
+    EditorAssignmentParameters,
+    EditorKeyword,
+    JCOMProfile,
+    SpecialIssue,
+)
 
 
 class GDPRAcceptanceForm(forms.Form):
@@ -156,6 +163,64 @@ class SIForm(forms.ModelForm):
     #    +--------------------------------------------------+
 
 
+class UpdateAssignmentParametersForm(forms.ModelForm):
+    keywords = forms.ModelMultipleChoiceField(
+        label=_("Keywords"),
+        queryset=Keyword.objects.all(),
+        # TODO: Ad this in app.css .select2-container {width: 100% !important;}
+        widget=Select2Multiple(),
+        required=False,
+    )
+
+    class Meta:
+        model = EditorAssignmentParameters
+        fields = (
+            "keywords",
+            "workload",
+        )
+
+
+class DirectorEditorAssignmentParametersForm(forms.ModelForm):
+    class Meta:
+        model = EditorAssignmentParameters
+        fields = [
+            "brake_on",
+            "workload",
+        ]
+        widgets = {
+            "workload": forms.TextInput(attrs={"readonly": True}),
+        }
+
+
+class EditorKeywordForm(forms.ModelForm):
+    # this is a "fake" field added only to have a proper rendering of the keyword value, but without any link
+    # to the model field
+    keyword_str = forms.CharField(widget=forms.TextInput(attrs={"readonly": True}), label=_("Keyword"))
+    field_order = ["keyword_str", "weight"]
+
+    class Meta:
+        model = EditorKeyword
+        fields = ["weight"]
+
+    def __init__(self, *args, **kwargs):  # noqa
+        if "initial" not in kwargs:
+            kwargs["initial"] = {}
+        # forcing the keyword content in the "fake" field allowed the field to be rendered, but it's disconnected
+        # from the model field and is ignored on save
+        kwargs["initial"]["keyword_str"] = kwargs["instance"].keyword.word
+        super().__init__(*args, **kwargs)
+
+
+EditorKeywordFormset = inlineformset_factory(
+    EditorAssignmentParameters,
+    EditorKeyword,
+    fk_name="editor_parameters",
+    extra=0,
+    can_delete=False,
+    form=EditorKeywordForm,
+)
+
+
 class SIUpdateForm(forms.ModelForm):
     class Meta:
         model = SpecialIssue
@@ -166,6 +231,6 @@ class SIUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         """Filter sections to show only sections of the special issue's journal."""
         super().__init__(*args, **kwargs)
-        self.fields["allowed_sections"].queryset = submission_models.Section.objects.filter(
+        self.fields["allowed_sections"].queryset = Section.objects.filter(
             journal=self.instance.journal,
         )

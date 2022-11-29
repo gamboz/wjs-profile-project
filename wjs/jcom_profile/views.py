@@ -5,7 +5,7 @@ from core import models as core_models
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
@@ -29,16 +29,26 @@ from submission import models as submission_models
 from utils import setting_handler
 from utils.logger import get_logger
 
+from wjs.jcom_profile.forms import (
+    DirectorEditorAssignmentParametersForm,
+    EditorKeywordFormset,
+    UpdateAssignmentParametersForm,
+)
+from wjs.jcom_profile.models import (
+    EditorAssignmentParameters,
+    JCOMProfile,
+    SpecialIssue,
+)
+
 from . import forms
-from .models import JCOMProfile, SpecialIssue
 from .utils import PATH_PARTS, save_file_to_special_issue
 
 logger = get_logger(__name__)
 
 
 @login_required
-def prova(request):
-    """Una prova."""
+def edit_profile(request):
+    """Edit profile view for wjs app."""
     user = JCOMProfile.objects.get(pk=request.user.id)
     form = forms.JCOMProfileForm(instance=user)
     # copied from core.views.py::edit_profile:358ss
@@ -475,3 +485,85 @@ class SIFileDelete(PermissionRequiredMixin, View):
         file_obj = get_object_or_404(core_models.File, pk=file_id)
         file_obj.delete()
         return redirect(request.GET["return"])
+
+
+class EditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
+    """Change editor's own submission parameters."""
+
+    model = EditorAssignmentParameters
+    form_class = UpdateAssignmentParametersForm
+    template_name = "submission/update_editor_parameters.html"
+    raise_exception = True
+
+    def test_func(self):  # noqa
+        user = self.request.user
+        journal = self.request.journal
+        return user.check_role(
+            journal,
+            "editor",
+        )
+
+    def get_object(self, queryset=None):  # noqa
+        editor, journal = self.request.user, self.request.journal
+        parameters, _ = EditorAssignmentParameters.objects.get_or_create(editor=editor, journal=journal)
+        return parameters
+
+    def get_success_url(self):  # noqa
+        messages.add_message(
+            self.request,
+            messages.SUCCESS,
+            "Parameters updated successfully",
+        )
+        return reverse("assignment_parameters")
+
+
+class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
+    """Change editors parameters as journal director.
+
+    Use formsets to update EditorKeyword instances weights.
+
+    """
+
+    model = EditorAssignmentParameters
+    form_class = DirectorEditorAssignmentParametersForm
+    template_name = "submission/director_update_editor_parameters.html"
+    raise_exception = True
+
+    def test_func(self):  # noqa
+        user = self.request.user
+        return user.is_staff
+
+    def get_object(self, queryset=None):  # noqa
+        editor_pk, journal = self.kwargs.get("editor_pk"), self.request.journal
+        editor = JCOMProfile.objects.get(pk=editor_pk)
+        if not editor.check_role(journal, "editor"):
+            raise Http404()
+        parameters, _ = EditorAssignmentParameters.objects.get_or_create(editor=editor, journal=journal)
+        return parameters
+
+    def get_context_data(self, **kwargs):  # noqa
+        context = super().get_context_data()
+        if self.request.POST:
+            formset = EditorKeywordFormset(data=self.request.POST, instance=self.object)
+            formset.is_valid()
+        else:
+            formset = EditorKeywordFormset(instance=self.object)
+        context["formset"] = formset
+        return context
+
+    def form_valid(self, form):  # noqa
+        context = self.get_context_data()
+        formset = context.get("formset")
+        if formset.is_valid():
+            formset.save()
+        else:
+            return self.render_to_response(self.get_context_data())
+        return super().form_valid(form)
+
+    def get_success_url(self):  # noqa
+        messages.add_message(
+            self.request,
+            messages.SUCCESS,
+            "Parameters updated successfully",
+        )
+        return reverse("assignment_parameters", args=(self.kwargs.get("editor_pk"),))

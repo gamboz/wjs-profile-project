@@ -6,7 +6,6 @@ import pytest_factoryboy
 from core.models import Account, Setting
 from django.conf import settings
 from django.core import management
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import deserialize
 from django.urls.base import clear_script_prefix
 from django.utils import translation
@@ -14,6 +13,7 @@ from journal import models as journal_models
 from journal.tests.utils import make_test_journal
 from press.models import Press
 from submission import models as submission_models
+from submission.models import Keyword
 from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 
@@ -42,15 +42,19 @@ INVITE_BUTTON = """<li>
         <a href="/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
     </li>"""
 
+ASSIGNMENT_PARAMETERS_SPAN = """<span class="card-title">Edit assignment parameters</span>"""  # noqa
 
-def drop_user():
-    """Delete the test user."""
-    try:
-        user_x = Account.objects.get(username=USERNAME)
-    except ObjectDoesNotExist:
-        pass
-    else:
-        user_x.delete()
+ASSIGNMENT_PARAMS = """<span class="card-title">Edit assignment parameters</span>"""
+
+
+@pytest.fixture
+def roles():
+    roles_relative_path = "utils/install/roles.json"
+    roles_path = os.path.join(settings.BASE_DIR, roles_relative_path)
+    with open(roles_path, encoding="utf-8") as f:
+        roles = f.read()
+        for role in deserialize("json", roles):
+            role.save()
 
 
 @pytest.fixture
@@ -89,10 +93,19 @@ def user():
     Create both core.models.Account and wjs.jcom_profile.models.JCOMProfile.
     """
     # Delete the test user (just in case...).
-    drop_user()
     user = Account(username=USERNAME, first_name="User", last_name="Ics")
     user.save()
     yield user
+
+
+@pytest.fixture()
+def editor(user, roles, journal, keywords):
+    editor = JCOMProfile.objects.get(janeway_account=user)
+    editor.gdpr_checkbox = True
+    editor.is_active = True
+    editor.add_account_role("editor", journal)
+    editor.save()
+    return editor
 
 
 @pytest.fixture()
@@ -119,7 +132,6 @@ def press(install_jcom_theme):
     apress.theme = "JCOM-theme"
     apress.save()
     yield apress
-    apress.delete()
 
 
 def set_jcom_theme(journal):
@@ -142,8 +154,6 @@ def journal(press):
     journal = make_test_journal(**journal_kwargs)
     set_jcom_theme(journal)
     yield journal
-    # probably redundant because of django db transactions rollbacks
-    journal.delete()
 
 
 @pytest.fixture
@@ -200,16 +210,6 @@ def user_as_main_author_setting():
 
 
 @pytest.fixture
-def roles():
-    roles_relative_path = "utils/install/roles.json"
-    roles_path = os.path.join(settings.BASE_DIR, roles_relative_path)
-    with open(roles_path, encoding="utf-8") as f:
-        roles = f.read()
-        for role in deserialize("json", roles):
-            role.save()
-
-
-@pytest.fixture
 def install_jcom_theme():
     """JCOM-theme must be installed in J. code base for its templates to be found."""
     management.call_command("install_themes")
@@ -226,6 +226,13 @@ def clear_script_prefix_fix():
     clear_script_prefix()
     yield None
     clear_script_prefix()
+
+
+@pytest.fixture
+def keywords():
+    for i in range(3):
+        Keyword.objects.create(word=f"{i}-keyword")
+    return Keyword.objects.all()
 
 
 # Name the fixture a bit differently. This code, without the second
