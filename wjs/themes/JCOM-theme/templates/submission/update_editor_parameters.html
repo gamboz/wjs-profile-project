@@ -12,6 +12,16 @@
     </div>
 {% endblock body %}
 
+{% block css %}
+    {{ block.super }}
+    {{ form.media.css }}
+{% endblock css %}
+
+{% block js %}
+    {{ block.super }}
+    {{ form.media.js }}
+{% endblock js %}
+
 {% block footer %}
     <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
 
