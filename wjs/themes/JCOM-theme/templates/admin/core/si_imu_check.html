@@ -87,18 +87,28 @@ tr.error td.error {
                                                        {% if not line.suggestions %}checked="checked"{% endif %}/>
                                                 new
                                                 <input type="radio" name="action-{{ line.index }}" value="skip"/>
-                                                skip (ignore line)
+                                                skip
                                             </td>
                                         </tr>
                                         {% for suggestion in line.suggestions %}
                                             <tr>
                                                 <td class="suggestion">&nbsp;</td>
                                                 <td class="suggestion">{{ suggestion.first }}</td>
-                                                <td class="suggestion">{{ suggestion.middle }}</td>
-                                                <td class="suggestion">{{ suggestion.last }}</td>
-                                                <td class="suggestion">{{ suggestion.email }}</td>
-                                                <td class="suggestion">{{ suggestion.institution }}</td>
-                                                <td class="suggestion">{{ suggestion.pk }}</td>
+                                                <td class="suggestion">
+                                                    {{ suggestion.middle }}
+                                                </td>
+                                                <td class="suggestion">
+                                                    {{ suggestion.last }}
+                                                </td>
+                                                <td class="suggestion">
+                                                    {{ suggestion.email }}
+                                                </td>
+                                                <td class="suggestion">
+                                                    {{ suggestion.institution }}
+                                                </td>
+                                                <td class="suggestion">
+                                                    {{ suggestion.pk }}
+                                                </td>
                                                 <td>
                                                     <input type="radio"
                                                            name="action-{{ line.index }}"
@@ -124,6 +134,42 @@ tr.error td.error {
                     </div>
                 </div>
             </form>
+        </div>
+        <div class="card-section">
+            <div class="row">
+                <div class="large-12 columns">
+                    <h2>
+                        Legend
+                    </h2>
+                    For each row in the uploaded spreadsheet, please mind the following meanings
+                    <dl>
+                        <dt>
+                            new
+                        </dt>
+                        <dd>
+                            create a new account in the DB. Naturally this is not possible if the email is the same as that of an already existing account.
+                        </dd>
+                        <dt>
+                            skip
+                        </dt>
+                        <dd>
+                            just ignore this line and do nothing, as if it was not present in the uploaded spreadsheed.
+                        </dd>
+                        <dt>
+                            DB
+                        </dt>
+                        <dd>
+                            use this existing account without any modification. If articles should be created, this account will be the owner and main author of the new article with the given title.
+                        </dd>
+                        <dt>
+                            edit...
+                        </dt>
+                        <dd>
+                            use this existing account, but let me change something. In the next step, a form will be available where you will be able to edit the account. You will be presented with the current data present in the DB and with the "new" ones uploaded with the spreasheet.
+                        </dd>
+                    </dl>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock body %}
