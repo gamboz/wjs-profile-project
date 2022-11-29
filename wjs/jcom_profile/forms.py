@@ -167,16 +167,17 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
     keywords = forms.ModelMultipleChoiceField(
         label=_("Keywords"),
         queryset=Keyword.objects.all(),
-        widget=Select2Multiple(select2attrs={"width": "500px"}),
+        # TODO: Ad this in app.css .select2-container {width: 100% !important;}
+        widget=Select2Multiple(),
         required=False,
     )
 
     class Meta:
         model = EditorAssignmentParameters
-        fields = [
+        fields = (
             "keywords",
             "workload",
-        ]
+        )
 
 
 class DirectorEditorAssignmentParametersForm(forms.ModelForm):

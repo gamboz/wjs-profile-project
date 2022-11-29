@@ -262,7 +262,6 @@ def test_editor_can_change_his_parameters(journal, roles, user_role, user):
     else:
         assert response.status_code == 403
 
-
 @pytest.mark.django_db
 def test_update_editor_assignment_parameters(editor, roles, keywords, journal):
     keywords_id = Keyword.objects.all().values_list("id", flat=True)
@@ -280,7 +279,6 @@ def test_update_editor_assignment_parameters(editor, roles, keywords, journal):
     assert assignment_parameters.workload == workload
     for keyword in keywords:
         assert keyword.word in list(editor_keywords.values_list("keyword__word", flat=True))
-
 
 @pytest.mark.django_db
 def test_assignment_parameter_button_is_present_in_editors_interface(admin, editor, journal):
