@@ -1,7 +1,9 @@
 {% extends "admin/core/base.html" %}
 {% load foundation %}
 {% load i18n %}
-{% block title-section %}{% trans "Insert Users" %} — {% trans "Step 1/3" %}{% endblock title-section %}
+{% block title-section %}
+    {% trans "Insert Users" %} — {% trans "Step 1/3" %}
+{% endblock title-section %}
 {% block body %}
     {{ form.media }}
     <div class="card">
@@ -21,7 +23,8 @@
     </div>
     <div class="card">
         <div class="card-section">
-            {% include "elements/forms/errors.html" with form=form %}
+          {% include "elements/forms/errors.html" with form=form %}
+          ERRORS: {{ form.errors }}x
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row">
@@ -62,7 +65,8 @@
                             </table>
                         </div>
                         <p>
-                          Warning: if you check "create articles on import" the title is mandatory.<br/>
+                            Warning: if you check "create articles on import" the title is mandatory.
+                            <br/>
                             Warning: only middle name and affiliation are optional. All other fields are mandatory (for the title, see above).
                             <br/>
                             Warning: order is important.
@@ -74,6 +78,11 @@
                     <div class="large-6 columns">{{ form.create_articles_on_import|foundation }}</div>
                     <div class="large-6 columns">
                         {{ form.match_euristic|foundation }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="large-6 columns">
+                        {{ form.type_of_new_articles|foundation }}
                     </div>
                 </div>
                 <div class="row">

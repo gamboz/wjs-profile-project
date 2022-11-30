@@ -704,6 +704,7 @@ class IMUStep1(TemplateView):
             "lines": self.process_data_file(data_file),
             "special_issue_id": kwargs["pk"],
             "create_articles_on_import": form.data.get("create_articles_on_import", ""),
+            "type_of_new_articles": form.data.get("type_of_new_articles", ""),
         }
         return render(
             self.request,
@@ -959,10 +960,14 @@ class IMUStep2(TemplateView):
         article = submission_models.Article(
             # do I need this? last_modified=now()
             journal=self.request.journal,
+            # TODO: use only cleaned data (don't use POST directly)
             title=self.request.POST[f"title_{index}"],
             owner=author,
-            # TODO: enable choosing a section in the first step
-            section=submission_models.Section.objects.get(journal=self.request.journal, name="Article"),
+            # TODO: use only cleaned data (don't use POST directly)
+            section=submission_models.Section.objects.get(
+                pk=self.request.POST["type_of_new_articles"],
+                journal=self.request.journal,
+            ),
             # TODO: enable choosing a license in the first step
             license=submission_models.Licence.objects.filter(journal=self.request.journal).first(),
             date_started=timezone.now(),
