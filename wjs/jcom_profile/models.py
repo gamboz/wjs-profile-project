@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from journal.models import Journal
-from submission.models import Article
+from submission.models import Article, Section
 from utils import logic as utils_logic
 
 # TODO: use settings.AUTH_USER_MODEL
@@ -132,10 +132,27 @@ class SpecialIssue(models.Model):
     journal = models.ForeignKey(to=Journal, on_delete=models.CASCADE)
     documents = models.ManyToManyField(to="core.File", limit_choices_to={"article_id": None})
     invitees = models.ManyToManyField(to="core.Account")
+    # A S.I. can impose a filter on submittable article types ("sections")
+    allowed_sections = models.ManyToManyField(to="submission.Section")
 
     def get_absolute_url(self):
         """Get the absolute URL (where create-view redirects on success)."""
         return reverse("si-update", kwargs={"pk": self.pk})
+
+    def save(self, *args, **kwargs):
+        """Set the default for field allowed_sections."""
+        # Cannot simply do `if not self.allowed_sections.exists()...`
+        # because `ValueError: "<SpecialIssue>" needs to have a value
+        # for field "id" before this many-to-many relationship can be
+        # used.`
+        #
+        # Approach from https://stackoverflow.com/a/32068983/1581629
+        created_flag = False
+        if not self.pk:
+            created_flag = True
+        super().save(*args, **kwargs)
+        if created_flag:
+            self.allowed_sections.set(Section.objects.filter(journal=self.journal))
 
     def is_open_for_submission(self):
         """Compute if this special issue is open for submission."""

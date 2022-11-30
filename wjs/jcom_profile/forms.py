@@ -9,7 +9,7 @@ from django.forms import ModelForm, inlineformset_factory
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from easy_select2.widgets import Select2Multiple
-from submission.models import Keyword
+from submission.models import Keyword, Section
 from utils.forms import CaptchaForm
 
 from wjs.jcom_profile.models import (
@@ -305,3 +305,18 @@ class IMUEditExistingAccounts(forms.ModelForm):
             "email",
             "institution",
         ]
+
+
+class SIUpdateForm(forms.ModelForm):
+    class Meta:
+        model = SpecialIssue
+        # same fields as SICreate; do not add "documents": they are dealt with "manually"
+
+        fields = ["name", "short_name", "description", "open_date", "close_date", "journal", "allowed_sections"]
+
+    def __init__(self, *args, **kwargs):
+        """Filter sections to show only sections of the special issue's journal."""
+        super().__init__(*args, **kwargs)
+        self.fields["allowed_sections"].queryset = Section.objects.filter(
+            journal=self.instance.journal,
+        )
