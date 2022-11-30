@@ -272,8 +272,23 @@ class IMUForm(forms.Form):
         choices=EURISTICS,
         required=True,
         initial="optimistic",
+        label="Match euristics - NOT IMPLEMENTED",
         help_text="Being optimistic ... TODO WRITE ME!",
     )
+    type_of_new_articles = forms.ModelChoiceField(
+        queryset=None,
+        required=True,
+        help_text="All new contributions will have the choosen section (article type).",
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Populate type_of_new_articles queryset from the allowed_section of the current si."""
+        super().__init__(*args, **kwargs)
+        if "pk" in kwargs:
+            special_issue = SpecialIssue.objects.get(kwargs["pk"])
+            self.type_of_new_articles.queryset = special_issue.allowed_sections
+        else:
+            raise Exception
 
 
 class IMUEditExistingAccounts(forms.ModelForm):

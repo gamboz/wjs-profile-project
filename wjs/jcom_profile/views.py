@@ -603,7 +603,7 @@ class IMUStep1(TemplateView):
 
     def get(self, *args, **kwargs):
         """Show a form to start the IMU process - upload the data file."""
-        form = self.form_class()
+        form = self.form_class(*args, **kwargs)
         return render(
             self.request,
             template_name=self.template_name,
