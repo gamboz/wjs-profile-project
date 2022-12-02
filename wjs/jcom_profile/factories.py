@@ -59,4 +59,11 @@ class ArticleFactory(factory.django.DjangoModelFactory):
     # + link with SubFactory also fails during teardown (credo...)
     #   - section = factory.SubFactory(SectionFactory)
     #
+    # TODO: try me!
+    # ... journal = factory.LazyAttribute(lambda x: factory.Iterator(Journal.objects.all()))
+    # oppure
+    # @factory.post_generation
+    # def set1(foo, create, value, **kwargs):
+    #     ... foo.value = 1
+
     # TODO: use dall.e (https://labs.openai.com) to fill `thumbnail_image_file`
