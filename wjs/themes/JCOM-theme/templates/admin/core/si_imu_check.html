@@ -16,6 +16,17 @@ tr.error td.error {
     background-color: red;
     color: white;
 }
+table { border-collapse: collapse; }
+table tbody tr:nth-child(even) {
+    border-bottom: 0;
+    background-color: #fefefe;
+}
+table tbody tr {
+    border-top: 1px solid #f1f1f1;
+}
+table tbody tr.suggestion {
+    border: none;
+}
     </style>
 {% endblock css %}
 {% block body %}
@@ -94,22 +105,22 @@ tr.error td.error {
                                             </td>
                                         </tr>
                                         {% for suggestion in line.suggestions %}
-                                            <tr>
-                                                <td class="suggestion">&nbsp;</td>
-                                                <td class="suggestion">{{ suggestion.first }}</td>
-                                                <td class="suggestion">
+                                            <tr class="suggestion">
+                                                <td>&nbsp;</td>
+                                                <td>{{ suggestion.first }}</td>
+                                                <td>
                                                     {{ suggestion.middle }}
                                                 </td>
-                                                <td class="suggestion">
+                                                <td>
                                                     {{ suggestion.last }}
                                                 </td>
-                                                <td class="suggestion">
+                                                <td>
                                                     {{ suggestion.email }}
                                                 </td>
-                                                <td class="suggestion">
+                                                <td>
                                                     {{ suggestion.institution }}
                                                 </td>
-                                                <td class="suggestion">
+                                                <td>
                                                     {{ suggestion.pk }}
                                                 </td>
                                                 <td>
