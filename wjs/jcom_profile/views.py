@@ -1,6 +1,6 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
 from collections import namedtuple
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Iterable
 
 import pandas as pd
@@ -612,7 +612,6 @@ class SuggestionLine:
     last: str
     email: str  # TODO: use some kind of email type like Type(email_address)
     institution: str
-    title: str
     pk: int
     is_best_suggestion: bool = False
 
@@ -661,6 +660,11 @@ class ContributionLine:
 
     def __eq__(self, other):
         """Two lines are equal if the name and title are the same."""
+        # This "equality" is useful when testing for repeated lines
+        # (e.g. spurious copy-paste), but there is also a different
+        # scenario: when two lines with the same email have different
+        # first/middle/last name or institution. This is taken care of
+        # elsewhere.
         return (
             self.first == other.first
             and self.middle == other.middle
@@ -671,6 +675,36 @@ class ContributionLine:
     def __hash__(self):
         """Let's say these suffice..."""
         return hash(f"{self.first}{self.middle}{self.last}{self.title}")
+
+    def author_eq(self, other):
+        """Two authors are "equal" if first/middle/last name or institution match.
+
+        Here I don't check the email because it is used as a
+        dictionary key to keep track of who we already saw. If we see
+        the same email more than once, we expect that the authors of
+        the two lines are equal.
+
+        """
+        return (
+            self.first == other.first
+            and self.middle == other.middle
+            and self.last == other.last
+            # and self.email == other.email  # just add also the email, it does not hurt
+            and self.institution == other.institution
+        )
+
+    def to_error_line(self, error_message):
+        """Use this line to build an ErrorLine with the given error message and return it."""
+        return ErrorLine(
+            index=self.index,
+            first=self.first,
+            middle=self.middle,
+            last=self.last,
+            email=self.email,
+            institution=self.institution,
+            title=self.title,
+            error=error_message,
+        )
 
 
 class IMUStep1(TemplateView):
@@ -728,20 +762,27 @@ class IMUStep1(TemplateView):
             na_filter=False,
             engine="odf",
         )
-        # Check for extra copy paste: two lines with same author and
-        # title are bad.
-        seen = {}
+        # Check for extra copy paste: two lines with same author and same title.
+        seen_titles = {}
+        # Check for uncleare data: two lines with same email, but different author metadata.
+        seen_authors = {}
         for row in df.itertuples(index=True):
             line = self.examine_row(row)
             if not isinstance(line, ContributionLine):
                 result_lines.append(line)
                 continue
-            if line in seen:
-                kwargs = asdict(line)
-                kwargs.pop("suggestions")
-                line = ErrorLine(index=line.index, **kwargs, error=f"Line {line.index} is the same as {seen[line]}")
+
+            if line in seen_titles:
+                line = line.to_error_line(
+                    f"Line {line.index} is the same as {seen_titles[line]}",
+                )
+            elif line.email in seen_authors and not line.author_eq(seen_authors[line.email]):
+                line = line.to_error_line(
+                    f"Line {line.index} has same email but different data than {seen_authors[line.email].index}",
+                )
             else:
-                seen[line] = line.index
+                seen_titles[line] = line.index
+                seen_authors[line.email] = line
             result_lines.append(line)
         return result_lines
 
