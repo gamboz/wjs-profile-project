@@ -98,9 +98,10 @@ table tbody tr.suggestion {
                                                 <input type="radio"
                                                        name="action-{{ line.index }}"
                                                        value="new"
-                                                       {% if not line.suggestions %}checked="checked"{% endif %}/>
+                                                       {% if not line.suggestions %}checked="checked"{% endif %}
+                                                       required="" />
                                                 new
-                                                <input type="radio" name="action-{{ line.index }}" value="skip"/>
+                                                <input type="radio" name="action-{{ line.index }}" value="skip" required="" />
                                                 skip
                                             </td>
                                         </tr>
@@ -126,12 +127,14 @@ table tbody tr.suggestion {
                                                 <td>
                                                     <input type="radio"
                                                            name="action-{{ line.index }}"
-                                                           value="DB_{{ suggestion.pk }}"/>
+                                                           value="DB_{{ suggestion.pk }}"
+                                                           required="" />
                                                     DB
                                                     <input type="radio"
                                                            name="action-{{ line.index }}"
                                                            value="edit_{{ suggestion.pk }}"
-                                                           {% if suggestion.is_best_suggestion %}checked="checked"{% endif %}/>
+                                                           {% if suggestion.is_best_suggestion %}checked="checked"{% endif %}
+                                                           required="" />
                                                     edit...
                                                 </td>
                                             </tr>

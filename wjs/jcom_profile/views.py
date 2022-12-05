@@ -657,6 +657,7 @@ class ContributionLine:
         self.institution = row.institution
         self.title = row.title
         self.index = row.Index  # watch out for "Index" uppercase "I"
+        self.suggestions = []
 
     def __eq__(self, other):
         """Two lines are equal if the name and title are the same."""
