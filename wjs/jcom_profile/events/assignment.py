@@ -7,8 +7,22 @@ from django.utils.module_loading import import_string
 
 
 def default_assign_editors_to_articles(**kwargs) -> None:
-    """Assign editors to article for review. Default algorithm. Logic TBD."""
-    print("default assignment algorithm.")
+    """Assign editors to article for review. Default algorithm."""
+    from review.models import EditorAssignment
+
+    from ..models import EditorAssignmentParameters
+
+    article = kwargs["article"]
+    if article.articlewrapper.special_issue and article.articlewrapper.special_issue.editors:
+        parameters = EditorAssignmentParameters.objects.filter(
+            editor__in=article.articlewrapper.special_issue.editors.all(),
+        )
+    else:
+        parameters = EditorAssignmentParameters.objects.filter(journal=article.journal)
+    editor = parameters.order_by("workload").first().editor
+    EditorAssignment.objects.create(article=article, editor=editor, editor_type="Editor", notified=True)
+    article.stage = "Assigned"
+    article.save()
 
 
 def dispatch_assignment(**kwargs) -> None:
