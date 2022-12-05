@@ -19,10 +19,14 @@ def default_assign_editors_to_articles(**kwargs) -> None:
         )
     else:
         parameters = EditorAssignmentParameters.objects.filter(journal=article.journal)
-    editor = parameters.order_by("workload").first().editor
-    EditorAssignment.objects.create(article=article, editor=editor, editor_type="Editor", notified=True)
-    article.stage = "Assigned"
-    article.save()
+    if parameters:
+        editor = parameters.order_by("workload").first().editor
+        EditorAssignment.objects.create(article=article, editor=editor, editor_type="Editor", notified=True)
+        article.stage = "Assigned"
+        article.save()
+    else:
+        # TODO: Check out how to deal with this
+        print("No editor parameters.")
 
 
 def dispatch_assignment(**kwargs) -> None:
