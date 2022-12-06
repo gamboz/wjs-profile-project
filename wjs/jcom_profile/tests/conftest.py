@@ -17,7 +17,7 @@ from submission.models import Keyword
 from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 
-from wjs.jcom_profile.factories import ArticleFactory
+from wjs.jcom_profile.factories import ArticleFactory, SpecialIssueFactory
 from wjs.jcom_profile.models import JCOMProfile
 from wjs.jcom_profile.utils import generate_token
 
@@ -240,3 +240,13 @@ def keywords():
 # article objects) and a fixture named "article" (i.e. one article
 # object) that would clash with the one defined above.
 pytest_factoryboy.register(ArticleFactory, "fb_article")
+# Make a fixture that returns a user "already existing" in the DB
+pytest_factoryboy.register(
+    ArticleFactory,
+    "existing_user",
+    first_name="Iam",
+    last_name="Sum",
+    email="iamsum@example.com",
+    institution="ML",
+)
+pytest_factoryboy.register(SpecialIssueFactory)
