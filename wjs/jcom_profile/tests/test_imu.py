@@ -1,6 +1,7 @@
 """Test Import Many Users functionality"""
 
 import io
+from collections import namedtuple
 
 import lxml.html
 import pytest
@@ -62,7 +63,7 @@ def test_si_imu_upload_one_existing_one_new(
             existing_user.institution,
             "Title ふう",
         ),
-        ("Novicius", None, "Fabulator", "nfabulator@dmain.net", "Affilia", "Title ばる"),
+        ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
     )
     ods = make_ods(foglio)
     data = dict(
@@ -78,7 +79,7 @@ def test_si_imu_upload_one_existing_one_new(
     expectations = (
         "Insert Users — Step 2/3",  # NB: second step! Looking at the POST
         'name="email_1" value="iamsum@example.com"',
-        'name="email_2" value="nfabulator@dmain.net"',
+        'name="email_2" value="nfabulator@domain.net"',
         "Title ふう",
         "Title ばる",
     )
@@ -197,7 +198,7 @@ def test_si_imu_upload_iequal_emails(
             existing_user.institution,
             "Title ふう",
         ),
-        ("Novicius", None, "Fabulator", "nfabulator@dmain.net", "Affilia", "Title ばる"),
+        ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
     )
     ods = make_ods(foglio)
     data = dict(
@@ -213,7 +214,7 @@ def test_si_imu_upload_iequal_emails(
     expectations = (
         "Insert Users — Step 2/3",
         f'name="email_1" value="{case_changed_email}"',
-        'name="email_2" value="nfabulator@dmain.net"',
+        'name="email_2" value="nfabulator@domain.net"',
         "Title ふう",
         "Title ばる",
     )
@@ -230,6 +231,190 @@ def test_si_imu_upload_iequal_emails(
     # Row 2 is about the new user: expect a "new" action:
     a2 = html.find(".//input[@name='action-2'][@checked]")
     assert a2.value == "new"
+
+
+@pytest.mark.django_db
+def test_si_imu_upload_new_author_two_contributions(
+    article_journal,
+    client,
+    admin,
+    special_issue,
+):
+    """Two different contribution from the same author not present in the DB.
+
+    System should suggest "new" for both lines.
+
+    Subsequently the system will notice that the new user has two
+    contributions and will re-use the newly created account, but this
+    is checked elsewhere.
+    """
+    client.force_login(admin)
+    url = reverse("si-imu-1", kwargs={"pk": special_issue.id})
+
+    foglio = (
+        ("Main session", None, None, None, None, None),
+        ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ふう"),
+        ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
+    )
+    ods = make_ods(foglio)
+    data = dict(
+        data_file=ods,
+        create_articles_on_import="on",
+        match_euristic="optimistic",
+        type_of_new_articles=special_issue.allowed_sections.first().id,
+    )
+    response = client.post(url, data)
+
+    # Preliminary checks
+    assert response.status_code == 200
+    expectations = (
+        "Insert Users — Step 2/3",
+        'name="email_1" value="nfabulator@domain.net"',
+        'name="email_2" value="nfabulator@domain.net"',
+        "Title ふう",
+        "Title ばる",
+    )
+    response_content = response.content.decode()
+    for expected in expectations:
+        assert expected in response_content
+
+    # Interesting checks
+    html = lxml.html.fromstring(response_content)
+    # Row 0 is for the "partition", we don't care.
+    # Row 1 is about the first already exising user: expect an "edit" action:
+    a1 = html.find(".//input[@name='action-1'][@checked]")
+    assert a1.value == "new"
+    # Row 2 is about the new user: expect a "new" action:
+    a2 = html.find(".//input[@name='action-2'][@checked]")
+    assert a2.value == "new"
+
+
+@pytest.mark.django_db
+def test_si_imu_upload_new_author_two_contributions_iequal_emails(
+    article_journal,
+    client,
+    admin,
+    special_issue,
+):
+    """Two different contribution from the same author not present in the DB.
+
+    The emails in the ods are iexact, but not exact. The system should
+    suggest "new" for both lines.
+
+    Subsequently the system will notice that the new user has two
+    contributions and will re-use the newly created account, but this
+    is checked elsewhere.
+    """
+    client.force_login(admin)
+    url = reverse("si-imu-1", kwargs={"pk": special_issue.id})
+
+    foglio = (
+        ("Main session", None, None, None, None, None),
+        ("Novicius", None, "Fabulator", "NFABULATOR@DOMAIN.NET", "Affilia", "Title ふう"),
+        ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
+    )
+    ods = make_ods(foglio)
+    data = dict(
+        data_file=ods,
+        create_articles_on_import="on",
+        match_euristic="optimistic",
+        type_of_new_articles=special_issue.allowed_sections.first().id,
+    )
+    response = client.post(url, data)
+
+    # Preliminary checks
+    assert response.status_code == 200
+    expectations = (
+        "Insert Users — Step 2/3",
+        'name="email_1" value="NFABULATOR@DOMAIN.NET"',
+        'name="email_2" value="nfabulator@domain.net"',
+        "Title ふう",
+        "Title ばる",
+    )
+    response_content = response.content.decode()
+    for expected in expectations:
+        assert expected in response_content
+
+    # Interesting checks
+    html = lxml.html.fromstring(response_content)
+    # Row 0 is for the "partition", we don't care.
+    # Row 1 is about the first already exising user: expect an "edit" action:
+    a1 = html.find(".//input[@name='action-1'][@checked]")
+    assert a1.value == "new"
+    # Row 2 is about the new user: expect a "new" action:
+    a2 = html.find(".//input[@name='action-2'][@checked]")
+    assert a2.value == "new"
+
+
+WrongData = namedtuple("WrongData", ["what", "where"])
+WRONG_DATA = (
+    WrongData(what="Errabis", where=0),  # first
+    WrongData(what="Errabis", where=1),  # middle
+    WrongData(what="Errabis", where=2),  # last
+    WrongData(what="Errabis", where=4),  # institution
+)
+
+
+@pytest.mark.parametrize("wrong_data", WRONG_DATA)
+@pytest.mark.django_db
+def test_si_imu_upload_two_authors_same_email_different_metadata(
+    article_journal,
+    client,
+    admin,
+    special_issue,
+    wrong_data,
+):
+    """Two different contribution from the same author not present in the DB.
+
+    The emails in the ods are identical, but the metadata in the two
+    lines is different. The system notice the problem and refuses to
+    process the second.
+    """
+    client.force_login(admin)
+    url = reverse("si-imu-1", kwargs={"pk": special_issue.id})
+
+    foglio = [
+        ("Main session", None, None, None, None, None),
+        ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ふう"),
+    ]
+    problematic_line = ["Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"]
+    problematic_line[wrong_data.where] = wrong_data.what
+    foglio.append(problematic_line)
+    ods = make_ods(foglio)
+    data = dict(
+        data_file=ods,
+        create_articles_on_import="on",
+        match_euristic="optimistic",
+        type_of_new_articles=special_issue.allowed_sections.first().id,
+    )
+    response = client.post(url, data)
+
+    # Preliminary checks
+    assert response.status_code == 200
+    expectations = (
+        "Insert Users — Step 2/3",
+        'name="email_1" value="nfabulator@domain.net"',
+        # no `"email_2" value="nfabulator@domain.net"`: only an error line
+        "Title ふう",
+        "Title ばる",
+    )
+    response_content = response.content.decode()
+    for expected in expectations:
+        assert expected in response_content
+
+    # Interesting checks
+    html = lxml.html.fromstring(response_content)
+    # Row 0 is for the "partition", we don't care.
+    # Row 1 is about the first already exising user: expect an "edit" action:
+    a1 = html.find(".//input[@name='action-1'][@checked]")
+    assert a1.value == "new"
+    # Row 2 is about the same author with wrong data: expect an error line
+    error_tr = html.find(".//tr[@class='error']")
+    # the error line should contain the line data...
+    assert error_tr.xpath(f"td[text()='{wrong_data.what}']")
+    # ...and an error message
+    error_msg = error_tr.find("td[@class='error']")
+    assert error_msg.text == "Line 2 has same email but different data than 1"
 
 
 # 1 contribution ✕ 1 smilar - new
