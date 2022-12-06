@@ -2,20 +2,9 @@
 
 import io
 
+import lxml.html
 import pytest
 from django.urls import reverse
-from imu_bits import (
-    FOGLIO1,
-    FOGLIO2,
-    FOGLIO3,
-    FOGLIO4,
-    FOGLIO5,
-    expectations1,
-    expectations2,
-    expectations3,
-    expectations4,
-    expectations5,
-)
 from odf.opendocument import OpenDocumentSpreadsheet
 from odf.table import Table, TableCell, TableRow
 from odf.text import P
@@ -46,44 +35,201 @@ def make_ods(data):
     f = io.BytesIO()
     doc.save(f, False)
     f.seek(0)
-    return {
-        "file": ("x.ods", f, "application/vnd.oasis.opendocument.spreadsheet"),
-    }
+    return f
 
 
-@pytest.mark.parametrize(
-    "test_input,expected",
-    [
-        (make_ods(FOGLIO1), expectations1),
-        (make_ods(FOGLIO2), expectations2),
-        (make_ods(FOGLIO3), expectations3),
-        (make_ods(FOGLIO4), expectations4),
-        (make_ods(FOGLIO5), expectations5),
-    ],
-)
 @pytest.mark.django_db
-def test_admin_IMU_upload(
-    test_input,
-    expected,
+def test_si_imu_upload_one_existing_one_new(
     article_journal,
     client,
     admin,
     existing_user,
     special_issue,
 ):
-    """Admin uploads ods file with authors."""
+    """Upload a sheet with one-existing / one-new authors."""
     client.force_login(admin)
     url = reverse("si-imu-1", kwargs={"pk": special_issue.id})
+
+    # foglio 1: "Main session" + 2 contributi diversi (diversi autori e
+    # titolo). Il primo autore è già presente nel DB.
+    foglio = (
+        ("Main session", None, None, None, None, None),
+        (
+            existing_user.first_name,
+            existing_user.middle_name,
+            existing_user.last_name,
+            existing_user.email,
+            existing_user.institution,
+            "Title ふう",
+        ),
+        ("Novicius", None, "Fabulator", "nfabulator@dmain.net", "Affilia", "Title ばる"),
+    )
+    ods = make_ods(foglio)
     data = dict(
-        data_file=test_input,
+        data_file=ods,
         create_articles_on_import="on",
         match_euristic="optimistic",
         type_of_new_articles=special_issue.allowed_sections.first().id,
     )
     response = client.post(url, data)
-    assert response.status_code == 200
 
-    assert "write me!!!" in response.content.decode()
+    # Preliminary checks
+    assert response.status_code == 200
+    expectations = (
+        "Insert Users — Step 2/3",  # NB: second step! Looking at the POST
+        'name="email_1" value="iamsum@example.com"',
+        'name="email_2" value="nfabulator@dmain.net"',
+        "Title ふう",
+        "Title ばる",
+    )
+    response_content = response.content.decode()
+    for expected in expectations:
+        assert expected in response_content
+
+    # Interesting checks
+    html = lxml.html.fromstring(response_content)
+    # Row 0 is for the "partition", we don't care.
+    # Row 1 is about the already exising user: expect an "edit" action:
+    a1 = html.find(".//input[@name='action-1'][@checked]")
+    assert a1.value.startswith("edit")
+    # Row 2 is about the new user: expect a "new" action:
+    a2 = html.find(".//input[@name='action-2'][@checked]")
+    assert a2.value == "new"
+
+
+@pytest.mark.django_db
+def test_si_imu_upload_two_identical_lines(
+    article_journal,
+    client,
+    admin,
+    existing_user,
+    special_issue,
+):
+    """Detect two identical contributions (same title and author).
+
+    Refuse to process the second.
+    """
+    client.force_login(admin)
+    url = reverse("si-imu-1", kwargs={"pk": special_issue.id})
+
+    # foglio 2: "Main session" + 2 contributi uguali tra loro (stesso
+    # autore e titolo). L'autore è già presente nel DB.
+    foglio = (
+        ("Main session", None, None, None, None, None),
+        (
+            existing_user.first_name,
+            existing_user.middle_name,
+            existing_user.last_name,
+            existing_user.email,
+            existing_user.institution,
+            "Title ふう",
+        ),
+        (
+            existing_user.first_name,
+            existing_user.middle_name,
+            existing_user.last_name,
+            existing_user.email,
+            existing_user.institution,
+            "Title ふう",
+        ),
+    )
+    ods = make_ods(foglio)
+    data = dict(
+        data_file=ods,
+        create_articles_on_import="on",
+        match_euristic="optimistic",
+        type_of_new_articles=special_issue.allowed_sections.first().id,
+    )
+    response = client.post(url, data)
+
+    # Preliminary checks
+    assert response.status_code == 200
+    expectations = (
+        "Insert Users — Step 2/3",
+        'name="email_1" value="iamsum@example.com"',
+        # no `"email_2" value="iamsum@example.com"`: only an error line
+        "Title ふう",
+    )
+    response_content = response.content.decode()
+    for expected in expectations:
+        assert expected in response_content
+
+    # Interesting checks
+    html = lxml.html.fromstring(response_content)
+    # Row 0 is for the "partition", we don't care.
+    # Row 1 is about the first already exising user: expect an "edit" action:
+    a1 = html.find(".//input[@name='action-1'][@checked]")
+    assert a1.value.startswith("edit")
+    # Row 2 is about the spurious copy-paste: expect an error line
+    error_tr = html.find(".//tr[@class='error']")
+    # the error line should contain the line data (e.g. the email)...
+    assert error_tr.xpath(f"td[text()='{existing_user.email}']")
+    # ...and an error message
+    error_msg = error_tr.find("td[@class='error']")
+    assert error_msg.text == "Line 2 is the same as 1"
+
+
+@pytest.mark.django_db
+def test_si_imu_upload_iequal_emails(
+    article_journal,
+    client,
+    admin,
+    existing_user,
+    special_issue,
+):
+    """Suggestions based on email should be case-insensitive.
+
+    Same as foglio 1, but the emails of the existing user in the DB
+    and in te ods file are equal only ignoring case
+    (uppercase/lowercase).
+    """
+    client.force_login(admin)
+    url = reverse("si-imu-1", kwargs={"pk": special_issue.id})
+
+    case_changed_email = existing_user.email.upper()
+    foglio = (
+        ("Main session", None, None, None, None, None),
+        (
+            existing_user.first_name,
+            existing_user.middle_name,
+            existing_user.last_name,
+            case_changed_email,  # ⇦ interesting piece here
+            existing_user.institution,
+            "Title ふう",
+        ),
+        ("Novicius", None, "Fabulator", "nfabulator@dmain.net", "Affilia", "Title ばる"),
+    )
+    ods = make_ods(foglio)
+    data = dict(
+        data_file=ods,
+        create_articles_on_import="on",
+        match_euristic="optimistic",
+        type_of_new_articles=special_issue.allowed_sections.first().id,
+    )
+    response = client.post(url, data)
+
+    # Preliminary checks
+    assert response.status_code == 200
+    expectations = (
+        "Insert Users — Step 2/3",
+        f'name="email_1" value="{case_changed_email}"',
+        'name="email_2" value="nfabulator@dmain.net"',
+        "Title ふう",
+        "Title ばる",
+    )
+    response_content = response.content.decode()
+    for expected in expectations:
+        assert expected in response_content
+
+    # Interesting checks
+    html = lxml.html.fromstring(response_content)
+    # Row 0 is for the "partition", we don't care.
+    # Row 1 is about the first already exising user: expect an "edit" action:
+    a1 = html.find(".//input[@name='action-1'][@checked]")
+    assert a1.value.startswith("edit")
+    # Row 2 is about the new user: expect a "new" action:
+    a2 = html.find(".//input[@name='action-2'][@checked]")
+    assert a2.value == "new"
 
 
 # 1 contribution ✕ 1 smilar - new

@@ -615,8 +615,7 @@ class SuggestionLine:
     pk: int
     is_best_suggestion: bool = False
 
-    # TODO: def __init__(line: ContributionLine... come si fa se ho definizioni incrociate?
-    def __init__(self, core_account, line):
+    def __init__(self, core_account, line: "ContributionLine"):
         """Build a SuggestionLine from an item of a queryset."""
         # TODO: map me more elegantly: can I unpack the namedtuple
         # directly into the default __init__ of the dataclass?
@@ -640,15 +639,14 @@ class ContributionLine:
     first: str
     middle: str
     last: str
-    email: str  # TODO: use some kind of email type like Type(email_address)
+    email: str
     institution: str
     title: str
     suggestions: Iterable[SuggestionLine]
 
     def __init__(self, row: namedtuple):
         """Build a ContributionLine from a Pandas namedtuple."""
-        # TODO: map me more elegantly: can I unpack the namedtuple
-        # directly into the default __init__ of the dataclass?
+        # Could map row more elegantly with `*[*row]`, but it gets less clear.
         self.first = row.first
         self.middle = row.middle
         self.last = row.last
@@ -734,7 +732,6 @@ class IMUStep1(TemplateView):
                 context={"form": form},
             )
         data_file = form.files["data_file"]
-        # TODO: shoul I dynamically create forms?
         context = {
             "lines": self.process_data_file(data_file),
             "special_issue_id": kwargs["pk"],
