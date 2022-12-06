@@ -597,7 +597,7 @@ class ErrorLine:
     first: str
     middle: str
     last: str
-    email: str  # TODO: use some kind of email type like Type(email_address)
+    email: str
     institution: str
     title: str
     error: str
@@ -605,27 +605,26 @@ class ErrorLine:
 
 @dataclass
 class SuggestionLine:
-    """A create / merge / merge+edit / ignore suggestion."""
+    """A merge-with-db / merge+edit suggestion."""
 
     first: str
     middle: str
     last: str
-    email: str  # TODO: use some kind of email type like Type(email_address)
+    email: str
     institution: str
     pk: int
     is_best_suggestion: bool = False
 
     def __init__(self, core_account, line: "ContributionLine"):
         """Build a SuggestionLine from an item of a queryset."""
-        # TODO: map me more elegantly: can I unpack the namedtuple
-        # directly into the default __init__ of the dataclass?
         self.first = core_account.first_name
         self.middle = core_account.middle_name
         self.last = core_account.last_name
         self.email = core_account.email
         self.institution = core_account.institution
         self.pk = core_account.id
-        if line.email == core_account.email:
+        # We compare emails case-insensitively
+        if line.email.upper() == core_account.email.upper():
             self.is_best_suggestion = True
 
 
