@@ -5,10 +5,12 @@ from collections import namedtuple
 
 import lxml.html
 import pytest
+from core.models import Account
 from django.urls import reverse
 from odf.opendocument import OpenDocumentSpreadsheet
 from odf.table import Table, TableCell, TableRow
 from odf.text import P
+from submission.models import Article
 
 
 def make_ods(data):
@@ -577,62 +579,36 @@ expected_5 = [
     "<td>DB</td>",
 ]
 
-expected_generic = (
-    "mailto:%(eo_mail_encoded)s",
-    "<h1>Load multiple users</h1>",
-)
 
-
-@pytest.mark.parametrize(
-    "test_input,expected",
-    [
-        (block_0, expected_0),
-        (block_1, expected_1),
-        (block_2, expected_2),
-        (block_3, expected_3),
-        (block_4, expected_4),
-        (block_5, expected_5),
-    ],
-)
-def donttest_administrator_IMU_check(
-    test_input,
-    expected,
-    admin_auth,
-    new_user,
-    new_conference,
-    new_contribution,
-    sessionid_of_new_contribution,
-    db_connection,
-    check_output,
+@pytest.mark.django_db
+def test_si_imu_new_author_and_contribution(
+    article_journal,
+    client,
+    admin,
+    special_issue,
 ):
-    """Admin inserts many users (phase 2 (check): ods uploaded and results presetend."""
-    with db_connection.cursor() as cursor:
-        cursor.execute(
-            "select count(*) as contribs from conf where confid = %s",
-            (new_conference,),
-        )
-        db_connection.commit()
-        assert cursor.rowcount == 1
-        record = cursor.fetchone()
-        assert record["contribs"] == 1
+    """Create new account and contribution."""
+    client.force_login(admin)
+    url = reverse("si-imu-2", kwargs={"pk": special_issue.id})
+    data = {
+        "tot_lines": "1",
+        "create_articles_on_import": "on",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+        "first_0": "Novicius",
+        "middle_0": None,
+        "last_0": "Fabulator",
+        "email_0": "nfabulator@domain.net",
+        "institution_0": "Affilia",
+        "title_0": "Title ばる",
+        "action-0": "new",
+    }
+    response = client.post(url, data)
+    assert response.status_code == 200
 
-    expected.extend(expected_generic)
-    test_input.setdefault("confid", new_conference)
-    check_output(
-        url_path="/cgi-bin/administrator/insert_many_users_check.cgi",
-        request_parameters=test_input,
-        expected_output=tuple(expected),
-        auth=admin_auth,
-        request_method=Methods.POST,
-    )
+    # The new user has been created
+    author = Account.objects.get(email=data["email_0"])
 
-    # cleanup (so that other tests find standard condition)
-    with db_connection.cursor() as cursor:
-        cursor.execute(
-            "delete from preproc where confid = %s and preid != %s",
-            (new_conference, new_contribution),
-        )
-        db_connection.commit()
-        # ugly... relies on knowledge of the test input
-        cursor.execute("delete from user where email='gamboz@medialab.sissa.it' and uid != 12325")
-        db_connection.commit()
+    # The new article has been created, the new user is the owner
+    article = Article.objects.first()
+
+    assert article.owner == author
