@@ -627,6 +627,7 @@ class SuggestionLine:
         # We compare emails case-insensitively
         if line.email.upper() == core_account.email.upper():
             self.is_best_suggestion = True
+            line.disable_new = True
 
 
 @dataclass
@@ -655,6 +656,7 @@ class ContributionLine:
         self.title = row.title
         self.index = row.Index  # watch out for "Index" uppercase "I"
         self.suggestions = []
+        self.disable_new = False
 
     def __eq__(self, other):
         """Two lines are equal if the name and title are the same."""

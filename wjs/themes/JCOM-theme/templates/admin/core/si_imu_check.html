@@ -99,7 +99,9 @@ table tbody tr.suggestion {
                                                        name="action-{{ line.index }}"
                                                        value="new"
                                                        {% if not line.suggestions %}checked="checked"{% endif %}
-                                                       required="" />
+                                                       required=""
+                                                       {% if line.disable_new %}disabled="disabled"{% endif %}
+                                                       />
                                                 new
                                                 <input type="radio" name="action-{{ line.index }}" value="skip" required="" />
                                                 skip
