@@ -940,9 +940,7 @@ class IMUStep2(TemplateView):
             )
             return
 
-        author, created = core_models.Account.objects.get_or_create(
-            email=form.cleaned_data["email"]
-        )
+        author, created = core_models.Account.objects.get_or_create(email=form.cleaned_data["email"])
         if created:
             author.first_name = form.cleaned_data["first_name"]
             author.middle_name = form.cleaned_data["middle_name"]
