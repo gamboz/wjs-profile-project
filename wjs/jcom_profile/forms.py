@@ -314,6 +314,29 @@ class IMUEditExistingAccounts(forms.ModelForm):
         ]
 
 
+class IMUHelperForm(forms.Form):
+    """Form to help in the validation of user data from step 2 used in step 3.
+
+    Fields should agree with fields of core.Account collected from the ods.
+    """
+
+    first_name = forms.CharField(max_length=300, required=True, strip=True)
+    middle_name = forms.CharField(
+        max_length=300,
+        required=False,
+        strip=True,
+        empty_value=None,
+    )
+    last_name = forms.CharField(max_length=300, required=True, strip=True)
+    email = forms.EmailField(required=True)
+    institution = forms.CharField(
+        max_length=1000,
+        required=False,
+        strip=True,
+        empty_value=None,
+    )
+
+
 class SIUpdateForm(forms.ModelForm):
     class Meta:
         model = SpecialIssue

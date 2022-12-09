@@ -612,3 +612,94 @@ def test_si_imu_new_author_and_contribution(
     article = Article.objects.first()
 
     assert article.owner == author
+
+
+@pytest.mark.django_db
+def test_si_imu_new_author_same_as_exising(
+    article_journal,
+    client,
+    admin,
+    special_issue,
+    existing_user,
+):
+    """Choose "new" for an account with the same email as an existing one is the same as choosing "DB"."""
+    client.force_login(admin)
+    url = reverse("si-imu-2", kwargs={"pk": special_issue.id})
+    data = {
+        "tot_lines": "1",
+        "create_articles_on_import": "on",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+        "first_0": existing_user.first_name,
+        "middle_0": existing_user.middle_name or "",
+        "last_0": existing_user.last_name,
+        "email_0": existing_user.email,  # ⇦ these two don't agree :)
+        "institution_0": existing_user.institution or "",
+        "title_0": "Title ばる",
+        "action-0": "new",  #              ⇦ these two don't agree :)
+    }
+    response = client.post(url, data)
+    assert response.status_code == 200
+
+    # The new user has been created
+    author = Account.objects.get(email=data["email_0"])
+
+    # The new article has been created, the new user is the owner
+    article = Article.objects.first()
+
+    assert article.owner == author
+
+
+@pytest.mark.parametrize("wrong_data", WRONG_DATA)
+@pytest.mark.django_db
+def test_si_imu_new_author_same_as_exising_but_different_data(
+    wrong_data,
+    article_journal,
+    client,
+    admin,
+    special_issue,
+    existing_user,
+):
+    """Choosing "new" for an account with the same email as an existing but with some different data causes error."""
+    client.force_login(admin)
+    url = reverse("si-imu-2", kwargs={"pk": special_issue.id})
+    messedup_data = [
+        existing_user.first_name,
+        existing_user.middle_name,
+        existing_user.last_name,
+        existing_user.email,  # never used, just a place-holder
+        existing_user.institution,
+    ]
+    messedup_data[wrong_data.where] = wrong_data.what
+    data = {
+        "tot_lines": "1",
+        "create_articles_on_import": "on",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+        "first_0": messedup_data[0],
+        "middle_0": messedup_data[1] or "",
+        "last_0": messedup_data[2],
+        "email_0": existing_user.email,  # ⇦ these two don't agree :)
+        "institution_0": messedup_data[4] or "",
+        "title_0": "Title ばる",
+        "action-0": "new",  #              ⇦ these two don't agree :)
+    }
+    response = client.post(url, data)
+    assert response.status_code == 200
+
+    # An error has been reported
+    assert (
+        f"ERROR - different data for existing user with email &quot;{existing_user.email}&quot;"
+        in response.content.decode()
+    )
+
+    # The existing user has not been changed
+    existing_user.refresh_from_db()
+    assert wrong_data.what not in [
+        existing_user.first_name,
+        existing_user.middle_name,
+        existing_user.last_name,
+        existing_user.institution,
+    ]
+
+    # No article has been created
+    article = Article.objects.first()
+    assert not article
