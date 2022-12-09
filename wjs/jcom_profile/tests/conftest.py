@@ -9,7 +9,7 @@ from core.models import Account, Role, Setting
 from django.conf import settings
 from django.core import management
 from django.urls.base import clear_script_prefix
-from django.utils import translation
+from django.utils import timezone, translation
 from journal import models as journal_models
 from journal.tests.utils import make_test_journal
 from press.models import Press
@@ -334,3 +334,10 @@ pytest_factoryboy.register(
     institution="ML",
 )
 pytest_factoryboy.register(SpecialIssueFactory, "fb_special_issue")
+yesterday = timezone.now() - timezone.timedelta(1)
+pytest_factoryboy.register(
+    SpecialIssueFactory,
+    "open_special_issue",
+    open_date=yesterday,
+    close_date=None,
+)
