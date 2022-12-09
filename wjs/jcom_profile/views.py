@@ -828,7 +828,7 @@ class IMUStep1(TemplateView):
         ]
 
 
-ODTLine = namedtuple("ODTLine", ["first", "middle", "last", "email", "institution"])
+ODSLine = namedtuple("ODSLine", ["first", "middle", "last", "email", "institution"])
 imu_edit_formset_factory = modelformset_factory(
     model=core_models.Account,
     form=forms.IMUEditExistingAccounts,
@@ -941,7 +941,7 @@ class IMUStep2(TemplateView):
             return
 
         author, created = core_models.Account.objects.get_or_create(
-            email=self.request.POST[f"email_{index}"],
+            email=form.cleaned_data["email"]
         )
         if created:
             author.first_name = form.cleaned_data["first_name"]
@@ -989,14 +989,14 @@ class IMUStep2(TemplateView):
         # a queryset, not a list...
         # ...accounts_to_edit.append(author)
         self.accounts_to_edit.append(pk)
-        odtline = ODTLine(
+        odsline = ODSLine(
             first=self.request.POST[f"first_{index}"],
             middle=self.request.POST[f"middle_{index}"],
             last=self.request.POST[f"last_{index}"],
             email=self.request.POST[f"email_{index}"],
             institution=self.request.POST[f"institution_{index}"],
         )
-        self.accounts_new_data[pk] = odtline
+        self.accounts_new_data[pk] = odsline
         self.add_line(index, msg=f"EDIT - {article} by {author}", must_edit=True)
 
     def action_unspecified(self, index):

@@ -18,7 +18,7 @@
 {% block body %}
     <div class="card">
         <div class="card-section">
-          {% for line in view.extra_context.lines %}
+            {% for line in view.extra_context.lines %}
                 <div class="row {{ line.css_class }}">
                     <div class="large-1 columns">{{ line.index }}</div>
                     <div class="large-11 columns">{{ line.msg }}</div>
@@ -71,7 +71,11 @@
                 {% endfor %}
                 <div class="row">
                     <div class="large-12 columns">
-                        <input type="submit" value="Update selected users" />
+                        {% if formset|length > 0 %}
+                            <input type="submit" value="Update selected users" />
+                        {% else %}
+                            <input type="submit" value="Continue" />
+                        {% endif %}
                     </div>
                 </div>
             </form>
