@@ -419,167 +419,6 @@ def test_si_imu_upload_two_authors_same_email_different_metadata(
     assert error_msg.text == "Line 2 has same email but different data than 1"
 
 
-# 1 contribution ✕ 1 smilar - new
-block_0 = dict(
-    lastname_0="Gamboz",
-    middlename_0=None,
-    firstname_0="Matteo",
-    affiliation_0="ml",
-    email_0="gamboz@medialab.sissa.it",
-    title_0="block 1 ᛒ",
-    session_0="0",
-    similar_0_0="12325",
-    choosen_0="new",
-    sessions="Main session",
-    users=0,
-)
-expected_0 = [
-    "<td>block 1 ᛒ</td>",
-    '<td>new <a href="gest_users.cgi?action=UPD&amp;author=',
-    "No user needs modification.",
-]
-
-# 1 contribution ✕ 1 smilar - db
-block_1 = dict(
-    lastname_0="Gamboz",
-    middlename_0=None,
-    firstname_0="Matteo",
-    affiliation_0="ml",
-    email_0="gamboz@medialab.sissa.it",
-    title_0="block 2 ᛒ",
-    session_0="0",
-    similar_0_0="12325",
-    choosen_0="db_0",
-    sessions="Main session",
-    users=0,
-)
-expected_1 = [
-    "<td>block 2 ᛒ</td>",
-    "<td>DB</td>",
-    "No user needs modification.",
-]
-
-# 1 contribution ✕ 1 smilar - modify
-block_2 = dict(
-    lastname_0="Gamboz",
-    middlename_0=None,
-    firstname_0="Matteo",
-    affiliation_0="〒 ml",
-    email_0="gamboz@medialab.sissa.it",
-    title_0="block 3 ᛒ",
-    session_0="0",
-    similar_0_0="12325",
-    choosen_0="modify_0",
-    sessions="Main session",
-    users=0,
-)
-expected_2 = [
-    "<td>block 3 ᛒ</td>",
-    "<td>DB",
-    '<td><input type="text" name="affiliation_12325"	value="〒 ml" /></td>',
-]
-
-# 2 contributions + first fails - db
-block_3 = dict(
-    lastname_0="Gamboz",
-    middlename_0=None,
-    firstname_0="Matteo",
-    affiliation_0="〒 ml",
-    email_0="gamboz@medialab.sissa.it",
-    title_0="block 4 ᛒ",
-    session_0="0",
-    similar_0_0="12325",
-    choosen_0="db_0",
-    #
-    lastname_1="Gamboz",
-    middlename_1=None,
-    firstname_1="Matteo",
-    affiliation_1="〒 ml",
-    email_1="gamboz@medialab.sissa.it",
-    title_1="block 4 ᛒ",
-    session_1="0",
-    similar_1_0="12325",
-    choosen_1="db_0",
-    #
-    sessions="Main session",
-    users=1,
-)
-expected_3 = [
-    "<td>block 4 ᛒ</td>",
-    "<td>DB",
-    "Contribution already present (same author, title, session).",
-]
-
-# 2 contributions from the same author, same email; both are checked "new"
-block_4 = dict(
-    lastname_0="Newone",
-    middlename_0=None,
-    firstname_0="User",
-    affiliation_0="Xyz",
-    email_0="newone@xyz.it",
-    title_0="title ふう",
-    session_0="0",
-    choosen_0="new",
-    #
-    lastname_1="Newone",
-    middlename_1=None,
-    firstname_1="User",
-    affiliation_1="Xyz",
-    email_1="newone@xyz.it",
-    title_1="title ばる",
-    session_1="0",
-    choosen_1="new",
-    #
-    sessions="Main session",
-    users=1,
-)
-expected_4 = [
-    # strings that should be relative to the _first_ record:
-    "<td>title ふう</td>",
-    "<td>new</td>",
-    "inserted </td>",
-    # strings that should be relative to the _second_ record:
-    "<td>title ばる</td>",
-    "<td>already inserted (see",
-    "<td>DB</td>",
-]
-
-# Same as block_4, but the emails of the accounts are different
-# case-wise. The expected behavior does not change.
-block_5 = dict(
-    lastname_0="Newone",
-    middlename_0=None,
-    firstname_0="User",
-    affiliation_0="Xyz",
-    email_0="newone@xyz.it",
-    title_0="title ふう",
-    session_0="0",
-    choosen_0="new",
-    #
-    lastname_1="Newone",
-    middlename_1=None,
-    firstname_1="User",
-    affiliation_1="Xyz",
-    email_1="NEWONE@xyz.it",  # only difference with block_4
-    title_1="title ばる",
-    session_1="0",
-    choosen_1="new",
-    #
-    sessions="Main session",
-    users=1,
-)
-expected_5 = [
-    # strings that should be relative to the _first_ record:
-    "<td>title ふう</td>",
-    "<td>new</td>",
-    "inserted </td>",
-    # strings that should be relative to the _second_ record:
-    "<td>title ばる</td>",
-    "<td>already inserted (see",
-    "<td>DB</td>",
-]
-
-
 @pytest.mark.django_db
 def test_si_imu_new_author_and_contribution(
     article_journal,
@@ -645,7 +484,6 @@ def test_si_imu_new_author_same_as_exising(
 
     # The new article has been created, the new user is the owner
     article = Article.objects.first()
-
     assert article.owner == author
 
 
@@ -703,3 +541,64 @@ def test_si_imu_new_author_same_as_exising_but_different_data(
     # No article has been created
     article = Article.objects.first()
     assert not article
+
+
+@pytest.mark.parametrize("modified_data", WRONG_DATA)
+@pytest.mark.django_db
+def test_si_imu_edit_exising(
+    article_journal,
+    client,
+    admin,
+    special_issue,
+    existing_user,
+    modified_data,
+):
+    """Choose "edit" should produce a form and display data from ods and db.
+
+    The existing user is not yet modified."""
+    client.force_login(admin)
+    url = reverse("si-imu-2", kwargs={"pk": special_issue.id})
+    new_data = [
+        existing_user.first_name,
+        existing_user.middle_name,
+        existing_user.last_name,
+        existing_user.email,  # never used, just a place-holder
+        existing_user.institution,
+    ]
+    new_data[modified_data.where] = modified_data.what
+    data = {
+        "tot_lines": "1",
+        "create_articles_on_import": "on",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+        "first_0": new_data[0],
+        "middle_0": new_data[1] or "",
+        "last_0": new_data[2],
+        "email_0": existing_user.email,
+        "institution_0": new_data[4] or "",
+        "title_0": "Title ばる",
+        "action-0": f"edit_{existing_user.id}",
+    }
+    response = client.post(url, data)
+    assert response.status_code == 200
+
+    # The existing_user has _not_ been modified (yet)
+    existing_user.refresh_from_db()
+    existing_user_data = [
+        existing_user.first_name,
+        existing_user.middle_name,
+        existing_user.last_name,
+        existing_user.email,  # never used, just a place-holder
+        existing_user.institution,
+    ]
+    assert existing_user_data[modified_data.where] != modified_data.what
+
+    # Data from the db and from the ods are both shown
+    response_content = response.content.decode()
+    html = lxml.html.fromstring(response_content)
+    assert html.xpath(f".//td[text()='{new_data[modified_data.where]}']")
+    assert html.xpath(f".//td[text()='{existing_user_data[modified_data.where]}']")
+
+    # The new article has been created, the existing user is the owner
+    article = Article.objects.first()
+    # NB: existing_user is a JCOMProfile, not a core.Account!
+    assert article.owner == existing_user.janeway_account
