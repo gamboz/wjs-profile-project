@@ -68,10 +68,10 @@ table tbody tr.suggestion {
                                         <tr class="error">
                                             <td>{{ line.index }}</td>
                                             <td>{{ line.first_name }}</td>
-                                            <td>{{ line.middle_name }}</td>
+                                            <td>{{ line.middle_name|default_if_none:"" }}</td>
                                             <td>{{ line.last_name }}</td>
                                             <td>{{ line.email }}</td>
-                                            <td>{{ line.institution }}</td>
+                                            <td>{{ line.institution|default_if_none:"" }}</td>
                                             <td>{{ line.title }}</td>
                                             <td class="error">{{ line.error }}</td>
                                         </tr>
@@ -79,17 +79,17 @@ table tbody tr.suggestion {
                                         <input type="hidden" name="first_name_{{ line.index }}" value="{{ line.first_name }}"/>
                                         <input type="hidden"
                                                name="middle_name_{{ line.index }}"
-                                               value="{{ line.middle_name }}"/>
+                                               value="{{ line.middle_name|default_if_none:"" }}"/>
                                         <input type="hidden" name="last_name_{{ line.index }}" value="{{ line.last_name }}"/>
                                         <input type="hidden" name="email_{{ line.index }}" value="{{ line.email }}"/>
                                         <input type="hidden"
                                                name="institution_{{ line.index }}"
-                                               value="{{ line.institution }}"/>
+                                               value="{{ line.institution|default_if_none:"" }}"/>
                                         <input type="hidden" name="title_{{ line.index }}" value="{{ line.title }}"/>
                                         <tr>
                                             <td>{{ line.index }}</td>
                                             <td>{{ line.first_name }}</td>
-                                            <td>{{ line.middle_name }}</td>
+                                            <td>{{ line.middle_name|default_if_none:"" }}</td>
                                             <td>{{ line.last_name }}</td>
                                             <td>{{ line.email }}</td>
                                             <td>{{ line.institution }}</td>

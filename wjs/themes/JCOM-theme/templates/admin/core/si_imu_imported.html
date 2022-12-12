@@ -34,18 +34,18 @@
                 {{ formset.management_form }}
                 {% for form in formset %}
                     {{ form.id }}
-                    {% with odtline=accounts_new_data|keyvalue:form.instance.id %}
+                    {% with odsline=accounts_new_data|keyvalue:form.instance.id %}
                         <div class="row">
                             <div class="large-12 columns">
                                 <table class="merge">
                                     <tbody>
                                         <tr>
-                                            <th>ODT</th>
-                                            <td>{{ odtline.first_name }}</td>
-                                            <td>{{ odtline.middle_name }}</td>
-                                            <td>{{ odtline.last_name }}</td>
-                                            <td>{{ odtline.email }}</td>
-                                            <td>{{ odtline.institution }}</td>
+                                            <th>ODS</th>
+                                            <td>{{ odsline.first_name }}</td>
+                                            <td>{{ odsline.middle_name|default_if_none:"" }}</td>
+                                            <td>{{ odsline.last_name }}</td>
+                                            <td>{{ odsline.email }}</td>
+                                            <td>{{ odsline.institution|default_if_none:"" }}</td>
                                         </tr>
                                         <tr>
                                             <th>DB</th>

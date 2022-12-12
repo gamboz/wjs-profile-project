@@ -945,9 +945,9 @@ class IMUStep2(TemplateView):
         # affiliation,...), and so we check.
         form = IMUHelperForm(
             data={
-                "first_name": self.request.POST[f"first_{index}"],
-                "middle_name": self.request.POST[f"middle_{index}"],
-                "last_name": self.request.POST[f"last_{index}"],
+                "first_name": self.request.POST[f"first_name_{index}"],
+                "middle_name": self.request.POST[f"middle_name_{index}"],
+                "last_name": self.request.POST[f"last_name_{index}"],
                 "email": self.request.POST[f"email_{index}"],
                 "institution": self.request.POST[f"institution_{index}"],
             },

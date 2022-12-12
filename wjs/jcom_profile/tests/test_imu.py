@@ -68,12 +68,12 @@ def test_si_imu_upload_one_existing_one_new(
         ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
     )
     ods = make_ods(foglio)
-    data = dict(
-        data_file=ods,
-        create_articles_on_import="on",
-        match_euristic="optimistic",
-        type_of_new_articles=special_issue.allowed_sections.first().id,
-    )
+    data = {
+        "data_file": ods,
+        "create_articles_on_import": "on",
+        "match_euristic": "optimistic",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+    }
     response = client.post(url, data)
 
     # Preliminary checks
@@ -137,12 +137,12 @@ def test_si_imu_upload_two_identical_lines(
         ),
     )
     ods = make_ods(foglio)
-    data = dict(
-        data_file=ods,
-        create_articles_on_import="on",
-        match_euristic="optimistic",
-        type_of_new_articles=special_issue.allowed_sections.first().id,
-    )
+    data = {
+        "data_file": ods,
+        "create_articles_on_import": "on",
+        "match_euristic": "optimistic",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+    }
     response = client.post(url, data)
 
     # Preliminary checks
@@ -203,12 +203,12 @@ def test_si_imu_upload_iequal_emails(
         ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
     )
     ods = make_ods(foglio)
-    data = dict(
-        data_file=ods,
-        create_articles_on_import="on",
-        match_euristic="optimistic",
-        type_of_new_articles=special_issue.allowed_sections.first().id,
-    )
+    data = {
+        "data_file": ods,
+        "create_articles_on_import": "on",
+        "match_euristic": "optimistic",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+    }
     response = client.post(url, data)
 
     # Preliminary checks
@@ -259,12 +259,12 @@ def test_si_imu_upload_new_author_two_contributions(
         ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
     )
     ods = make_ods(foglio)
-    data = dict(
-        data_file=ods,
-        create_articles_on_import="on",
-        match_euristic="optimistic",
-        type_of_new_articles=special_issue.allowed_sections.first().id,
-    )
+    data = {
+        "data_file": ods,
+        "create_articles_on_import": "on",
+        "match_euristic": "optimistic",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+    }
     response = client.post(url, data)
 
     # Preliminary checks
@@ -316,12 +316,12 @@ def test_si_imu_upload_new_author_two_contributions_iequal_emails(
         ("Novicius", None, "Fabulator", "nfabulator@domain.net", "Affilia", "Title ばる"),
     )
     ods = make_ods(foglio)
-    data = dict(
-        data_file=ods,
-        create_articles_on_import="on",
-        match_euristic="optimistic",
-        type_of_new_articles=special_issue.allowed_sections.first().id,
-    )
+    data = {
+        "data_file": ods,
+        "create_articles_on_import": "on",
+        "match_euristic": "optimistic",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+    }
     response = client.post(url, data)
 
     # Preliminary checks
@@ -383,12 +383,12 @@ def test_si_imu_upload_two_authors_same_email_different_metadata(
     problematic_line[wrong_data.where] = wrong_data.what
     foglio.append(problematic_line)
     ods = make_ods(foglio)
-    data = dict(
-        data_file=ods,
-        create_articles_on_import="on",
-        match_euristic="optimistic",
-        type_of_new_articles=special_issue.allowed_sections.first().id,
-    )
+    data = {
+        "data_file": ods,
+        "create_articles_on_import": "on",
+        "match_euristic": "optimistic",
+        "type_of_new_articles": special_issue.allowed_sections.first().id,
+    }
     response = client.post(url, data)
 
     # Preliminary checks
@@ -433,9 +433,9 @@ def test_si_imu_new_author_and_contribution(
         "tot_lines": "1",
         "create_articles_on_import": "on",
         "type_of_new_articles": special_issue.allowed_sections.first().id,
-        "first_0": "Novicius",
-        "middle_0": None,
-        "last_0": "Fabulator",
+        "first_name_0": "Novicius",
+        "middle_name_0": None,
+        "last_name_0": "Fabulator",
         "email_0": "nfabulator@domain.net",
         "institution_0": "Affilia",
         "title_0": "Title ばる",
@@ -468,13 +468,13 @@ def test_si_imu_new_author_same_as_exising(
         "tot_lines": "1",
         "create_articles_on_import": "on",
         "type_of_new_articles": special_issue.allowed_sections.first().id,
-        "first_0": existing_user.first_name,
-        "middle_0": existing_user.middle_name or "",
-        "last_0": existing_user.last_name,
+        "first_name_0": existing_user.first_name,
+        "middle_name_0": existing_user.middle_name or "",
+        "last_name_0": existing_user.last_name,
         "email_0": existing_user.email,  # ⇦ these two don't agree :)
         "institution_0": existing_user.institution or "",
         "title_0": "Title ばる",
-        "action-0": "new",  #              ⇦ these two don't agree :)
+        "action-0": "new",  # ⇦ these two don't agree :)
     }
     response = client.post(url, data)
     assert response.status_code == 200
@@ -512,13 +512,13 @@ def test_si_imu_new_author_same_as_exising_but_different_data(
         "tot_lines": "1",
         "create_articles_on_import": "on",
         "type_of_new_articles": special_issue.allowed_sections.first().id,
-        "first_0": messedup_data[0],
-        "middle_0": messedup_data[1] or "",
-        "last_0": messedup_data[2],
+        "first_name_0": messedup_data[0],
+        "middle_name_0": messedup_data[1] or "",
+        "last_name_0": messedup_data[2],
         "email_0": existing_user.email,  # ⇦ these two don't agree :)
         "institution_0": messedup_data[4] or "",
         "title_0": "Title ばる",
-        "action-0": "new",  #              ⇦ these two don't agree :)
+        "action-0": "new",  # ⇦ these two don't agree :)
     }
     response = client.post(url, data)
     assert response.status_code == 200
@@ -570,9 +570,9 @@ def test_si_imu_edit_exising(
         "tot_lines": "1",
         "create_articles_on_import": "on",
         "type_of_new_articles": special_issue.allowed_sections.first().id,
-        "first_0": new_data[0],
-        "middle_0": new_data[1] or "",
-        "last_0": new_data[2],
+        "first_name_0": new_data[0],
+        "middle_name_0": new_data[1] or "",
+        "last_name_0": new_data[2],
         "email_0": existing_user.email,
         "institution_0": new_data[4] or "",
         "title_0": "Title ばる",
@@ -596,7 +596,10 @@ def test_si_imu_edit_exising(
     response_content = response.content.decode()
     html = lxml.html.fromstring(response_content)
     assert html.xpath(f".//td[text()='{new_data[modified_data.where]}']")
-    assert html.xpath(f".//td[text()='{existing_user_data[modified_data.where]}']")
+    # don't look for empty values (they could be anything anywhere)
+    expected_text = existing_user_data[modified_data.where]
+    if expected_text is not None:
+        assert html.xpath(f".//td[text()='{expected_text}']")
 
     # The new article has been created, the existing user is the owner
     article = Article.objects.first()
