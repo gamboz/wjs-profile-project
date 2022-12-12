@@ -1,9 +1,10 @@
 """pytest common stuff and fixtures."""
+import datetime
 import os
 
 import pytest
 import pytest_factoryboy
-from core.models import Account, AccountRole, Role, Setting
+from core.models import Account, Setting
 from django.conf import settings
 from django.core import management
 from django.core.serializers import deserialize
@@ -18,7 +19,7 @@ from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 
 from wjs.jcom_profile.factories import ArticleFactory
-from wjs.jcom_profile.models import JCOMProfile
+from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
 from wjs.jcom_profile.utils import generate_token
 
 USERNAME = "user"
@@ -259,10 +260,41 @@ def directors(director_role, article_journal):
             last_name=f"Director{i}",
             is_active=True,
         )
-        AccountRole.objects.create(
-            user=director,
-            journal=article_journal,
-            role=Role.objects.get(slug="director"),
-        )
+        director.add_account_role("director", article_journal)
         directors.append(director)
     return directors
+
+
+@pytest.fixture
+def editors(roles, article_journal):
+    editors = []
+    for i in range(3):
+        editor = Account.objects.create(
+            username=f"Editor{i}",
+            email=f"Editor{i}@Editor{i}.it",
+            first_name=f"Editor{i}",
+            last_name=f"Editor{i}",
+            is_active=True,
+        )
+        editor.add_account_role("editor", article_journal)
+        editor.save()
+
+        editors.append(editor)
+    return editors
+
+
+@pytest.fixture
+def special_issue(article, editors):
+    special_issue = SpecialIssue.objects.create(
+        name="Special issue",
+        short_name="special-issue",
+        journal=journal,
+        open_date=datetime.datetime.now(),
+        close_date=datetime.datetime.now() + datetime.timedelta(days=1),
+    )
+    for editor in editors:
+        special_issue.editors.add(editor)
+        special_issue.save()
+    article_wrapper = ArticleWrapper.objects.get(janeway_article=article_journal)
+    article_wrapper.special_issue = special_issue
+    article_wrapper.save()
