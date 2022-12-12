@@ -76,11 +76,11 @@ table tbody tr.suggestion {
                                             <td class="error">{{ line.error }}</td>
                                         </tr>
                                     {% else %}
-                                        <input type="hidden" name="first_{{ line.index }}" value="{{ line.first_name }}"/>
+                                        <input type="hidden" name="first_name_{{ line.index }}" value="{{ line.first_name }}"/>
                                         <input type="hidden"
-                                               name="middle_{{ line.index }}"
+                                               name="middle_name_{{ line.index }}"
                                                value="{{ line.middle_name }}"/>
-                                        <input type="hidden" name="last_{{ line.index }}" value="{{ line.last_name }}"/>
+                                        <input type="hidden" name="last_name_{{ line.index }}" value="{{ line.last_name }}"/>
                                         <input type="hidden" name="email_{{ line.index }}" value="{{ line.email }}"/>
                                         <input type="hidden"
                                                name="institution_{{ line.index }}"

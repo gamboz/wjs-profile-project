@@ -576,6 +576,9 @@ class DirectorEditorAssignmentParametersUpdate(UserPassesTestMixin, UpdateView):
         return reverse("assignment_parameters", args=(self.kwargs.get("editor_pk"),))
 
 
+ODSLine = namedtuple("ODSLine", ["first_name", "middle_name", "last_name", "email", "institution"])
+
+
 @dataclass
 class PartitionLine:
     """A line representing a collection partition.
@@ -645,16 +648,15 @@ class ContributionLine:
     title: str
     suggestions: Iterable[SuggestionLine]
 
-    def __init__(self, row: namedtuple):
-        """Build a ContributionLine from a Pandas namedtuple."""
-        # Could map row more elegantly with `*[*row]`, but it gets less clear.
-        self.first_name = row.first_name
-        self.middle_name = row.middle_name
-        self.last_name = row.last_name
-        self.email = row.email
-        self.institution = row.institution
-        self.title = row.title
-        self.index = row.Index  # watch out for "Index" uppercase "I"
+    def __init__(self, line: dict):
+        """Build a ContributionLine."""
+        self.first_name = line["first_name"]
+        self.middle_name = line["middle_name"]
+        self.last_name = line["last_name"]
+        self.email = line["email"]
+        self.institution = line["institution"]
+        self.title = line["title"]
+        self.index = line["index"]
         self.suggestions = []
         self.disable_new = False
 
@@ -810,11 +812,13 @@ class IMUStep1(TemplateView):
                 "last_name": row.last_name,
                 "email": row.email,
                 "institution": row.institution,
+                "title": row.title,
             },
         )
         if not validation_form.is_valid():
             return ErrorLine(validation_form.cleaned_data, error=validation_form.errors)
 
+        validation_form.cleaned_data["index"] = row.Index  # watch out for "Index" uppercase "I"
         line = ContributionLine(validation_form.cleaned_data)
         line.suggestions = self.make_suggestion(line)
         return line
@@ -845,7 +849,6 @@ class IMUStep1(TemplateView):
         ]
 
 
-ODSLine = namedtuple("ODSLine", ["first_name", "middle_name", "last_name", "email", "institution"])
 imu_edit_formset_factory = modelformset_factory(
     model=core_models.Account,
     form=forms.IMUEditExistingAccounts,
@@ -914,10 +917,10 @@ class IMUStep2(TemplateView):
     def process(self, index: int):
         """Process line "index"."""
         # Actions come in these forms:
-        # - action-1_skip
-        # - action-1_new
-        # - action-1_db_123
-        # - action-1_edit_123
+        # - action-1 → skip
+        # - action-1 → new
+        # - action-1 → db_123
+        # - action-1 → edit_123
         # Here we just find to where we should dispatch the processing to.
         action_suggestion = self.request.POST.get(f"action-{index}", "unspecified")
         action, *suggestion = action_suggestion.split("_")
