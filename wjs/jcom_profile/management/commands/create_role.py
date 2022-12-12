@@ -22,7 +22,6 @@ class Command(BaseCommand):
                 if not created:
                     self.stdout.write(self.style.WARNING(f"A role named {role_name} already exists."))
                 else:
-                    print(created)
                     self.stdout.write(self.style.SUCCESS(f"{role_name} role created successfully."))
             except Exception:
                 self.stdout.write(self.style.ERROR(f"An error occured trying to create a new role named {role_name}."))

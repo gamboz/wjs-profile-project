@@ -4,7 +4,7 @@ import os
 
 import pytest
 import pytest_factoryboy
-from core.models import Account, Setting
+from core.models import Account, Role, Setting
 from django.conf import settings
 from django.core import management
 from django.core.serializers import deserialize
@@ -201,8 +201,9 @@ def article(admin, coauthor, article_journal, section):
 
 @pytest.fixture
 def director_role():
-    """Run create_role command to create Director role."""
-    management.call_command("create_role", "Director")
+    """Create Director Role."""
+    # TODO: Check this Role creation
+    Role.objects.create(name="Director", slug="director", pk=100)
 
 
 @pytest.fixture

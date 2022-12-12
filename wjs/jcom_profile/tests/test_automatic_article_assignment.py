@@ -56,6 +56,8 @@ def test_normal_issue_articles_automatic_assignment(
             article.journal.code
         ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
         article_editors = directors
+    elif WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(article.journal.code):
+        del WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[article.journal.code]
 
     with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=WJS_ARTICLE_ASSIGNMENT_FUNCTIONS):
         client = Client()
@@ -86,6 +88,7 @@ def test_special_issue_articles_automatic_assignment(
     admin,
     article,
     coauthors_setting,
+    director_role,
     special_issue,
     journal_assignment_algorithm_exists,
 ):
@@ -93,6 +96,8 @@ def test_special_issue_articles_automatic_assignment(
         WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[
             special_issue.journal.code
         ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
+    elif WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(article.journal.code):
+        del WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[article.journal.code]
     with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=WJS_ARTICLE_ASSIGNMENT_FUNCTIONS):
         client = Client()
         client.force_login(admin)
