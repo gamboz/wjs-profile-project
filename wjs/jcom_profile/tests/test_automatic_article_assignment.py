@@ -31,8 +31,8 @@ def get_expected_editor(editors, article):
 @pytest.mark.parametrize(
     "journal_assignment_algorithm_exists",
     (
-        True,
         False,
+        True,
     ),
 )
 @pytest.mark.django_db
@@ -45,7 +45,7 @@ def test_normal_issue_articles_automatic_assignment(
 ):
     if journal_assignment_algorithm_exists:
         WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[
-            article.journal
+            article.journal.code
         ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
     with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=WJS_ARTICLE_ASSIGNMENT_FUNCTIONS):
         client = Client()
@@ -67,8 +67,8 @@ def test_normal_issue_articles_automatic_assignment(
 @pytest.mark.parametrize(
     "journal_assignment_algorithm_exists",
     (
-        True,
         False,
+        True,
     ),
 )
 @pytest.mark.django_db
