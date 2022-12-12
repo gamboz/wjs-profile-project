@@ -14,8 +14,14 @@ WJS_ARTICLE_ASSIGNMENT_FUNCTIONS = {
 
 
 def get_expected_editor(editors, article):
+    """
+    Get the editor with the lowest workload, regardless the algorithm.
+    :param editors: The editors among which we select the expected editor.
+    :param article: the submitted article
+    :return: The expected editor
+    """
     lowest_workload = 1000
-    selected_editor = None
+    expected_editor = None
     for editor in editors:
         params = EditorAssignmentParameters.objects.create(
             editor=editor,
@@ -23,9 +29,9 @@ def get_expected_editor(editors, article):
             workload=random.randint(1, 10),
         )
         if params.workload < lowest_workload:
-            selected_editor = params.editor
+            expected_editor = params.editor
             lowest_workload = params.workload
-    return selected_editor
+    return expected_editor
 
 
 @pytest.mark.parametrize(
@@ -40,17 +46,21 @@ def test_normal_issue_articles_automatic_assignment(
     admin,
     article,
     directors,
+    editors,
     coauthors_setting,
     journal_assignment_algorithm_exists,
 ):
+    article_editors = editors
     if journal_assignment_algorithm_exists:
         WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[
             article.journal.code
         ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
+        article_editors = directors
+
     with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=WJS_ARTICLE_ASSIGNMENT_FUNCTIONS):
         client = Client()
         client.force_login(admin)
-        selected_director = get_expected_editor(directors, article)
+        expected_editor = get_expected_editor(article_editors, article)
 
         url = reverse("submit_review", args=(article.pk,))
 
@@ -60,7 +70,7 @@ def test_normal_issue_articles_automatic_assignment(
         editor_assignment = EditorAssignment.objects.get(article=article)
         article.refresh_from_db()
 
-        assert editor_assignment.editor == selected_director
+        assert editor_assignment.editor == expected_editor
         assert article.stage == "Assigned"
 
 
@@ -86,7 +96,7 @@ def test_special_issue_articles_automatic_assignment(
     with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=WJS_ARTICLE_ASSIGNMENT_FUNCTIONS):
         client = Client()
         client.force_login(admin)
-        selected_editor = get_expected_editor(special_issue.editors.all(), article)
+        expected_editor = get_expected_editor(special_issue.editors.all(), article)
 
         url = reverse("submit_review", args=(article.pk,))
 
@@ -96,5 +106,5 @@ def test_special_issue_articles_automatic_assignment(
         editor_assignment = EditorAssignment.objects.get(article=article)
         article.refresh_from_db()
 
-        assert editor_assignment.editor == selected_editor
+        assert editor_assignment.editor == expected_editor
         assert article.stage == "Assigned"
