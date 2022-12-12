@@ -67,20 +67,20 @@ table tbody tr.suggestion {
                                     {% elif line.error %}
                                         <tr class="error">
                                             <td>{{ line.index }}</td>
-                                            <td>{{ line.first }}</td>
-                                            <td>{{ line.middle }}</td>
-                                            <td>{{ line.last }}</td>
+                                            <td>{{ line.first_name }}</td>
+                                            <td>{{ line.middle_name }}</td>
+                                            <td>{{ line.last_name }}</td>
                                             <td>{{ line.email }}</td>
                                             <td>{{ line.institution }}</td>
                                             <td>{{ line.title }}</td>
                                             <td class="error">{{ line.error }}</td>
                                         </tr>
                                     {% else %}
-                                        <input type="hidden" name="first_{{ line.index }}" value="{{ line.first }}"/>
+                                        <input type="hidden" name="first_{{ line.index }}" value="{{ line.first_name }}"/>
                                         <input type="hidden"
                                                name="middle_{{ line.index }}"
-                                               value="{{ line.middle }}"/>
-                                        <input type="hidden" name="last_{{ line.index }}" value="{{ line.last }}"/>
+                                               value="{{ line.middle_name }}"/>
+                                        <input type="hidden" name="last_{{ line.index }}" value="{{ line.last_name }}"/>
                                         <input type="hidden" name="email_{{ line.index }}" value="{{ line.email }}"/>
                                         <input type="hidden"
                                                name="institution_{{ line.index }}"
@@ -88,9 +88,9 @@ table tbody tr.suggestion {
                                         <input type="hidden" name="title_{{ line.index }}" value="{{ line.title }}"/>
                                         <tr>
                                             <td>{{ line.index }}</td>
-                                            <td>{{ line.first }}</td>
-                                            <td>{{ line.middle }}</td>
-                                            <td>{{ line.last }}</td>
+                                            <td>{{ line.first_name }}</td>
+                                            <td>{{ line.middle_name }}</td>
+                                            <td>{{ line.last_name }}</td>
                                             <td>{{ line.email }}</td>
                                             <td>{{ line.institution }}</td>
                                             <td>{{ line.title }}</td>
@@ -110,12 +110,12 @@ table tbody tr.suggestion {
                                         {% for suggestion in line.suggestions %}
                                             <tr class="suggestion">
                                                 <td>&nbsp;</td>
-                                                <td>{{ suggestion.first }}</td>
+                                                <td>{{ suggestion.first_name }}</td>
                                                 <td>
-                                                    {{ suggestion.middle }}
+                                                    {{ suggestion.middle_name }}
                                                 </td>
                                                 <td>
-                                                    {{ suggestion.last }}
+                                                    {{ suggestion.last_name }}
                                                 </td>
                                                 <td>
                                                     {{ suggestion.email }}

@@ -335,6 +335,7 @@ class IMUHelperForm(forms.Form):
         strip=True,
         empty_value=None,
     )
+    title = forms.CharField(max_length=999, required=False, strip=True, empty_value=None)
 
 
 class SIUpdateForm(forms.ModelForm):

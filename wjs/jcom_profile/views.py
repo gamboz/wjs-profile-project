@@ -595,9 +595,9 @@ class ErrorLine:
     """An error in the input."""
 
     index: int
-    first: str
-    middle: str
-    last: str
+    first_name: str
+    middle_name: str
+    last_name: str
     email: str
     institution: str
     title: str
@@ -608,9 +608,9 @@ class ErrorLine:
 class SuggestionLine:
     """A merge-with-db / merge+edit suggestion."""
 
-    first: str
-    middle: str
-    last: str
+    first_name: str
+    middle_name: str
+    last_name: str
     email: str
     institution: str
     pk: int
@@ -618,9 +618,9 @@ class SuggestionLine:
 
     def __init__(self, core_account, line: "ContributionLine"):
         """Build a SuggestionLine from an item of a queryset."""
-        self.first = core_account.first_name
-        self.middle = core_account.middle_name
-        self.last = core_account.last_name
+        self.first_name = core_account.first_name
+        self.middle_name = core_account.middle_name
+        self.last_name = core_account.last_name
         self.email = core_account.email
         self.institution = core_account.institution
         self.pk = core_account.id
@@ -637,9 +637,9 @@ class ContributionLine:
     Here we also keep "suggestions" of similar authors from the database.
     """
 
-    first: str
-    middle: str
-    last: str
+    first_name: str
+    middle_name: str
+    last_name: str
     email: str
     institution: str
     title: str
@@ -648,9 +648,9 @@ class ContributionLine:
     def __init__(self, row: namedtuple):
         """Build a ContributionLine from a Pandas namedtuple."""
         # Could map row more elegantly with `*[*row]`, but it gets less clear.
-        self.first = row.first
-        self.middle = row.middle
-        self.last = row.last
+        self.first_name = row.first_name
+        self.middle_name = row.middle_name
+        self.last_name = row.last_name
         self.email = row.email
         self.institution = row.institution
         self.title = row.title
@@ -666,15 +666,15 @@ class ContributionLine:
         # first/middle/last name or institution. This is taken care of
         # elsewhere.
         return (
-            self.first == other.first
-            and self.middle == other.middle
-            and self.last == other.last
+            self.first_name == other.first_name
+            and self.middle_name == other.middle_name
+            and self.last_name == other.last_name
             and self.title == other.title
         )
 
     def __hash__(self):
         """Let's say these suffice..."""
-        return hash(f"{self.first}{self.middle}{self.last}{self.title}")
+        return hash(f"{self.first_name}{self.middle_name}{self.last_name}{self.title}")
 
     def author_eq(self, other):
         """Two authors are "equal" if first/middle/last name or institution match.
@@ -686,9 +686,9 @@ class ContributionLine:
 
         """
         return (
-            self.first == other.first
-            and self.middle == other.middle
-            and self.last == other.last
+            self.first_name == other.first_name
+            and self.middle_name == other.middle_name
+            and self.last_name == other.last_name
             # and self.email == other.email  # just add also the email, it does not hurt
             and self.institution == other.institution
         )
@@ -697,9 +697,9 @@ class ContributionLine:
         """Use this line to build an ErrorLine with the given error message and return it."""
         return ErrorLine(
             index=self.index,
-            first=self.first,
-            middle=self.middle,
-            last=self.last,
+            first_name=self.first_name,
+            middle_name=self.middle_name,
+            last_name=self.last_name,
             email=self.email,
             institution=self.institution,
             title=self.title,
@@ -750,7 +750,7 @@ class IMUStep1(TemplateView):
         """Prepare data file to be presented in the input/merge form."""
         result_lines = []
 
-        columns_names = ("first", "middle", "last", "email", "institution", "title")
+        columns_names = ("first_name", "middle_name", "last_name", "email", "institution", "title")
         sheet_index = 0
         df = pd.read_excel(
             data_file.read(),
@@ -793,14 +793,29 @@ class IMUStep1(TemplateView):
         # Allow for dirty data: if I'm missing lastname and email,
         # I'll consider this a PartitionLine and just use the
         # firstname column as the partition name.
-        if not row.last and not row.email:
-            return PartitionLine(index=row.Index, name=row.first)
+        if not row.last_name and not row.email:
+            return PartitionLine(index=row.Index, name=row.first_name)
+
         # But filter untreatable errors: if the title is missing and
         # the flag `create_articles_on_import` is True, treat the line
         # as an error
         if self.request.POST["create_articles_on_import"] and not row.title:
             return ErrorLine(*[*row], error="Missing title!")
-        line = ContributionLine(row)
+
+        # Validate the rest
+        validation_form = IMUHelperForm(
+            data={
+                "first_name": row.first_name,
+                "middle_name": row.middle_name,
+                "last_name": row.last_name,
+                "email": row.email,
+                "institution": row.institution,
+            },
+        )
+        if not validation_form.is_valid():
+            return ErrorLine(validation_form.cleaned_data, error=validation_form.errors)
+
+        line = ContributionLine(validation_form.cleaned_data)
         line.suggestions = self.make_suggestion(line)
         return line
 
@@ -824,13 +839,13 @@ class IMUStep1(TemplateView):
         return [
             SuggestionLine(suggestion, line)
             for suggestion in core_models.Account.objects.filter(
-                last_name__iexact=line.last,
-                first_name__istartswith=line.first[0],
+                last_name__iexact=line.last_name,
+                first_name__istartswith=line.first_name[0],
             )
         ]
 
 
-ODSLine = namedtuple("ODSLine", ["first", "middle", "last", "email", "institution"])
+ODSLine = namedtuple("ODSLine", ["first_name", "middle_name", "last_name", "email", "institution"])
 imu_edit_formset_factory = modelformset_factory(
     model=core_models.Account,
     form=forms.IMUEditExistingAccounts,
@@ -990,9 +1005,9 @@ class IMUStep2(TemplateView):
         # ...accounts_to_edit.append(author)
         self.accounts_to_edit.append(pk)
         odsline = ODSLine(
-            first=self.request.POST[f"first_{index}"],
-            middle=self.request.POST[f"middle_{index}"],
-            last=self.request.POST[f"last_{index}"],
+            first_name=self.request.POST[f"first_name_{index}"],
+            middle_name=self.request.POST[f"middle_name_{index}"],
+            last_name=self.request.POST[f"last_name_{index}"],
             email=self.request.POST[f"email_{index}"],
             institution=self.request.POST[f"institution_{index}"],
         )
