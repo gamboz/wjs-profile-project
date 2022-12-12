@@ -50,10 +50,10 @@
                                         <tr>
                                             <th>DB</th>
                                             <td>{{ form.first_name.value }}</td>
-                                            <td>{{ form.middle_name.value }}</td>
+                                            <td>{{ form.middle_name.value|default_if_none:"" }}</td>
                                             <td>{{ form.last_name.value }}</td>
                                             <td>{{ form.email.value }}</td>
-                                            <td>{{ form.institution.value }}</td>
+                                            <td>{{ form.institution.value|default_if_none:"" }}</td>
                                         </tr>
                                         <tr>
                                             <td>{{ form.apply_changes }}</td>

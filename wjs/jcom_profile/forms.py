@@ -325,7 +325,7 @@ class IMUHelperForm(forms.Form):
         max_length=300,
         required=False,
         strip=True,
-        empty_value=None,
+        empty_value="",
     )
     last_name = forms.CharField(max_length=300, required=True, strip=True)
     email = forms.EmailField(required=True)
@@ -333,9 +333,9 @@ class IMUHelperForm(forms.Form):
         max_length=1000,
         required=False,
         strip=True,
-        empty_value=None,
+        empty_value="",
     )
-    title = forms.CharField(max_length=999, required=False, strip=True, empty_value=None)
+    title = forms.CharField(max_length=999, required=False, strip=True, empty_value="")
 
 
 class SIUpdateForm(forms.ModelForm):

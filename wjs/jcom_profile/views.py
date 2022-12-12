@@ -622,10 +622,10 @@ class SuggestionLine:
     def __init__(self, core_account, line: "ContributionLine"):
         """Build a SuggestionLine from an item of a queryset."""
         self.first_name = core_account.first_name
-        self.middle_name = core_account.middle_name
+        self.middle_name = core_account.middle_name or ""
         self.last_name = core_account.last_name
         self.email = core_account.email
-        self.institution = core_account.institution
+        self.institution = core_account.institution or ""
         self.pk = core_account.id
         # We compare emails case-insensitively
         if line.email.upper() == core_account.email.upper():
@@ -1003,10 +1003,12 @@ class IMUStep2(TemplateView):
         author = core_models.Account.objects.get(pk=pk)
         self.special_issue.invitees.add(author)
         article = self.create_article(index, author)
+
         # I'd prefer to use the author directly, but the formset wants
         # a queryset, not a list...
         # ...accounts_to_edit.append(author)
         self.accounts_to_edit.append(pk)
+
         odsline = ODSLine(
             first_name=self.request.POST[f"first_name_{index}"],
             middle_name=self.request.POST[f"middle_name_{index}"],
