@@ -284,17 +284,19 @@ def editors(roles, article_journal):
 
 
 @pytest.fixture
-def special_issue(article, editors):
+def special_issue(article, editors, article_journal, director_role):
     special_issue = SpecialIssue.objects.create(
         name="Special issue",
         short_name="special-issue",
-        journal=journal,
+        journal=article_journal,
         open_date=datetime.datetime.now(),
         close_date=datetime.datetime.now() + datetime.timedelta(days=1),
     )
     for editor in editors:
         special_issue.editors.add(editor)
         special_issue.save()
-    article_wrapper = ArticleWrapper.objects.get(janeway_article=article_journal)
+    article_wrapper = ArticleWrapper.objects.get(janeway_article=article)
     article_wrapper.special_issue = special_issue
     article_wrapper.save()
+
+    return special_issue
