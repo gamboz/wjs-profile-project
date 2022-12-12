@@ -3,7 +3,7 @@ import os
 
 import pytest
 import pytest_factoryboy
-from core.models import Account, Setting
+from core.models import Account, AccountRole, Role, Setting
 from django.conf import settings
 from django.core import management
 from django.core.serializers import deserialize
@@ -199,6 +199,12 @@ def article(admin, coauthor, article_journal, section):
 
 
 @pytest.fixture
+def director_role():
+    """Run create_role command to create Director role."""
+    management.call_command("create_role", "Director")
+
+
+@pytest.fixture
 def coauthors_setting():
     """Run add_coauthors_submission_email_settings command to install custom settings for coauthors email."""
     management.call_command("add_coauthors_submission_email_settings")
@@ -240,3 +246,23 @@ def keywords():
 # article objects) and a fixture named "article" (i.e. one article
 # object) that would clash with the one defined above.
 pytest_factoryboy.register(ArticleFactory, "fb_article")
+
+
+@pytest.fixture
+def directors(director_role, article_journal):
+    directors = []
+    for i in range(3):
+        director = Account.objects.create(
+            username=f"Director{i}",
+            email=f"Director{i}@Director{i}.it",
+            first_name=f"Director{i}",
+            last_name=f"Director{i}",
+            is_active=True,
+        )
+        AccountRole.objects.create(
+            user=director,
+            journal=article_journal,
+            role=Role.objects.get(slug="director"),
+        )
+        directors.append(director)
+    return directors
