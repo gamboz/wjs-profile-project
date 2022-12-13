@@ -41,8 +41,11 @@ def default_assign_editors_to_articles(**kwargs) -> None:
     from ..models import EditorAssignmentParameters
 
     article = kwargs["article"]
-    if article.articlewrapper.special_issue and article.articlewrapper.special_issue.editors:
-        parameters = get_special_issue_parameters(article)
+    if article.articlewrapper.special_issue:
+        if article.articlewrapper.special_issue.editors:
+            parameters = get_special_issue_parameters(article)
+        else:
+            return
     else:
         parameters = EditorAssignmentParameters.objects.filter(journal=article.journal)
     if parameters:
@@ -63,14 +66,17 @@ def jcom_assign_editors_to_articles(**kwargs):
         role=Role.objects.get(slug="director"),
     ).values_list("user")
     parameters = None
-    if article.articlewrapper.special_issue and article.articlewrapper.special_issue.editors:
-        parameters = get_special_issue_parameters(article)
+    if article.articlewrapper.special_issue:
+        if article.articlewrapper.special_issue.editors:
+            parameters = get_special_issue_parameters(article)
+        else:
+            return
     elif directors:
         parameters = EditorAssignmentParameters.objects.filter(journal=article.journal, editor__in=directors)
     if parameters:
         assign_article(parameters, article)
     else:
-        print("No editor parameters.")
+        return
 
 
 def dispatch_assignment(**kwargs) -> None:

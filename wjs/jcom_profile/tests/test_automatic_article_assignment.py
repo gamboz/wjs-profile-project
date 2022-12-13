@@ -22,6 +22,8 @@ def get_expected_editor(editors, article):
     """
     lowest_workload = 1000
     expected_editor = None
+    if not editors:
+        return expected_editor
     for editor in editors:
         params = EditorAssignmentParameters.objects.create(
             editor=editor,
@@ -35,29 +37,23 @@ def get_expected_editor(editors, article):
 
 
 @pytest.mark.parametrize(
-    "journal_assignment_algorithm_exists",
+    "has_editors",
     (
         False,
         True,
     ),
 )
 @pytest.mark.django_db
-def test_normal_issue_articles_automatic_assignment(
+def test_default_normal_issue_articles_automatic_assignment(
     admin,
     article,
-    directors,
     editors,
     coauthors_setting,
-    journal_assignment_algorithm_exists,
+    has_editors,
 ):
-    article_editors = editors
-    if journal_assignment_algorithm_exists:
-        WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[
-            article.journal.code
-        ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
-        article_editors = directors
-    elif WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(article.journal.code):
-        del WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[article.journal.code]
+    article_editors = None
+    if has_editors:
+        article_editors = editors
 
     with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=WJS_ARTICLE_ASSIGNMENT_FUNCTIONS):
         client = Client()
@@ -69,47 +65,142 @@ def test_normal_issue_articles_automatic_assignment(
         response = client.post(url, data={"next_step": "next_step"})
         assert response.status_code == 302
 
-        editor_assignment = EditorAssignment.objects.get(article=article)
         article.refresh_from_db()
-
-        assert editor_assignment.editor == expected_editor
-        assert article.stage == "Assigned"
+        if has_editors:
+            editor_assignment = EditorAssignment.objects.get(article=article)
+            assert editor_assignment.editor == expected_editor
+            assert article.stage == "Assigned"
+        else:
+            assert article.stage == "Unassigned"
 
 
 @pytest.mark.parametrize(
-    "journal_assignment_algorithm_exists",
+    "has_editors",
     (
         False,
         True,
     ),
 )
 @pytest.mark.django_db
-def test_special_issue_articles_automatic_assignment(
+def test_default_special_issue_articles_automatic_assignment(
     admin,
     article,
     coauthors_setting,
     director_role,
+    directors,
     special_issue,
-    journal_assignment_algorithm_exists,
+    has_editors,
 ):
-    if journal_assignment_algorithm_exists:
-        WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[
-            special_issue.journal.code
-        ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
-    elif WJS_ARTICLE_ASSIGNMENT_FUNCTIONS.get(article.journal.code):
-        del WJS_ARTICLE_ASSIGNMENT_FUNCTIONS[article.journal.code]
+    article_editors = None
+
+    if has_editors:
+        article_editors = special_issue.editors.all()
+
     with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=WJS_ARTICLE_ASSIGNMENT_FUNCTIONS):
         client = Client()
         client.force_login(admin)
-        expected_editor = get_expected_editor(special_issue.editors.all(), article)
+        expected_editor = get_expected_editor(article_editors, article)
 
         url = reverse("submit_review", args=(article.pk,))
 
         response = client.post(url, data={"next_step": "next_step"})
         assert response.status_code == 302
 
-        editor_assignment = EditorAssignment.objects.get(article=article)
         article.refresh_from_db()
+        if has_editors:
+            editor_assignment = EditorAssignment.objects.get(article=article)
 
-        assert editor_assignment.editor == expected_editor
-        assert article.stage == "Assigned"
+            assert editor_assignment.editor == expected_editor
+            assert article.stage == "Assigned"
+        else:
+            assert article.stage == "Unassigned"
+
+
+@pytest.mark.parametrize(
+    "has_editors",
+    (
+        False,
+        True,
+    ),
+)
+@pytest.mark.django_db
+def test_jcom_normal_issue_articles_automatic_assignment(
+    admin,
+    article,
+    directors,
+    editors,
+    coauthors_setting,
+    has_editors,
+):
+    article_editors = None
+
+    jcom_assignment_settings = WJS_ARTICLE_ASSIGNMENT_FUNCTIONS
+    jcom_assignment_settings[
+        article.journal.code
+    ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
+
+    if has_editors:
+        article_editors = directors
+
+    with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=jcom_assignment_settings):
+        client = Client()
+        client.force_login(admin)
+        expected_editor = get_expected_editor(article_editors, article)
+
+        url = reverse("submit_review", args=(article.pk,))
+
+        response = client.post(url, data={"next_step": "next_step"})
+        assert response.status_code == 302
+
+        article.refresh_from_db()
+        if has_editors:
+            editor_assignment = EditorAssignment.objects.get(article=article)
+
+            assert editor_assignment.editor == expected_editor
+            assert article.stage == "Assigned"
+        else:
+            assert article.stage == "Unassigned"
+
+
+@pytest.mark.parametrize(
+    "has_editors",
+    (
+        False,
+        True,
+    ),
+)
+@pytest.mark.django_db
+def test_jcom_special_issue_articles_automatic_assignment(
+    admin,
+    article,
+    coauthors_setting,
+    special_issue,
+    has_editors,
+):
+    article_editors = None
+    jcom_assignment_settings = WJS_ARTICLE_ASSIGNMENT_FUNCTIONS
+    jcom_assignment_settings[
+        article.journal.code
+    ] = "wjs.jcom_profile.events.assignment.jcom_assign_editors_to_articles"
+
+    if has_editors:
+        article_editors = special_issue.editors.all()
+
+    with override_settings(WJS_ARTICLE_ASSIGNMENT_FUNCTIONS=jcom_assignment_settings):
+        client = Client()
+        client.force_login(admin)
+        expected_editor = get_expected_editor(article_editors, article)
+
+        url = reverse("submit_review", args=(article.pk,))
+
+        response = client.post(url, data={"next_step": "next_step"})
+        assert response.status_code == 302
+
+        article.refresh_from_db()
+        if has_editors:
+            editor_assignment = EditorAssignment.objects.get(article=article)
+
+            assert editor_assignment.editor == expected_editor
+            assert article.stage == "Assigned"
+        else:
+            assert article.stage == "Unassigned"

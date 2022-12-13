@@ -110,6 +110,16 @@ def editor(user, roles, journal, keywords):
 
 
 @pytest.fixture()
+def director(user, roles, journal, director_role):
+    director = JCOMProfile.objects.get(janeway_account=user)
+    director.gdpr_checkbox = True
+    director.is_active = True
+    director.add_account_role("director", journal)
+    director.save()
+    return director
+
+
+@pytest.fixture()
 def invited_user():
     """Create an user invited by staff, with minimal data."""
     email = "invited_user@mail.it"
