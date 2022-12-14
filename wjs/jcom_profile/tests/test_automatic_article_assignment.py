@@ -86,8 +86,6 @@ def test_default_special_issue_articles_automatic_assignment(
     admin,
     article,
     coauthors_setting,
-    director_role,
-    directors,
     special_issue,
     has_editors,
 ):
