@@ -17,6 +17,7 @@ from submission import models as submission_models
 from submission.models import Keyword
 from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
+from utils.management.commands.install_janeway import ROLES_RELATIVE_PATH
 
 from wjs.jcom_profile.factories import ArticleFactory
 from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
@@ -50,12 +51,8 @@ ASSIGNMENT_PARAMS = """<span class="card-title">Edit assignment parameters</span
 
 @pytest.fixture
 def roles():
-    roles_relative_path = "utils/install/roles.json"
-    roles_path = os.path.join(settings.BASE_DIR, roles_relative_path)
-    with open(roles_path, encoding="utf-8") as f:
-        roles = f.read()
-        for role in deserialize("json", roles):
-            role.save()
+    roles_path = os.path.join(settings.BASE_DIR, ROLES_RELATIVE_PATH)
+    management.call_command("loaddata", roles_path)
 
 
 @pytest.fixture
@@ -210,10 +207,10 @@ def article(admin, coauthor, article_journal, section):
 
 
 @pytest.fixture
-def director_role():
+def director_role(roles):
     """Create Director Role."""
-    # TODO: Check this Role creation
-    Role.objects.create(name="Director", slug="director", pk=100)
+    print(Role.objects.all())
+    Role.objects.get_or_create(name="Director", slug="director")
 
 
 @pytest.fixture
