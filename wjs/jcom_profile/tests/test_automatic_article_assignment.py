@@ -1,4 +1,4 @@
-"""Tests related to the submission process."""
+"""Tests related to the automatic assignment of articles after submission."""
 import random
 
 import pytest
