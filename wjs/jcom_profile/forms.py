@@ -257,12 +257,12 @@ class IMUForm(forms.Form):
     data_file = forms.FileField(
         allow_empty_file=False,
         required=True,
-        help_text="Upload odt file with first, middle, last name, email, affiliation, paper title; one per row.",
+        help_text=_("Upload odt file with first, middle, last name, email, affiliation, paper title; one per row."),
     )
     create_articles_on_import = forms.BooleanField(
         required=False,
         initial=True,
-        help_text="If set to false, articles are not created. The authors must start a submission themselves.",
+        help_text=_("If set to false, articles are not created. The authors must start a submission themselves."),
     )
     EURISTICS = (
         ("optimistic", "Optimistic - risk to merge different people"),
@@ -272,13 +272,13 @@ class IMUForm(forms.Form):
         choices=EURISTICS,
         required=True,
         initial="optimistic",
-        label="Match euristics - NOT IMPLEMENTED",
-        help_text="Being optimistic ... TODO WRITE ME!",
+        label=_("Match euristics - NOT IMPLEMENTED"),
+        help_text=_("Being optimistic ... TODO WRITE ME!"),
     )
     type_of_new_articles = forms.ModelChoiceField(
         queryset=Section.objects.none(),
         required=True,
-        help_text="All new contributions will have the choosen section (article type).",
+        help_text=_("All new contributions will have the choosen section (article type)."),
     )
 
     def __init__(self, *args, **kwargs):
@@ -301,7 +301,11 @@ class IMUForm(forms.Form):
 class IMUEditExistingAccounts(forms.ModelForm):
     """Form to allow the modification of exising account during IMU process."""
 
-    apply_changes = forms.BooleanField(required=False, initial=False, help_text="Apply changes to this user account")
+    apply_changes = forms.BooleanField(
+        required=False,
+        initial=False,
+        help_text=_("Apply changes to this user account"),
+    )
 
     class Meta:
         model = core_models.Account
