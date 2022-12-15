@@ -54,7 +54,7 @@
                         </div>
                     {% endif %}
                     <div class="title-area"><h2>{% trans "Article Info" %}</h2></div>
-                    <table class="scroll small">
+                    <table class="scroll small" id="article-info-table">
                         <tr>
                             <th colspan="{% if request.journal.submissionconfiguration.subtitle %}2{% else %}3{% endif %}">{% trans "Title" %}</th>
                             {% if request.journal.submissionconfiguration.subtitle %}
@@ -72,9 +72,7 @@
                         </tr>
 
                         <tr>
-                            <td colspan="3">{% if article.articlewrapper.special_issue %}
-                                {{ article.articlewrapper.special_issue }} {% else %}
-                                Normal issue {% endif %}</td>
+                            <td colspan="3">{% if article.articlewrapper.special_issue.name %}{{ article.articlewrapper.special_issue }}{% else %}Normal Issue{% endif %}</td>
                         </tr>
 
                         {% if request.journal.submissionconfiguration.abstract %}
@@ -117,7 +115,7 @@
                     <div class="title-area"><h2>{% trans "Author Info" %}</h2></div>
                     <p>Edit your profile to change these</p>
                     <a href="{% url 'core_edit_profile' %}" class="btn btn-primary button primary">Edit profile</a>
-                    <table class="table small">
+                    <table class="table small" id="author-info-table">
                         <tr>
                             <th>First Name</th>
                             <th>Middle Name</th>
