@@ -76,11 +76,15 @@ table tbody tr.suggestion {
                                             <td class="error">{{ line.error }}</td>
                                         </tr>
                                     {% else %}
-                                        <input type="hidden" name="first_name_{{ line.index }}" value="{{ line.first_name }}"/>
+                                        <input type="hidden"
+                                               name="first_name_{{ line.index }}"
+                                               value="{{ line.first_name }}"/>
                                         <input type="hidden"
                                                name="middle_name_{{ line.index }}"
                                                value="{{ line.middle_name|default_if_none:"" }}"/>
-                                        <input type="hidden" name="last_name_{{ line.index }}" value="{{ line.last_name }}"/>
+                                        <input type="hidden"
+                                               name="last_name_{{ line.index }}"
+                                               value="{{ line.last_name }}"/>
                                         <input type="hidden" name="email_{{ line.index }}" value="{{ line.email }}"/>
                                         <input type="hidden"
                                                name="institution_{{ line.index }}"
@@ -100,8 +104,7 @@ table tbody tr.suggestion {
                                                        value="new"
                                                        {% if not line.suggestions %}checked="checked"{% endif %}
                                                        required=""
-                                                       {% if line.disable_new %}disabled="disabled"{% endif %}
-                                                       />
+                                                       {% if line.disable_new %}disabled="disabled"{% endif %}/>
                                                 new
                                                 <input type="radio" name="action-{{ line.index }}" value="skip" required="" />
                                                 skip
@@ -130,13 +133,13 @@ table tbody tr.suggestion {
                                                     <input type="radio"
                                                            name="action-{{ line.index }}"
                                                            value="DB_{{ suggestion.pk }}"
-                                                           required="" />
+                                                           required=""/>
                                                     DB
                                                     <input type="radio"
                                                            name="action-{{ line.index }}"
                                                            value="edit_{{ suggestion.pk }}"
                                                            {% if suggestion.is_best_suggestion %}checked="checked"{% endif %}
-                                                           required="" />
+                                                           required=""/>
                                                     edit...
                                                 </td>
                                             </tr>
@@ -158,8 +161,9 @@ table tbody tr.suggestion {
             <div class="row">
                 <div class="large-12 columns">
                     <h2>
-                        Legend
+                        {% trans "Legend" %}
                     </h2>
+                    {% blocktrans %}
                     For each row in the uploaded spreadsheet, please mind the following meanings
                     <dl>
                         <dt>
@@ -186,9 +190,10 @@ table tbody tr.suggestion {
                         <dd>
                             use this existing account, but let me change something. In the next step, a form will be available where you will be able to edit the account. You will be presented with the current data present in the DB and with the "new" ones uploaded with the spreasheet.
                         </dd>
-                    </dl>
-                </div>
+                    {% endblocktrans %}
+                </dl>
             </div>
         </div>
     </div>
+</div>
 {% endblock body %}

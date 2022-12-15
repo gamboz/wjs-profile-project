@@ -10,7 +10,7 @@
         <div class="card-section">
             <div class="row">
                 <div class="large-12 columns">
-                    <h2>Intro</h2>
+                    <h2>{% trans "Intro" %}</h2>
                     <p>You can limit submission to this collection to invited users only. The process has are 3 steps:</p>
                     <ol>
                         <li>upload the data file with the list of invitees</li>
@@ -24,7 +24,6 @@
     <div class="card">
         <div class="card-section">
           {% include "elements/forms/errors.html" with form=form %}
-          ERRORS: {{ form.errors }}x
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row">
