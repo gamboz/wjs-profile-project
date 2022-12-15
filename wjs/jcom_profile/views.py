@@ -719,7 +719,7 @@ class IMUStep1(TemplateView):
 
     def get(self, *args, **kwargs):
         """Show a form to start the IMU process - upload the data file."""
-        form = self.form_class(*args, **kwargs)
+        form = self.form_class(special_issue_id=kwargs["pk"])
         return render(
             self.request,
             template_name=self.template_name,
@@ -728,7 +728,11 @@ class IMUStep1(TemplateView):
 
     def post(self, *args, **kwargs):
         """Receive the data file, process it and redirect along to the next step."""
-        form = self.form_class(self.request.POST, self.request.FILES)
+        form = self.form_class(
+            special_issue_id=kwargs["pk"],
+            request_post=self.request.POST,
+            request_files=self.request.FILES,
+        )
         if not form.is_valid():
             return render(
                 self.request,

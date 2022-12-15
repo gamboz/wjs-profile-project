@@ -281,21 +281,19 @@ class IMUForm(forms.Form):
         help_text=_("All new contributions will have the choosen section (article type)."),
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, special_issue_id, request_post=None, request_files=None):
         """Populate type_of_new_articles queryset from the allowed_section of the current s.i."""
-        # This is a bit fragile: I get the pk when the form is
-        # instantiated in a GET (so I want all the choices), but I get
-        # the request.POST in POSTs.
-        pk = kwargs.pop("pk", None)
-        if pk:
+        if not request_post:
             super().__init__()
-            special_issue = SpecialIssue.objects.get(pk=pk)
+            special_issue = SpecialIssue.objects.get(pk=special_issue_id)
             queryset = special_issue.allowed_sections.all()
             self.fields["type_of_new_articles"].queryset = queryset
             self.fields["type_of_new_articles"].initial = queryset.first()
         else:
-            super().__init__(*args, **kwargs)
-            self.fields["type_of_new_articles"].queryset = Section.objects.filter(pk=args[0]["type_of_new_articles"])
+            super().__init__(request_post, request_files)
+            self.fields["type_of_new_articles"].queryset = Section.objects.filter(
+                pk=request_post["type_of_new_articles"],
+            )
 
 
 class IMUEditExistingAccounts(forms.ModelForm):
