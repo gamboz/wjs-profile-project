@@ -1,5 +1,4 @@
 """pytest common stuff and fixtures."""
-import datetime
 import os
 import random
 
@@ -306,8 +305,8 @@ def special_issue(article, editors, article_journal, director_role):
         name="Special issue",
         short_name="special-issue",
         journal=article_journal,
-        open_date=datetime.datetime.now(),
-        close_date=datetime.datetime.now() + datetime.timedelta(days=1),
+        open_date=timezone.now(),
+        close_date=timezone.now() + timezone.timedelta(1),
     )
     for editor in editors:
         special_issue.editors.add(editor)
