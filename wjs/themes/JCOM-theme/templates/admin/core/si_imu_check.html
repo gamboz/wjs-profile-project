@@ -47,12 +47,12 @@ table tbody tr.suggestion {
                         <table>
                             <thead>
                                 <th>&nbsp</th>
-                                <th>first</th>
-                                <th>middle</th>
-                                <th>last</th>
-                                <th>email</th>
-                                <th>affiliation</th>
-                                <th>title</th>
+                                <th>{% trans "first" %}</th>
+                                <th>{% trans "middle" %}</th>
+                                <th>{% trans "last" %}</th>
+                                <th>{% trans "email" %}</th>
+                                <th>{% trans "institution" %}</th>
+                                <th>{% trans "title" %}</th>
                                 <th>&nbsp</th>
                             </thead>
                             <tbody>
@@ -105,9 +105,9 @@ table tbody tr.suggestion {
                                                        {% if not line.suggestions %}checked="checked"{% endif %}
                                                        required=""
                                                        {% if line.disable_new %}disabled="disabled"{% endif %}/>
-                                                new
+                                                {% trans "new" %}
                                                 <input type="radio" name="action-{{ line.index }}" value="skip" required="" />
-                                                skip
+                                                {% trans "skip" %}
                                             </td>
                                         </tr>
                                         {% for suggestion in line.suggestions %}
@@ -190,10 +190,10 @@ table tbody tr.suggestion {
                         <dd>
                             use this existing account, but let me change something. In the next step, a form will be available where you will be able to edit the account. You will be presented with the current data present in the DB and with the "new" ones uploaded with the spreasheet.
                         </dd>
+                    </dl>
                     {% endblocktrans %}
-                </dl>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock body %}

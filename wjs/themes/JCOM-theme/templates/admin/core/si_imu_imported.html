@@ -72,9 +72,9 @@
                 <div class="row">
                     <div class="large-12 columns">
                         {% if formset|length > 0 %}
-                            <input type="submit" value="Update selected users" />
+                            <input type="submit" value='{% trans "Update selected users" %}' />
                         {% else %}
-                            <input type="submit" value="Continue" />
+                            <input type="submit" value='{% trans "Continue" %}' />
                         {% endif %}
                     </div>
                 </div>

@@ -28,16 +28,18 @@
                 {% csrf_token %}
                 <div class="row">
                     <div class="large-12 columns">
+                        {% blocktrans %}
                         <p>
                             The data file must be an <b>OASIS <a href="https://en.wikipedia.org/wiki/OpenDocument">OpenDocument</a> Spreadsheet</b>
                             (that means "an OpenOffice 2 version of excel file") with data on the
                             first sheet and with the following structure:
                         </p>
+                        {% endblocktrans %}
                         <div id="ods">
                             <table>
                                 <tbody>
                                     <tr>
-                                        <td>session (optional)</td>
+                                        <td>{% trans "session (optional)" %}</td>
                                         <td></td>
                                         <td></td>
                                         <td></td>
@@ -45,12 +47,12 @@
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <td>first name</td>
-                                        <td>middle name</td>
-                                        <td>last name</td>
-                                        <td>e-mail</td>
-                                        <td>institution / affiliation</td>
-                                        <td>contribution title</td>
+                                        <td>{% trans "first name" %}</td>
+                                        <td>{% trans "middle name" %}</td>
+                                        <td>{% trans "last name" %}</td>
+                                        <td>{% trans "e-mail" %}</td>
+                                        <td>{% trans "institution / affiliation" %}</td>
+                                        <td>{% trans "contribution title" %}</td>
                                     </tr>
                                     <tr>
                                         <td>...</td>
@@ -63,6 +65,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        {% blocktrans %}
                         <p>
                             Warning: if you check "create articles on import" the title is mandatory.
                             <br/>
@@ -70,6 +73,7 @@
                             <br/>
                             Warning: order is important.
                         </p>
+                        {% endblocktrans %}
                     </div>
                     <div class="large-12 columns">{{ form.data_file|foundation }}</div>
                 </div>
