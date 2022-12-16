@@ -333,4 +333,4 @@ pytest_factoryboy.register(
     email="iamsum@example.com",
     institution="ML",
 )
-pytest_factoryboy.register(SpecialIssueFactory)
+pytest_factoryboy.register(SpecialIssueFactory, "fb_special_issue")
