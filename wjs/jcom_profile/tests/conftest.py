@@ -1,13 +1,13 @@
 """pytest common stuff and fixtures."""
 import datetime
 import os
+import random
 
 import pytest
 import pytest_factoryboy
 from core.models import Account, Role, Setting
 from django.conf import settings
 from django.core import management
-from django.core.serializers import deserialize
 from django.urls.base import clear_script_prefix
 from django.utils import translation
 from journal import models as journal_models
@@ -20,7 +20,12 @@ from utils.install import update_issue_types, update_settings, update_xsl_files
 from utils.management.commands.install_janeway import ROLES_RELATIVE_PATH
 
 from wjs.jcom_profile.factories import ArticleFactory
-from wjs.jcom_profile.models import ArticleWrapper, JCOMProfile, SpecialIssue
+from wjs.jcom_profile.models import (
+    ArticleWrapper,
+    EditorAssignmentParameters,
+    JCOMProfile,
+    SpecialIssue,
+)
 from wjs.jcom_profile.utils import generate_token
 
 USERNAME = "user"
@@ -268,6 +273,11 @@ def directors(director_role, article_journal):
             last_name=f"Director{i}",
             is_active=True,
         )
+        EditorAssignmentParameters.objects.create(
+            editor=director,
+            journal=article_journal,
+            workload=random.randint(1, 10),
+        )
         director.add_account_role("director", article_journal)
         directors.append(director)
     return directors
@@ -286,6 +296,12 @@ def editors(roles, article_journal):
         )
         editor.add_account_role("editor", article_journal)
         editor.save()
+
+        EditorAssignmentParameters.objects.create(
+            editor=editor,
+            journal=article_journal,
+            workload=random.randint(1, 10),
+        )
 
         editors.append(editor)
     return editors

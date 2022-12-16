@@ -6,21 +6,6 @@ from django.conf import settings
 from django.utils.module_loading import import_string
 
 
-def assign_article(parameters, article):
-    """
-    Assign an article depending on editor parameters and the article itself.
-
-    :param parameters: The EditorParameters selected by the automatic assignment algorithm called after submission.
-    :param article: The assigned article.
-    """
-    from review.models import EditorAssignment
-
-    editor = parameters.order_by("workload").first().editor
-    EditorAssignment.objects.create(article=article, editor=editor, editor_type="Editor", notified=True)
-    article.stage = "Assigned"
-    article.save()
-
-
 def get_special_issue_parameters(article):
     """
     Get special issue EditorAssignmentParameters depending on article special issue editors.
@@ -38,6 +23,9 @@ def get_special_issue_parameters(article):
 
 def default_assign_editors_to_articles(**kwargs) -> None:
     """Assign editors to article for review. Default algorithm."""
+    from review.logic import assign_editor
+    from utils.logic import get_current_request
+
     from ..models import EditorAssignmentParameters
 
     article = kwargs["article"]
@@ -48,12 +36,15 @@ def default_assign_editors_to_articles(**kwargs) -> None:
     else:
         parameters = EditorAssignmentParameters.objects.filter(journal=article.journal)
     if parameters:
-        assign_article(parameters, article)
+        request = get_current_request()
+        assign_editor(article, parameters.order_by("workload").first().editor, "editor", request, False)
 
 
 def jcom_assign_editors_to_articles(**kwargs):
     """Assign editors to article for review. JCOM algorithm."""
     from core.models import AccountRole, Role
+    from review.logic import assign_editor
+    from utils.logic import get_current_request
 
     from ..models import EditorAssignmentParameters
 
@@ -70,7 +61,8 @@ def jcom_assign_editors_to_articles(**kwargs):
         ).values_list("user")
         parameters = EditorAssignmentParameters.objects.filter(journal=article.journal, editor__in=directors)
     if parameters:
-        assign_article(parameters, article)
+        request = get_current_request()
+        assign_editor(article, parameters.order_by("workload").first().editor, "editor", request, False)
 
 
 def dispatch_assignment(**kwargs) -> None:

@@ -1,6 +1,4 @@
 """Tests related to the automatic assignment of articles after submission."""
-import random
-
 import pytest
 from django.test import Client, override_settings
 from django.urls import reverse
@@ -25,10 +23,9 @@ def get_expected_editor(editors, article):
     if not editors:
         return expected_editor
     for editor in editors:
-        params = EditorAssignmentParameters.objects.create(
+        params = EditorAssignmentParameters.objects.get(
             editor=editor,
             journal=article.journal,
-            workload=random.randint(1, 10),
         )
         if params.workload < lowest_workload:
             expected_editor = params.editor
@@ -69,9 +66,6 @@ def test_default_normal_issue_articles_automatic_assignment(
         if has_editors:
             editor_assignment = EditorAssignment.objects.get(article=article)
             assert editor_assignment.editor == expected_editor
-            assert article.stage == "Assigned"
-        else:
-            assert article.stage == "Unassigned"
 
 
 @pytest.mark.parametrize(
@@ -109,9 +103,6 @@ def test_default_special_issue_articles_automatic_assignment(
             editor_assignment = EditorAssignment.objects.get(article=article)
 
             assert editor_assignment.editor == expected_editor
-            assert article.stage == "Assigned"
-        else:
-            assert article.stage == "Unassigned"
 
 
 @pytest.mark.parametrize(
@@ -155,9 +146,6 @@ def test_jcom_normal_issue_articles_automatic_assignment(
             editor_assignment = EditorAssignment.objects.get(article=article)
 
             assert editor_assignment.editor == expected_editor
-            assert article.stage == "Assigned"
-        else:
-            assert article.stage == "Unassigned"
 
 
 @pytest.mark.parametrize(
@@ -199,6 +187,3 @@ def test_jcom_special_issue_articles_automatic_assignment(
             editor_assignment = EditorAssignment.objects.get(article=article)
 
             assert editor_assignment.editor == expected_editor
-            assert article.stage == "Assigned"
-        else:
-            assert article.stage == "Unassigned"
