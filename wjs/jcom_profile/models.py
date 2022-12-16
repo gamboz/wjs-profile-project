@@ -134,6 +134,7 @@ class SpecialIssue(models.Model):
     invitees = models.ManyToManyField(to="core.Account")
     # A S.I. can impose a filter on submittable article types ("sections")
     allowed_sections = models.ManyToManyField(to="submission.Section")
+    editors = models.ManyToManyField("core.Account", blank=True)
 
     def get_absolute_url(self):
         """Get the absolute URL (where create-view redirects on success)."""
