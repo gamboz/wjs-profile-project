@@ -111,6 +111,7 @@ def director(user, roles, journal, director_role):
     director = JCOMProfile.objects.get(janeway_account=user)
     director.gdpr_checkbox = True
     director.is_active = True
+    director.add_account_role("editor", journal)
     director.add_account_role("director", journal)
     director.save()
     return director
