@@ -33,15 +33,15 @@
                         </div>
                         <p>
                             {% if request.journal.submissionconfiguration.publication_fees %}
-                                <i class="fa fa-check-circle green"></i> Agreed to Publication Fees statement.<br/>
+                                <i class="fa fa-check-circle green"></i> {% trans "Agreed to Publication Fees statement." %}<br/>
                             {% endif %}
 
                             {% if request.journal.submissionconfiguration.submission_check %}
-                                <i class="fa fa-check-circle green"></i> Agreed to Submission Checklist.<br/>
+                                <i class="fa fa-check-circle green"></i> {% trans "Agreed to Submission Checklist." %}<br/>
                             {% endif %}
 
                             {% if request.journal.submissionconfiguration.copyright_notice %}
-                                <i class="fa fa-check-circle green"></i> Agreed to Copyright statement.<br/>
+                                <i class="fa fa-check-circle green"></i> {% trans "Agreed to Copyright statement." %}<br/>
                             {% endif %}
                         </p>
 
@@ -117,14 +117,14 @@
                     <a href="{% url 'core_edit_profile' %}" class="btn btn-primary button primary">Edit profile</a>
                     <table class="table small" id="author-info-table">
                         <tr>
-                            <th>First Name</th>
-                            <th>Middle Name</th>
-                            <th>Last Name</th>
-                            <th>Email Address</th>
-                            <th>ORCID</th>
-                            <th>Affiliation</th>
-                            <th>Country</th>
-                            <th>Biography</th>
+                            <th>{% trans "First Name" %}</th>
+                            <th>{% trans "Middle Name" %}</th>
+                            <th>{% trans "Last Name" %} </th>
+                            <th>{% trans "Email Address" %} </th>
+                            <th>{% trans "ORCID" %}</th>
+                            <th>{% trans "Affiliation" %}</th>
+                            <th>{% trans "Country" %}</th>
+                            <th>{% trans "Biography" %}</th>
                         </tr>
                         {% for order in article.articleauthororder_set.all %}
                             <tr>
@@ -150,7 +150,7 @@
                             <tr>
                                 <td>{{ file.label }}</td>
                                 <td>{{ file }}</td>
-                                <td>Manuscript</td>
+                                <td>{% trans Manuscript %}</td>
                             </tr>
                         {% endfor %}
                         {% if request.journal.submissionconfiguration.figures_data %}
@@ -158,7 +158,7 @@
                                 <tr>
                                     <td>{{ file.label }}</td>
                                     <td>{{ file }}</td>
-                                    <td>Figure/Data</td>
+                                    <td>{% trans Figure/Data %}</td>
                                 </tr>
                             {% endfor %}
                         {% endif %}
