@@ -209,7 +209,6 @@ def article(admin, coauthor, article_journal, section):
 @pytest.fixture
 def director_role(roles):
     """Create Director Role."""
-    print(Role.objects.all())
     Role.objects.get_or_create(name="Director", slug="director")
 
 
