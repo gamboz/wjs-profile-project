@@ -32,6 +32,7 @@ from submission import decorators
 from submission import forms as submission_forms
 from submission import logic as submission_logic
 from submission import models as submission_models
+from submission.models import Article
 from utils import setting_handler
 from utils.logger import get_logger
 
@@ -276,6 +277,17 @@ class SpecialIssues(TemplateView):
             template_name=self.template_name,
             context=context,
         )
+
+
+@login_required
+@decorators.submission_is_enabled
+@submission_authorised
+def proceed_with_normal_issue(request, article_id):  # NOQA
+    """Redirect to article info removing special issue from article if necessary."""
+    article = Article.objects.get(pk=article_id)
+    article.articlewrapper.special_issue = None
+    article.articlewrapper.save()
+    return redirect(reverse("submit_info_original", kwargs={"article_id": article.pk}))
 
 
 @login_required

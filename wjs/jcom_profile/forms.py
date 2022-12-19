@@ -143,7 +143,7 @@ class SIForm(forms.ModelForm):
         # TODO: Check this. Since I am using a ModelMultipleChoiceField I am getting an entire queryset, but the model
         #  expects a single instance, which I take here in the clean method.
         data = {"special_issue": None}
-        if self.cleaned_data["special_issue"]:
+        if self.cleaned_data.get("special_issue"):
             data["special_issue"] = self.cleaned_data["special_issue"].first()
         return data
 
