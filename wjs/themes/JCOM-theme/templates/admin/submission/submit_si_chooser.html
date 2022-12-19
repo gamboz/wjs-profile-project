@@ -45,16 +45,19 @@
 {% block js %}
     <script>
         $(document).ready(function () {
-
-            $('input:checkbox').click(function () {
-                var inputs = $('input:checkbox')
-
+            var inputs = $('input:checkbox')
+            function check() {
                 if ($(this).is(':checked')) {
                     inputs.not(this).prop('disabled', true);
                 } else {
                     inputs.prop('disabled', false);
                 }
-            })
+                return inputs
+            }
+            inputs.each(check);
+
+            inputs.click(check);
+
         });
     </script>
 {% endblock js %}
