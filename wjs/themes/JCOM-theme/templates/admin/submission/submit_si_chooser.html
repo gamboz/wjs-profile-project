@@ -13,7 +13,6 @@
         <div class="box">
             <form method="post"{% if journal_settings.general.abstract_required %} novalidate{% endif %}>
                 {% csrf_token %}
-
                 {% if article.is_preprint %}{% trans "This article is a preprint" %}{% endif %}
                 {% include "submission/timeline.html" with data=article %}
 
@@ -33,6 +32,29 @@
                     </div>
                 </div>
             </form>
+            <div class="row expanded">
+                <p>If your submission is not related to any special issue, click here to continue </p>
+                <a href="{% url 'submit_info_original' article.pk %}"
+                   class="success button pull-right"><i
+                        class="fa fa-check">&nbsp;</i>{% trans "Proceed as Normal Issue" %}</a>
+            </div>
         </div>
     </article>
 {% endblock body %}
+
+{% block js %}
+    <script>
+        $(document).ready(function () {
+
+            $('input:checkbox').click(function () {
+                var inputs = $('input:checkbox')
+
+                if ($(this).is(':checked')) {
+                    inputs.not(this).prop('disabled', true);
+                } else {
+                    inputs.prop('disabled', false);
+                }
+            })
+        });
+    </script>
+{% endblock js %}
