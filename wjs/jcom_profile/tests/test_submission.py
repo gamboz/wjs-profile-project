@@ -454,3 +454,18 @@ def test_special_issue_article_show_issue_name_in_article_info(admin, article, c
     assert special_issue.name in [
         td.text for td in (e.find("td") for e in article_info_table.findall("tr")) if td is not None
     ]
+
+
+@pytest.mark.django_db
+def test_proceed_with_normal_issue_when_special_issues_are_open(admin, article, coauthors_setting, special_issue):
+    client = Client()
+    client.force_login(admin)
+    article.articlewrapper.special_issue = special_issue
+
+    url = reverse("proceed_normal_issue", args=(article.id,))
+
+    response = client.get(url)
+    assert response.status_code == 302
+
+    article.articlewrapper.refresh_from_db()
+    assert article.articlewrapper.special_issue is None
