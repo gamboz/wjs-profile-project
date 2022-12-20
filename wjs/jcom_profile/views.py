@@ -284,10 +284,13 @@ class SpecialIssues(TemplateView):
 @submission_authorised
 def proceed_with_normal_issue(request, article_id):  # NOQA
     """Redirect to article info removing special issue from article if necessary."""
-    article = Article.objects.get(pk=article_id)
-    article.articlewrapper.special_issue = None
-    article.articlewrapper.save()
-    return redirect(reverse("submit_info_original", kwargs={"article_id": article.pk}))
+    try:
+        article = Article.objects.get(pk=article_id)
+        article.articlewrapper.special_issue = None
+        article.articlewrapper.save()
+        return redirect(reverse("submit_info_original", kwargs={"article_id": article.pk}))
+    except Article.DoesNotExist:
+        raise Http404
 
 
 @login_required

@@ -23,7 +23,7 @@ urlpatterns = [
         name="submit_info",
     ),
     url(
-        r"^submit/normal_issue/(?P<article_id>\d+)/info/$",
+        r"^submit/normal_issue/(?P<article_id>\d+)/$",
         views.proceed_with_normal_issue,
         name="proceed_normal_issue",
     ),
