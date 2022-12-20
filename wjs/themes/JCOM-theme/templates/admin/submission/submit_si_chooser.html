@@ -18,8 +18,8 @@
                     {% include "submission/timeline.html" with data=article %}
                     <p>If your submission is not related to any special issue, click here to continue </p>
                     <div class="large-12 columns">
-                        <a href="{% url 'proceed_normal_issue' article.id %}" class="btn btn-primary button primary">Proceed
-                            with Normal Issue</a>
+                        <a href="{% url 'proceed_normal_issue' article.id %}"
+                           class="btn btn-primary button primary">{% trans "Proceed with Normal Issue" %}</a>
                     </div>
                     <div class="title-area">
                         <h2>{% trans "Choose Special Issue" %}</h2>
