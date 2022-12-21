@@ -28,7 +28,7 @@
                     <div class="content">
                         {% include "elements/forms/errors.html" with form=form %}
                         {% for choice in form.special_issue %}
-                            <div class="radio">{{ choice }}</div> {# Or any other type you want. #}
+                            <div class="{% if forloop.counter0 == 0 %}hide{% endif %} radio">{{ choice }}</div>
                         {% endfor %}
 
                     </div>
@@ -49,7 +49,6 @@
 {% block js %}
     <script>
         $(document).ready(function () {
-            $('#id_special_issue_0').parent().hide();
             var normalIssueBtn = $('#proceed-normal-issue-btn')
             normalIssueBtn.click(function () {
                 $('#id_special_issue_0').prop("checked", true);
