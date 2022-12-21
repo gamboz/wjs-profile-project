@@ -18,20 +18,25 @@
                     {% include "submission/timeline.html" with data=article %}
                     <p>If your submission is not related to any special issue, click here to continue </p>
                     <div class="large-12 columns">
-                        <a href="{% url 'proceed_normal_issue' article.id %}"
-                           class="btn btn-primary button success pull-right"><i
-                                class="fa fa-check">&nbsp;</i>{% trans "Proceed with Normal Issue" %}</a>
+                        <button class="btn btn-primary button success pull-right" id="proceed-normal-issue-btn"><i
+                                class="fa fa-check" type="submit">&nbsp;</i>{% trans "Proceed with Normal Issue" %}
+                        </button>
                     </div>
                     <div class="title-area">
                         <h2>{% trans "Choose Special Issue" %}</h2>
                     </div>
                     <div class="content">
                         {% include "elements/forms/errors.html" with form=form %}
-                        {{ form }}
+                        {% for choice in form.special_issue %}
+                            <div class="radio">{{ choice }}</div> {# Or any other type you want. #}
+                        {% endfor %}
+
                     </div>
 
-                    <div class="large-12 columns">
-                        <button class="success button pull-right" type="submit" name="start_submission"><i
+                    <div class="large-12 columns text-right">
+                        <button class="button warning " name="clear_radio" type="reset">{% trans "Clear selection" %}
+                        </button>
+                        <button class="success button" type="submit" name="start_submission"><i
                                 class="fa fa-check">&nbsp;</i>{% trans "Proceed with Special Issue" %}
                         </button>
                     </div>
@@ -44,20 +49,11 @@
 {% block js %}
     <script>
         $(document).ready(function () {
-            var inputs = $('input:checkbox')
-
-            inputs.each(function () {
-                if ($(this).is(':checked')) {
-                    inputs.not(this).prop('disabled', true);
-                }
-            });
-            inputs.click(function () {
-                if ($(this).is(':checked')) {
-                    inputs.not(this).prop('disabled', true);
-                } else {
-                    inputs.prop('disabled', false);
-                }
-            });
+            $('#id_special_issue_0').parent().hide();
+            var normalIssueBtn = $('#proceed-normal-issue-btn')
+            normalIssueBtn.click(function () {
+                $('#id_special_issue_0').prop("checked", true);
+            })
         });
     </script>
 {% endblock js %}

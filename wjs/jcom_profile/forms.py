@@ -124,10 +124,11 @@ class SIForm(forms.ModelForm):
         model = ArticleWrapper
         fields = ("special_issue",)
 
-    special_issue = forms.ModelMultipleChoiceField(
+    special_issue = forms.ModelChoiceField(
         queryset=None,
         required=False,
-        widget=forms.CheckboxSelectMultiple(),
+        empty_label="Normal Issue",
+        widget=forms.RadioSelect(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -137,15 +138,6 @@ class SIForm(forms.ModelForm):
         self.fields["special_issue"].queryset = (
             SpecialIssue.objects.current_journal().open_for_submission().current_user()
         )
-
-    def clean(self):
-        """Add a single SpecialIssue instance to form."""
-        # TODO: Check this. Since I am using a ModelMultipleChoiceField I am getting an entire queryset, but the model
-        #  expects a single instance, which I take here in the clean method.
-        data = {"special_issue": None}
-        if self.cleaned_data.get("special_issue"):
-            data["special_issue"] = self.cleaned_data["special_issue"].first()
-        return data
 
     # TODO: how do I represent the "no special issue" case?
     # - A1 keep a special issue called "normal submission" always open

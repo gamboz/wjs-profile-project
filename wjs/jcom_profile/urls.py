@@ -22,11 +22,6 @@ urlpatterns = [
         views.SpecialIssues.as_view(),
         name="submit_info",
     ),
-    url(
-        r"^submit/normal_issue/(?P<article_id>\d+)/$",
-        views.proceed_with_normal_issue,
-        name="proceed_normal_issue",
-    ),
     # ... and "rename" it (i.e. the submission's second step) to be
     # able to get back in the loop
     url(

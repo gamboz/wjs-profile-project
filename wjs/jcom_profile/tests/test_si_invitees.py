@@ -159,4 +159,4 @@ class TestSIInvitees:
         # I can see the expected SIs
         assert html.find(f".//input[@value='{si_no_invitees.id}']") is not None
         assert html.find(f".//input[@value='{si_vodka.id}']") is not None
-        assert len(html.findall(".//input")) == 3  # 2 SIs + normal submission
+        assert len(html.findall(".//input[@name='special_issue']")) == 3  # 2 SIs + normal submission
