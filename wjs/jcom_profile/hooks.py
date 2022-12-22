@@ -38,7 +38,7 @@ def extra_edit_subscription_hook(request_context):
         {
             "card_title": "Newsletters",
             "card_paragraph": "Edit your subscription settings by clicking the button below.",
-            "url_name": "assignment_parameters",
+            "url_name": "edit_newsletters",
             "button_text": "Edit my subscription",
         },
     )

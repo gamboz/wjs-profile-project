@@ -17,6 +17,8 @@ from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
     JCOMProfile,
+    NewsletterTopic,
+    Recipient,
     SpecialIssue,
 )
 
@@ -176,10 +178,7 @@ class UpdateAssignmentParametersForm(forms.ModelForm):
 
     class Meta:
         model = EditorAssignmentParameters
-        fields = (
-            # "keywords",
-            "workload",
-        )
+        fields = ("workload",)
 
     def __init__(self, *args, **kwargs):
         """Know your kwds."""
@@ -354,3 +353,16 @@ class SIUpdateForm(forms.ModelForm):
         self.fields["allowed_sections"].queryset = Section.objects.filter(
             journal=self.instance.journal,
         )
+
+
+class NewsletterTopicForm(forms.ModelForm):
+    topics = forms.ModelMultipleChoiceField(
+        label=_("Topics"),
+        queryset=NewsletterTopic.objects.all(),
+        widget=Select2Multiple(),
+        required=False,
+    )
+
+    class Meta:
+        model = Recipient
+        fields = ("topics",)
