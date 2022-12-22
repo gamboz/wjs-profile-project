@@ -1,3 +1,5 @@
+import random
+
 import pytest
 from core import models as core_models
 from django.conf import settings
@@ -13,6 +15,7 @@ from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
     JCOMProfile,
+    Recipient,
 )
 from wjs.jcom_profile.tests.conftest import ASSIGNMENT_PARAMETERS_SPAN, INVITE_BUTTON
 from wjs.jcom_profile.utils import generate_token
@@ -376,3 +379,21 @@ def test_director_can_change_editor_parameters(journal, roles, admin, editor, ke
     assert editor_parameters.brake_on == brake_on
     for keyword in EditorKeyword.objects.filter(editor_parameters=editor_parameters):
         assert keyword.weight == weight
+
+
+@pytest.mark.parametrize("is_news", (True, False))
+@pytest.mark.django_db
+def test_update_newsletter_subscription(editor, keywords, journal, is_news):
+    keywords = random.choices(Keyword.objects.values_list("id", "word"), k=5)
+
+    client = Client()
+    client.force_login(editor)
+    url = f"/{journal.code}/update/newsletters/"
+    data = {"topics": [k[0] for k in keywords], "news": is_news}
+    response = client.post(url, data)
+    assert response.status_code == 302
+
+    user_recipient = Recipient.objects.get(user=editor, journal=journal)
+    topics = user_recipient.topics.all()
+    for topic in topics:
+        assert topic.word in [k[1] for k in keywords]

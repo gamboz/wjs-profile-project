@@ -249,7 +249,7 @@ def clear_script_prefix_fix():
 
 @pytest.fixture
 def keywords():
-    for i in range(3):
+    for i in range(10):
         Keyword.objects.create(word=f"{i}-keyword")
     return Keyword.objects.all()
 
