@@ -383,17 +383,39 @@ def test_director_can_change_editor_parameters(journal, roles, admin, editor, ke
 
 @pytest.mark.parametrize("is_news", (True, False))
 @pytest.mark.django_db
-def test_update_newsletter_subscription(editor, keywords, journal, is_news):
+def test_update_newsletter_subscription(jcom_user, keywords, journal, is_news):
     keywords = random.choices(Keyword.objects.values_list("id", "word"), k=5)
 
     client = Client()
-    client.force_login(editor)
+    client.force_login(jcom_user)
     url = f"/{journal.code}/update/newsletters/"
     data = {"topics": [k[0] for k in keywords], "news": is_news}
-    response = client.post(url, data)
-    assert response.status_code == 302
+    response = client.post(url, data, follow=True)
+    assert response.status_code == 200
 
-    user_recipient = Recipient.objects.get(user=editor, journal=journal)
+    user_recipient = Recipient.objects.get(user=jcom_user, journal=journal)
     topics = user_recipient.topics.all()
     for topic in topics:
         assert topic.word in [k[1] for k in keywords]
+
+    messages = list(response.context["messages"])
+    assert len(messages) == 1
+    assert messages[0].message == "Newsletter preferences updated."
+
+
+@pytest.mark.django_db
+def test_newsletter_unsubscription(jcom_user, keywords, journal):
+    client = Client()
+    client.force_login(jcom_user)
+    url = f"/{journal.code}/update/newsletters/"
+    data = {}
+    response = client.post(url, data, follow=True)
+    assert response.status_code == 200
+
+    user_recipient = Recipient.objects.get(user=jcom_user, journal=journal)
+    assert not user_recipient.topics.all()
+    assert not user_recipient.news
+
+    messages = list(response.context["messages"])
+    assert len(messages) == 1
+    assert messages[0].message == "Unsubscription successful."

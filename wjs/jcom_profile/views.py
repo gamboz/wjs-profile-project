@@ -1080,9 +1080,15 @@ class NewsletterParametersUpdateView(UpdateView):
         return recipient
 
     def get_success_url(self):  # noqa
+        if "topics" not in self.request.POST and "news" not in self.request.POST:
+            message = "Unsubscription successful."
+            message_type = messages.ERROR
+        else:
+            message = "Newsletter preferences updated."
+            message_type = messages.SUCCESS
         messages.add_message(
             self.request,
-            messages.SUCCESS,
-            "Newsletter topic successfully added",
+            message_type,
+            message,
         )
         return reverse("edit_newsletters")
