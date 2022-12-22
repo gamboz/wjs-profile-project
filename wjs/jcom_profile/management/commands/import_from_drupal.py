@@ -341,7 +341,7 @@ class Command(BaseCommand):
 
         # in Drupal, volume is a dedicated document type, but in
         # Janeway it is only a number
-        # sanity check (apparently Drupal exposes volume uri in both article and issue json):
+        # Sanity check (apparently Drupal exposes volume uri in both article and issue json):
         assert raw_data["field_volume"]["uri"] == issue_data["field_volume"]["uri"]
         volume_data = self.fetch_data_dict(issue_data["field_volume"]["uri"])
 
@@ -370,7 +370,7 @@ class Command(BaseCommand):
         # - can I leave this empty??? ⇨ no, it defaults to now()
         # - should I evince from the issue number??? ⇨ maybe...
         # - maybe I can use the publication date of the issue's editorial? ⇨ not all issues have an editorial
-        date_published = timezone.datetime(year, 1, 1)
+        date_published = timezone.datetime(year, 1, 1, tzinfo=rome_timezone)
 
         # TODO: JCOM has "special issues" published alongside normal
         # issues, while Janeway has "collections", that are orthogonal
