@@ -4,13 +4,24 @@
 
 {% block body %}
     <h2>Newsletters </h2>
-    <div>
-        <form method="post">
-            {% csrf_token %}
-            {{ form }}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col s12">
+                <label for="{{ form.news.id_for_label }}">
+                    {% trans "Topics: " %}
+                </label>
+                {{ form.topics }}
+            </div>
+            <div class="col s12">
+                {{ form.news }}
+                <label for="{{ form.news.id_for_label }}">{% trans "News" %}</label>
+            </div>
             <input type="submit"/>
-        </form>
-    </div>
+        </div>
+
+    </form>
 {% endblock body %}
 
 {% block css %}

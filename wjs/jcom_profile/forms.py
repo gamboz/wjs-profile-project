@@ -361,7 +361,11 @@ class NewsletterTopicForm(forms.ModelForm):
         widget=Select2Multiple(),
         required=False,
     )
+    news = forms.BooleanField(required=False)
 
     class Meta:
         model = Recipient
-        fields = ("topics",)
+        fields = (
+            "topics",
+            "news",
+        )
