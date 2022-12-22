@@ -14,7 +14,6 @@ from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
     JCOMProfile,
-    NewsletterTopic,
     Recipient,
     SpecialIssue,
 )
@@ -126,11 +125,6 @@ class EditorAssignmentParametersAdmin(admin.ModelAdmin):
 @admin.register(EditorKeyword)
 class EditorKeywordAdmin(admin.ModelAdmin):
     """Helper class to "admin" editor keyword."""
-
-
-@admin.register(NewsletterTopic)
-class NewsletterTopicAdmin(admin.ModelAdmin):
-    """Helper class to "admin" newsletter topic."""
 
 
 @admin.register(Recipient)

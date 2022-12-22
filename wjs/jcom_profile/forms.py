@@ -17,7 +17,6 @@ from wjs.jcom_profile.models import (
     EditorAssignmentParameters,
     EditorKeyword,
     JCOMProfile,
-    NewsletterTopic,
     Recipient,
     SpecialIssue,
 )
@@ -358,7 +357,7 @@ class SIUpdateForm(forms.ModelForm):
 class NewsletterTopicForm(forms.ModelForm):
     topics = forms.ModelMultipleChoiceField(
         label=_("Topics"),
-        queryset=NewsletterTopic.objects.all(),
+        queryset=Keyword.objects.all(),
         widget=Select2Multiple(),
         required=False,
     )
