@@ -12,11 +12,34 @@ def prova_hook(request_context):
 
 
 def extra_edit_profile_parameters_hook(request_context):
-    """Add hook to add assignment parameter button."""
+    """Add hook to add assignment parameter card."""
     user = request_context.request.user
     journal = request_context.request.journal
     rendered = ""
     if user and journal and user.check_role(journal, "editor"):
-        template_name = "extra_edit_profile_parameters.html"
-        rendered = render_to_string(template_name, {})
+        template_name = "extra_edit_profile_card_block.html"
+        rendered = render_to_string(
+            template_name,
+            {
+                "card_title": "Edit assignment parameters",
+                "card_paragraph": "Go to your your assignment parameters by clicking the button below.",
+                "url_name": "assignment_parameters",
+                "button_text": "Assignment parameters",
+            },
+        )
+    return rendered
+
+
+def extra_edit_subscription_hook(request_context):
+    """Add hook to add newsletters card."""
+    template_name = "extra_edit_profile_card_block.html"
+    rendered = render_to_string(
+        template_name,
+        {
+            "card_title": "Newsletters",
+            "card_paragraph": "Edit your subscription settings by clicking the button below.",
+            "url_name": "assignment_parameters",
+            "button_text": "Edit my subscription",
+        },
+    )
     return rendered
