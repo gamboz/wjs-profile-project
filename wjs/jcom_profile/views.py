@@ -1086,19 +1086,21 @@ class NewsletterParametersUpdate(UpdateView):
         return recipient
 
     def get_success_url(self):  # noqa
+        url = reverse("edit_newsletters")
         if "topics" not in self.request.POST and "news" not in self.request.POST:
             message = "Unsubscription successful."
             if self.request.user.is_anonymous():
                 self.object.delete()
-                return reverse("website_index")
+                url = reverse("website_index")
         else:
             message = "Newsletter preferences updated."
+
         messages.add_message(
             self.request,
             messages.SUCCESS,
             message,
         )
-        return reverse("edit_newsletters")
+        return url
 
 
 def anonymous_user_register_newsletter(request):
