@@ -43,7 +43,7 @@ from wjs.jcom_profile.models import (
 )
 
 from . import forms
-from .utils import PATH_PARTS, save_file_to_special_issue
+from .utils import PATH_PARTS, generate_token, save_file_to_special_issue
 
 logger = get_logger(__name__)
 
@@ -1069,13 +1069,19 @@ class IMUStep3(TemplateView):
         return redirect(to=reverse("si-update", kwargs={"pk": kwargs["pk"]}))
 
 
-class NewsletterParametersUpdateView(UpdateView):
+class NewsletterParametersUpdate(UpdateView):
     model = Recipient
     template_name = "elements/accounts/edit_newsletters_subscription.html"
     form_class = forms.NewsletterTopicForm
 
     def get_object(self, queryset=None):  # noqa
         user, journal = self.request.user, self.request.journal
+        if user.is_anonymous():
+            try:
+                recipient = Recipient.objects.get(pk=self.request.session["anonymous_recipient"])
+                return recipient
+            except KeyError:
+                return Http404
         recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
         return recipient
 
@@ -1092,3 +1098,73 @@ class NewsletterParametersUpdateView(UpdateView):
             message,
         )
         return reverse("edit_newsletters")
+
+
+def register_newsletter(request):
+    """Handle anonymous user newsletter registration process using a dedicated token."""
+    if request.method == "POST":
+        form = forms.RegisterUserNewsletterForm(request.POST)
+        if form.is_valid():
+            email = form.data["email"]
+            journal = request.journal
+            token = generate_token(email)
+            try:
+                recipient = Recipient.objects.get(
+                    email=email,
+                    journal=journal,
+                    newsletter_token=token,
+                    accepted_subscription=True,
+                )
+                redirect(reverse("edit_newsletters"), kwargs={"recipient": recipient})
+            except Recipient.DoesNotExist:
+                Recipient.objects.create(email=email, journal=journal, newsletter_token=token)
+                acceptance_url = request.build_absolute_uri(
+                    reverse(
+                        "confirm_anonymous_newsletter_subscription",
+                        kwargs={"token": token},
+                    ),
+                )
+                send_mail(
+                    f"Newsletter registration",  # noqa
+                    setting_handler.get_setting(
+                        "email",
+                        "subscribe_custom_email_message",
+                        request.journal,
+                    ).processed_value.format(journal, acceptance_url),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                )
+                template = "elements/accounts/anonymous_subscription_email_sent.html"
+                return render(request, template)
+
+    template = "elements/accounts/register_newsletters.html"
+    context = {
+        "form": forms.RegisterUserNewsletterForm(),
+    }
+    return render(request, template, context)
+
+
+def confirm_anonymous_newsletter_subscription(request, token):
+    """Explicitly confirm newsletter subscription as anonymous user."""
+    template = "elements/accounts/anonymous_subscription_acceptance.html"
+    try:
+        recipient = Recipient.objects.get(newsletter_token=token)
+    except Recipient.DoesNotExist:
+        context = {"error": True}
+        return render(request, template, context, status=404)
+
+    context = {
+        "form": forms.AnonymousNewsletterSubscriptionAcceptanceForm(),
+    }
+    if request.POST:
+        form = forms.AnonymousNewsletterSubscriptionAcceptanceForm(request.POST)
+        if form.is_valid():
+            if not recipient.accepted_subscription:
+                recipient.accepted_subscription = True
+                recipient.save()
+        else:
+            context["form"] = form
+        request.session["anonymous_recipient"] = recipient.id
+        return redirect(reverse("edit_newsletters"))
+
+    return render(request, template, context)

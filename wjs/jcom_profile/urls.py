@@ -89,8 +89,18 @@ urlpatterns = [
     ),
     url(
         r"^update/newsletters/$",
-        views.NewsletterParametersUpdateView.as_view(),
+        views.NewsletterParametersUpdate.as_view(),
         name="edit_newsletters",
+    ),
+    url(
+        r"^register/newsletters/$",
+        views.register_newsletter,
+        name="register_newsletters",
+    ),
+    url(
+        r"^/confirm/subscription/(?P<token>.+)/",
+        views.confirm_anonymous_newsletter_subscription,
+        name="confirm_anonymous_newsletter_subscription",
     ),
 ]
 
