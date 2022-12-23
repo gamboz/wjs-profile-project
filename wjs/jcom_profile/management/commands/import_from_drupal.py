@@ -23,7 +23,18 @@ from wjs.jcom_profile import models as wjs_models
 logger = get_logger(__name__)
 FakeRequest = namedtuple("FakeRequest", ["user"])
 rome_timezone = pytz.timezone("Europe/Rome")
-
+# Expect a "body" to be available since last issue of 2016 (Issue 06,
+# 2016); the first document of that issue has been published
+# 2016-10-21, but commentaries of that issue do not have a body. So
+# I'll consider the first issue of 2017 as a boundary date (first
+# document published 2017-01-11).
+BODY_EXPECTED_DATE = timezone.datetime(2017, 1, 1, tzinfo=rome_timezone)
+# Expect to have review dates (submitted/accepted) since this
+# date. The first paper managed by wjapp has: submitted 2015-03-04 /
+# published 2015-03-03 (published before submitted!?!).  All
+# publication dates up to 29 Sep 2015 have timestamp at "00:00" and
+# they are probably artificial.
+HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
 
 # TODO: rethink sections order?
 # SECTION_ORDER =
@@ -49,7 +60,7 @@ class Command(BaseCommand):
             try:
                 self.process(raw_data)
             except Exception as e:
-                logger.critical("Failed import for %s!\n%s", raw_data["nid"], e)
+                logger.critical("Failed import for %s (%s)!\n%s", raw_data["field_id"], raw_data["nid"], e)
                 # raise e
 
     def add_arguments(self, parser):
@@ -143,17 +154,18 @@ class Command(BaseCommand):
     def create_article(self, raw_data):
         """Create a stub for an article with basics metadata.
 
-        - [ ] All the rest (author, kwds, etc.) will be added by someone else.
+        - All the rest (author, kwds, etc.) will be added by someone else.
+        - If article already exists in Janeway, update it.
+        - Empty fields set the value to NULL, but undefined field do
+          nothing (the old value is preserverd).
 
-        - [ ] If article already exists in Janeway, update it.
-
-        - [ ] Empty fields set the value to NULL, but undefined field do nothing (the old value is preserverd).
         """
         journal = journal_models.Journal.objects.get(code="JCOM")
+        # There is a document with no DOI (JCOM_1303_2014_RCR), so I use the "pubid"
         article = submission_models.Article.get_article(
             journal=journal,
-            identifier_type="doi",
-            identifier=raw_data["field_doi"],
+            identifier_type="pubid",
+            identifier=raw_data["field_id"],
         )
         if not article:
             logger.debug("Cannot find article with DOI=%s. Creating a new one.", raw_data["field_doi"])
@@ -175,14 +187,16 @@ class Command(BaseCommand):
         # constraint at DB level, so if issue a `create` it would just
         # work and the same article will end up with multiple
         # identical identifiers.
-        doi = raw_data["field_doi"]
-        assert doi.startswith("10.22323")
-        identifiers_models.Identifier.objects.get_or_create(
-            identifier=doi,
-            article=article,
-            id_type="doi",  # should be a member of the set identifiers_models.IDENTIFIER_TYPES
-            enabled=True,
-        )
+        if doi := raw_data["field_doi"]:
+            assert doi.startswith("10.22323")
+            identifiers_models.Identifier.objects.get_or_create(
+                identifier=doi,
+                article=article,
+                id_type="doi",  # should be a member of the set identifiers_models.IDENTIFIER_TYPES
+                enabled=True,
+            )
+        else:
+            logger.warning("Missing DOI for %s (%s)", raw_data["field_id"], raw_data["nid"])
         pubid = raw_data["field_id"]
         identifiers_models.Identifier.objects.get_or_create(
             identifier=pubid,
@@ -202,17 +216,49 @@ class Command(BaseCommand):
 
     def set_history(self, article, raw_data):
         """Set the review history date: received, accepted, published dates."""
-        for date, field_name in (
+        for drupal_field_name, janeway_field_name in (
             ("field_received_date", "date_submitted"),
             ("field_accepted_date", "date_accepted"),
             ("field_published_date", "date_published"),
         ):
-            if not raw_data[date]:
-                logger.warning("Missing %s in %s", date, raw_data["nid"])
+            timestamp = raw_data[drupal_field_name]
+            if not timestamp:
+                # timestamp = self.get_dates_from_wjapp()...
+                if article.date_published >= HISTORY_EXPECTED_DATE:
+                    logger.warning("Missing %s in %s", drupal_field_name, raw_data["nid"])
             else:
-                setattr(article, field_name, rome_timezone.localize(datetime.fromtimestamp(int(raw_data[date]))))
+                setattr(article, janeway_field_name, rome_timezone.localize(datetime.fromtimestamp(int(timestamp))))
         article.save()
         logger.debug("  %s - history", raw_data["field_id"])
+
+    def set_files(self, article, raw_data):
+        """Find info about the article "attachments", download them and import them as galleys."""
+        # First, let's drop all existing files
+        # see plugin imports.ojs.importers.import_galleys
+        for galley in article.galley_set.all():
+            galley.unlink_files()
+            galley.delete()
+
+        if not self.options["skip_files"]:
+            attachments = raw_data["field_attachments"]
+            # TODO: who whould this user be???
+            admin = core_models.Account.objects.filter(is_admin=True).first()
+            fake_request = FakeRequest(user=admin)
+            # "attachments" are only references to "file" nodes
+            for file_node in attachments:
+                file_dict = self.fetch_data_dict(file_node["file"]["uri"])
+                file_download_url = file_dict["url"]
+                uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
+                save_galley(
+                    article,
+                    request=fake_request,
+                    uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
+                    is_galley=True,
+                    label=file_node["description"],
+                    save_to_disk=True,
+                    public=True,
+                )
+            logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
 
     def set_body_and_abstract(self, article, raw_data):
         """Set body and abstract.
@@ -244,7 +290,7 @@ class Command(BaseCommand):
                     expected_format,
                 )
             if abstract_dict["summary"] != "":
-                logger.error("Abstract has a summary. What should I do?")
+                logger.warning("Dropping short-abstract (summary) for %s.", raw_data["field_id"])
             article.abstract = abstract
             logger.debug("  %s - abstract", raw_data["field_id"])
 
@@ -255,7 +301,8 @@ class Command(BaseCommand):
         # Body (NB: it's a galley with mime-type in files.HTML_MIMETYPES)
         body_dict = raw_data["body"]
         if not body_dict:
-            logger.warning("Missing body in %s", raw_data["nid"])
+            if article.date_published > BODY_EXPECTED_DATE:
+                logger.warning("Missing body in (%s)", raw_data["field_id"], raw_data["nid"])
             article.save()
             return
         body = body_dict.get("value", None)
@@ -288,35 +335,6 @@ class Command(BaseCommand):
         article.body = body
         article.save()
         logger.debug("  %s - body (as html galley)", raw_data["field_id"])
-
-    def set_files(self, article, raw_data):
-        """Find info about the article "attachments", download them and import them as galleys."""
-        # First, let's drop all existing files
-        # see plugin imports.ojs.importers.import_galleys
-        for galley in article.galley_set.all():
-            galley.unlink_files()
-            galley.delete()
-
-        if not self.options["skip_files"]:
-            attachments = raw_data["field_attachments"]
-            # TODO: who whould this user be???
-            admin = core_models.Account.objects.filter(is_admin=True).first()
-            fake_request = FakeRequest(user=admin)
-            # "attachments" are only references to "file" nodes
-            for file_node in attachments:
-                file_dict = self.fetch_data_dict(file_node["file"]["uri"])
-                file_download_url = file_dict["url"]
-                uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
-                save_galley(
-                    article,
-                    request=fake_request,
-                    uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
-                    is_galley=True,
-                    label=file_node["description"],
-                    save_to_disk=True,
-                    public=True,
-                )
-            logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
 
     def set_keywords(self, article, raw_data):
         """Create and set keywords."""
@@ -477,7 +495,12 @@ class Command(BaseCommand):
             email = author_dict["field_email"]
             if not email:
                 email = f"{author_dict['field_id']}@invalid.com"
-                logger.warning("Missing email for %s.", raw_data["nid"])
+                # Some known authors that do not have an email:
+                # - VACCELERATE: it's a consortium
+                if article.date_published >= HISTORY_EXPECTED_DATE:
+                    logger.warning("Missing email for author %s on %s.", author_dict["field_id"], raw_data["nid"])
+            # yeah... one was not stripped... 😢
+            email = email.strip()
             author, _ = core_models.Account.objects.get_or_create(
                 email=email,
                 first_name=author_dict["field_name"],  # TODO: this contains first+middle; split!
