@@ -94,7 +94,7 @@ urlpatterns = [
     ),
     url(
         r"^register/newsletters/$",
-        views.register_newsletter,
+        views.anonymous_user_register_newsletter,
         name="register_newsletters",
     ),
     url(

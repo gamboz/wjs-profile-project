@@ -1100,7 +1100,7 @@ class NewsletterParametersUpdate(UpdateView):
         return reverse("edit_newsletters")
 
 
-def register_newsletter(request):
+def anonymous_user_register_newsletter(request):
     """Handle anonymous user newsletter registration process using a dedicated token."""
     if request.method == "POST":
         form = forms.RegisterUserNewsletterForm(request.POST)
@@ -1115,7 +1115,8 @@ def register_newsletter(request):
                     newsletter_token=token,
                     accepted_subscription=True,
                 )
-                redirect(reverse("edit_newsletters"), kwargs={"recipient": recipient})
+                request.session["anonymous_recipient"] = recipient.id
+                return redirect(reverse("edit_newsletters"))
             except Recipient.DoesNotExist:
                 Recipient.objects.create(email=email, journal=journal, newsletter_token=token)
                 acceptance_url = request.build_absolute_uri(
@@ -1137,7 +1138,7 @@ def register_newsletter(request):
                 template = "elements/accounts/anonymous_subscription_email_sent.html"
                 return render(request, template)
 
-    template = "elements/accounts/register_newsletters.html"
+    template = "elements/accounts/anonymous_user_register_newsletter.html"
     context = {
         "form": forms.RegisterUserNewsletterForm(),
     }
