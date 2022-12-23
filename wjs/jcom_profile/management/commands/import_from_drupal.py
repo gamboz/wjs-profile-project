@@ -1,10 +1,10 @@
 """Data migration POC."""
-
 from collections import namedtuple
 from datetime import datetime, timedelta
 from io import BytesIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
+import lxml.html
 import pytz
 import requests
 from core import models as core_models
@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from identifiers import models as identifiers_models
 from journal import models as journal_models
+from lxml.html import HtmlElement
 from production.logic import save_galley
 from requests.auth import HTTPBasicAuth
 from submission import models as submission_models
@@ -145,7 +146,8 @@ class Command(BaseCommand):
         self.set_identifiers(article, raw_data)
         self.set_history(article, raw_data)
         self.set_files(article, raw_data)
-        self.set_body_and_abstract(article, raw_data)
+        self.set_abstract(article, raw_data)
+        self.set_body(article, raw_data)
         self.set_keywords(article, raw_data)
         self.set_issue(article, raw_data)
         self.set_authors(article, raw_data)
@@ -260,7 +262,7 @@ class Command(BaseCommand):
                 )
             logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
 
-    def set_body_and_abstract(self, article, raw_data):
+    def set_abstract(self, article, raw_data):
         """Set body and abstract.
 
         Take care of escaping & co.
@@ -274,26 +276,34 @@ class Command(BaseCommand):
                 expected_language,
             )
 
-        # Abstract
         abstract_dict = raw_data["field_abstract"]
         if not abstract_dict:
-            logger.warning("Missing abstract in %s", raw_data["nid"])
-        else:
-            abstract = abstract_dict.get("value", None)
-            if abstract and "This item is available only in the original language." in abstract:
-                abstract = None
-            expected_format = "filtered_html"
-            if abstract_dict["format"] != expected_format:
-                logger.error(
-                    "Abstract's format is %s (different from expected %s).",
-                    abstract_dict["format"],
-                    expected_format,
-                )
-            if abstract_dict["summary"] != "":
-                logger.warning("Dropping short-abstract (summary) for %s.", raw_data["field_id"])
-            article.abstract = abstract
-            logger.debug("  %s - abstract", raw_data["field_id"])
+            logger.warning("Missing abstract in %s (%s)", raw_data["field_id"], raw_data["nid"])
+            return
 
+        abstract = abstract_dict.get("value", None)
+        if abstract and "This item is available only in the original language." in abstract:
+            abstract = None
+        expected_format = "filtered_html"
+        if abstract_dict["format"] != expected_format:
+            logger.error(
+                "Abstract's format is %s (different from expected %s).",
+                abstract_dict["format"],
+                expected_format,
+            )
+        if abstract_dict["summary"] != "":
+            logger.warning("Dropping short-abstract (summary) for %s.", raw_data["field_id"])
+        article.abstract = abstract
+        logger.debug("  %s - abstract", raw_data["field_id"])
+
+    def set_body(self, article, raw_data):
+        """Manage the body.
+
+        Take care of
+        - [ ] images included in body
+        - [ ] how-to-cite
+        ...
+        """
         if self.options["skip_files"]:
             article.save()
             return
@@ -322,7 +332,8 @@ class Command(BaseCommand):
         name = "body.html"
         admin = core_models.Account.objects.filter(is_admin=True).first()
         fake_request = FakeRequest(user=admin)
-        body_as_file = File(BytesIO(body_dict["value"].encode()), name)
+        body_bytes = self.process_body(article, body_dict["value"])
+        body_as_file = File(BytesIO(body_bytes), name)
         save_galley(
             article,
             request=fake_request,
@@ -515,12 +526,14 @@ class Command(BaseCommand):
                 try:
                     usercod = int(author_dict["field_id"])
                 except ValueError:
-                    logger.warning(
-                        "Non-integer usercod for author %s on %s: %s.",
-                        author_dict["field_surname"],
-                        raw_data["nid"],
-                        author_dict["field_id"],
-                    )
+                    if article.date_published >= HISTORY_EXPECTED_DATE:
+                        logger.warning(
+                            "Non-integer usercod for author %s (%s) on %s (%s)",
+                            author_dict["field_surname"],
+                            author_dict["field_id"],
+                            raw_data["field_id"],
+                            raw_data["nid"],
+                        )
                 else:
                     mapping, _ = wjs_models.Correspondence.objects.get_or_create(
                         account=author,
@@ -579,3 +592,64 @@ class Command(BaseCommand):
         response = requests.get(uri, auth=self.basic_auth)
         assert response.status_code == 200, f"Got {response.status_code}!"
         return response.json()
+
+    def process_body(self, article, body: str) -> bytes:
+        """Rewrite and adapt body to match Janeway's expectations."""
+        html = lxml.html.fromstring(body)
+
+        # src/themes/material/assets/toc.js expects
+        # - the root element of the article to have id="main_article"
+        html.set("id", "main_article")
+        # - the headings that go in the toc to be h2-level, but Drupal has them at h3-level
+        self.promote_headings(html)
+        self.drop_toc(html)
+        self.drop_how_to_cite(html)
+        return lxml.html.tostring(html)
+
+    def promote_headings(self, html: HtmlElement):
+        """Promote all h2-h6 headings by one level."""
+        for level in range(2, 7):
+            for heading in html.findall(f"h{level}"):
+                heading.tag = f"h{level-1}"
+
+    def drop_toc(self, html: HtmlElement):
+        """Drop the "manual" TOC present in Drupal body content."""
+        tocs = html.find_class("tableofcontents")
+        if len(tocs) == 0:
+            logger.warning("No TOC in WRITEME!!!")
+            return
+
+        if len(tocs) > 1:
+            logger.error("Multiple TOCs in WRITEME!!!")
+
+        tocs[0].drop_tree()
+
+    def drop_how_to_cite(self, html: HtmlElement):
+        """Drop the "manual" How-to-cite present in Drupal body content."""
+        htc_h2 = html.xpath(".//h2[text()='How to cite']")
+        if len(htc_h2) == 0:
+            logger.warning("No How-to-cite in WRITEME!!!")
+            return
+
+        if len(htc_h2) > 1:
+            logger.error("Multiple How-to-cites in WRITEME!!!")
+
+        htc_h2 = htc_h2[0]
+        max_expected = 3
+        count = 0
+        while True:
+            # we are going to `drop_tree` this element, so `getnext()`
+            # should provide for new elments
+            p = htc_h2.getnext()
+            count += 1
+            if count > max_expected:
+                logger.warning("Too many elements after How-to-cite's H2 in WRITEME!!!")
+                break
+            if p.tag != "p":
+                break
+            if p.text.strip() == "":
+                p.drop_tree()
+                break
+            p.drop_tree()
+
+        htc_h2.drop_tree()
