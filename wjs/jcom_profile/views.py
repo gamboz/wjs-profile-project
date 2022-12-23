@@ -1088,13 +1088,14 @@ class NewsletterParametersUpdate(UpdateView):
     def get_success_url(self):  # noqa
         if "topics" not in self.request.POST and "news" not in self.request.POST:
             message = "Unsubscription successful."
-            message_type = messages.ERROR
+            if self.request.user.is_anonymous():
+                self.object.delete()
+                return reverse("website_index")
         else:
             message = "Newsletter preferences updated."
-            message_type = messages.SUCCESS
         messages.add_message(
             self.request,
-            message_type,
+            messages.SUCCESS,
             message,
         )
         return reverse("edit_newsletters")
@@ -1113,10 +1114,12 @@ def anonymous_user_register_newsletter(request):
                     email=email,
                     journal=journal,
                     newsletter_token=token,
-                    accepted_subscription=True,
                 )
-                request.session["anonymous_recipient"] = recipient.id
-                return redirect(reverse("edit_newsletters"))
+                if not recipient.accepted_subscription:
+                    return redirect(reverse("confirm_anonymous_newsletter_subscription", kwargs={"token": token}))
+                else:
+                    request.session["anonymous_recipient"] = recipient.id
+                    return redirect(reverse("edit_newsletters"))
             except Recipient.DoesNotExist:
                 Recipient.objects.create(email=email, journal=journal, newsletter_token=token)
                 acceptance_url = request.build_absolute_uri(
