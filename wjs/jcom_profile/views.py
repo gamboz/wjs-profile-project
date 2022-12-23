@@ -1077,11 +1077,8 @@ class NewsletterParametersUpdate(UpdateView):
     def get_object(self, queryset=None):  # noqa
         user, journal = self.request.user, self.request.journal
         if user.is_anonymous():
-            try:
-                recipient = Recipient.objects.get(pk=self.request.session["anonymous_recipient"])
-                return recipient
-            except KeyError:
-                return Http404
+            recipient = Recipient.objects.get(pk=self.request.session["anonymous_recipient"])
+            return recipient
         recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
         return recipient
 
