@@ -98,7 +98,7 @@ urlpatterns = [
         name="register_newsletters",
     ),
     url(
-        r"^/confirm/subscription/(?P<token>.+)/",
+        r"^confirm/subscription/(?P<token>.+)/",
         views.confirm_anonymous_newsletter_subscription,
         name="confirm_anonymous_newsletter_subscription",
     ),

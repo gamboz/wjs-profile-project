@@ -1128,7 +1128,7 @@ def anonymous_user_register_newsletter(request):
                     ),
                 )
                 send_mail(
-                    f"Newsletter registration",  # noqa
+                    "Newsletter registration",
                     setting_handler.get_setting(
                         "email",
                         "subscribe_custom_email_message",
