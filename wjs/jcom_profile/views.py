@@ -16,12 +16,18 @@ from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.forms import modelformset_factory
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.views import View
-from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DetailView,
+    FormView,
+    TemplateView,
+    UpdateView,
+)
 from repository import models as preprint_models
 from security.decorators import (
     article_edit_user_required,
@@ -1100,74 +1106,83 @@ class NewsletterParametersUpdate(UpdateView):
         return url
 
 
-def anonymous_user_register_newsletter(request):
-    """Handle anonymous user newsletter registration process using a dedicated token."""
-    if request.method == "POST":
-        form = forms.RegisterUserNewsletterForm(request.POST)
-        if form.is_valid():
-            email = form.data["email"]
-            journal = request.journal
-            token = generate_token(email)
-            try:
-                recipient = Recipient.objects.get(
-                    email=email,
-                    journal=journal,
-                    newsletter_token=token,
-                )
-                if not recipient.accepted_subscription:
-                    return redirect(reverse("confirm_anonymous_newsletter_subscription", kwargs={"token": token}))
-                else:
-                    request.session["anonymous_recipient"] = recipient.id
-                    return redirect(reverse("edit_newsletters"))
-            except Recipient.DoesNotExist:
-                Recipient.objects.create(email=email, journal=journal, newsletter_token=token)
-                acceptance_url = request.build_absolute_uri(
+class AnonymousUserNewsletterRegistration(FormView):
+    template_name = "elements/accounts/anonymous_user_register_newsletter.html"
+    form_class = forms.RegisterUserNewsletterForm
+
+    def form_valid(self, request, *args, **kwargs):  # noqa
+        context = self.get_context_data()
+        form = context.get("form")
+        email = form.data["email"]
+        journal = self.request.journal
+        token = generate_token(email)
+        try:
+            recipient = Recipient.objects.get(
+                email=email,
+                journal=journal,
+                newsletter_token=token,
+            )
+            if not recipient.accepted_subscription:
+                return HttpResponseRedirect(
                     reverse(
                         "confirm_anonymous_newsletter_subscription",
                         kwargs={"token": token},
                     ),
                 )
-                send_mail(
-                    "Newsletter registration",
-                    setting_handler.get_setting(
-                        "email",
-                        "subscribe_custom_email_message",
-                        request.journal,
-                    ).processed_value.format(journal, acceptance_url),
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                )
-                template = "elements/accounts/anonymous_subscription_email_sent.html"
-                return render(request, template)
+            else:
+                self.request.session["anonymous_recipient"] = recipient.id
+                return redirect(reverse("edit_newsletters"))
+        except Recipient.DoesNotExist:
+            Recipient.objects.create(email=email, journal=journal, newsletter_token=token)
+            acceptance_url = self.request.build_absolute_uri(
+                reverse(
+                    "confirm_anonymous_newsletter_subscription",
+                    kwargs={"token": token},
+                ),
+            )
+            send_mail(
+                "Newsletter registration",
+                setting_handler.get_setting(
+                    "email",
+                    "subscribe_custom_email_message",
+                    self.request.journal,
+                ).processed_value.format(journal, acceptance_url),
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+            )
+        return super().form_valid(form)
 
-    template = "elements/accounts/anonymous_user_register_newsletter.html"
-    context = {
-        "form": forms.RegisterUserNewsletterForm(),
-    }
-    return render(request, template, context)
+    def get_success_url(self):  # noqa
+        return reverse("register_newsletters_email_sent")
 
 
-def confirm_anonymous_newsletter_subscription(request, token):
-    """Explicitly confirm newsletter subscription as anonymous user."""
-    template = "elements/accounts/anonymous_subscription_acceptance.html"
-    try:
-        recipient = Recipient.objects.get(newsletter_token=token)
-    except Recipient.DoesNotExist:
-        context = {"error": True}
-        return render(request, template, context, status=404)
+class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
+    template_name = "elements/accounts/anonymous_subscription_email_sent.html"
 
-    context = {
-        "form": forms.AnonymousNewsletterSubscriptionAcceptanceForm(),
-    }
-    if request.POST:
-        form = forms.AnonymousNewsletterSubscriptionAcceptanceForm(request.POST)
-        if form.is_valid():
-            if not recipient.accepted_subscription:
-                recipient.accepted_subscription = True
-                recipient.save()
-        else:
-            context["form"] = form
-        request.session["anonymous_recipient"] = recipient.id
-        return redirect(reverse("edit_newsletters"))
 
-    return render(request, template, context)
+class AnonymousUserNewsletterConfirmation(FormView):
+    template_name = "elements/accounts/anonymous_subscription_acceptance.html"
+    form_class = forms.AnonymousNewsletterSubscriptionAcceptanceForm
+
+    def get_context_data(self, **kwargs):  # noqa
+        context = super().get_context_data()
+        token = self.kwargs["token"]
+        try:
+            recipient = Recipient.objects.get(newsletter_token=token)
+            context["recipient"] = recipient
+        except Recipient.DoesNotExist:
+            context = {"error": True}
+        return context
+
+    def form_valid(self, request, *args, **kwargs):  # noqa
+        context = self.get_context_data()
+        recipient = context["recipient"]
+        form = context["form"]
+        if not recipient.accepted_subscription:
+            recipient.accepted_subscription = True
+            recipient.save()
+        self.request.session["anonymous_recipient"] = recipient.id
+        return super().form_valid(form)
+
+    def get_success_url(self):  # noqa
+        return reverse("edit_newsletters")

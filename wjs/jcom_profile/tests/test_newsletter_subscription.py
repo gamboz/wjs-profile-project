@@ -60,14 +60,17 @@ def test_register_to_newsletter_as_anonymous_user(journal, custom_newsletter_set
     newsletter_token = generate_token(anonymous_email)
 
     response_get = client.get(url)
+    request = RequestFactory().get(url)
     assert response_get.status_code == 200
 
     data = {"email": anonymous_email}
-    response_register = client.post(url, data)
-    request = RequestFactory().get(url)
+    response_register = client.post(url, data, follow=True)
+    redirect_url, status_code = response_register.redirect_chain[-1]
+
     anonymous_recipient = Recipient.objects.get(email=anonymous_email)
 
-    assert response_register.status_code == 200
+    assert status_code == 302
+    assert redirect_url == reverse("register_newsletters_email_sent")
     assert len(mail.outbox) == 1
     newsletter_email = mail.outbox[0]
     acceptance_url = request.build_absolute_uri(

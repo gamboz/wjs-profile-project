@@ -94,12 +94,17 @@ urlpatterns = [
     ),
     url(
         r"^register/newsletters/$",
-        views.anonymous_user_register_newsletter,
+        views.AnonymousUserNewsletterRegistration.as_view(),
         name="register_newsletters",
     ),
     url(
+        r"^register/newsletters/email-sent/$",
+        views.AnonymousUserNewsletterConfirmationEmailSent.as_view(),
+        name="register_newsletters_email_sent",
+    ),
+    url(
         r"^confirm/subscription/(?P<token>.+)/",
-        views.confirm_anonymous_newsletter_subscription,
+        views.AnonymousUserNewsletterConfirmation.as_view(),
         name="confirm_anonymous_newsletter_subscription",
     ),
 ]
