@@ -144,3 +144,30 @@ def test_confirm_newsletter_subscription_as_anonymous_user(journal, custom_newsl
     anonymous_recipient.refresh_from_db()
     assert redirect_url == reverse("edit_newsletters")
     assert anonymous_recipient.accepted_subscription is True
+
+
+@pytest.mark.django_db
+def test_anonymous_user_newsletter_unsubscription(journal):
+    client = Client()
+    anonymous_email = "anonymous@email.com"
+    newsletter_token = generate_token(anonymous_email)
+    anonymous_recipient = Recipient.objects.create(
+        email=anonymous_email,
+        newsletter_token=newsletter_token,
+        journal=journal,
+    )
+    session = client.session
+    session["anonymous_recipient"] = anonymous_recipient.id
+    session.save()
+    url = f"/{journal.code}/update/newsletters/"
+    data = {}
+    response = client.post(url, data, follow=True)
+    redirect_url, status_code = response.redirect_chain[-1]
+    assert status_code == 302
+    assert redirect_url == f"/{journal.code}/"
+
+    messages = list(response.context["messages"])
+    assert len(messages) == 1
+    assert messages[0].message == "Unsubscription successful."
+
+    assert not Recipient.objects.filter(email=anonymous_email, newsletter_token=newsletter_token)
