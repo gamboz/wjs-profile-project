@@ -1103,7 +1103,7 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
         if user.is_anonymous():
             recipient = Recipient.objects.get(newsletter_token=self.request.GET.get("token"))
         else:
-            recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
+            recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal, email=user.email)
         return recipient
 
     def get_success_url(self):  # noqa
@@ -1172,7 +1172,7 @@ def unsubscribe_newsletter(request, recipient_pk):
         response = HttpResponseRedirect(reverse("website_index"))
     else:
         recipient.news = False
-        recipient.topics.all().delete()
+        recipient.topics.clear()
         recipient.save()
         response = HttpResponseRedirect(reverse("core_edit_profile"))
     messages.add_message(

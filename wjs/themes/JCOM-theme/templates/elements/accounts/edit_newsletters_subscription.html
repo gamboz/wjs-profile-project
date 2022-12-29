@@ -12,10 +12,11 @@
         <button class="success button" type="submit"><i
                 class="fa fa-check">&nbsp;</i>{% trans "Save preferences" %}
         </button>
-        <a class="button" href="{% url "unsubscribe_newsletter" object.pk %}" id="unsubscribe-button"><i
+        <a data-open="unsubscription-confirmation" class="button" id="unsubscribe-button"><i
                 class="fa fa-times">&nbsp;</i>{% trans "Unsubscribe" %}
         </a>
     </form>
+    {% include "elements/unsubscribe_confirmation_modal.html" %}
 {% endblock body %}
 
 {% block css %}
@@ -32,7 +33,7 @@
 
 {% block footer %}
     <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
-
+    <script src="{% static "admin/js/modal.js" %}"></script>
     {{ form.media }}
 
 {% endblock footer %}
