@@ -13,7 +13,7 @@ class Command(BaseCommand):
             name="subscribe_custom_email_message",
             group=group,
             types="text",
-            pretty_name=_("Email message that is sent when an user is being registered or subscribes to newsletters."),
+            pretty_name=_("Email message that is sent when an anonymous user subscribes to newsletters."),
             description=_(
                 "Message email body",
             ),
