@@ -102,11 +102,6 @@ urlpatterns = [
         views.AnonymousUserNewsletterConfirmationEmailSent.as_view(),
         name="register_newsletters_email_sent",
     ),
-    url(
-        r"^confirm/subscription/(?P<token>.+)/",
-        views.AnonymousUserNewsletterConfirmation.as_view(),
-        name="confirm_anonymous_newsletter_subscription",
-    ),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)

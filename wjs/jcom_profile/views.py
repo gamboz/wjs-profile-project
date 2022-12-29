@@ -16,7 +16,7 @@ from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.forms import modelformset_factory
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -1075,24 +1075,45 @@ class IMUStep3(TemplateView):
         return redirect(to=reverse("si-update", kwargs={"pk": kwargs["pk"]}))
 
 
-class NewsletterParametersUpdate(UpdateView):
+class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
     model = Recipient
     template_name = "elements/accounts/edit_newsletters_subscription.html"
     form_class = forms.NewsletterTopicForm
+    raise_exception = True
+
+    def test_func(self):
+        """
+        Protect this view.
+
+        If the user is anonymous, check if a token is provided; if it is not provided,
+        then a Forbidden error is raised.
+        If the user is not anonymous, the test passes.
+        """
+        if self.request.user.is_anonymous():
+            token = self.request.GET.get("token")
+            try:
+                Recipient.objects.get(newsletter_token=token)
+                return True
+            except Recipient.DoesNotExist:
+                return False
+        return True
 
     def get_object(self, queryset=None):  # noqa
         user, journal = self.request.user, self.request.journal
         if user.is_anonymous():
-            recipient = Recipient.objects.get(pk=self.request.session["anonymous_recipient"])
-            return recipient
-        recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
+            recipient = Recipient.objects.get(newsletter_token=self.request.GET.get("token"))
+        else:
+            recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
         return recipient
 
     def get_success_url(self):  # noqa
+        user = self.request.user
         url = reverse("edit_newsletters")
+        if user.is_anonymous():
+            url += f"?token={self.object.newsletter_token}"
         if "topics" not in self.request.POST and "news" not in self.request.POST:
             message = "Unsubscription successful."
-            if self.request.user.is_anonymous():
+            if user.is_anonymous():
                 self.object.delete()
                 url = reverse("website_index")
         else:
@@ -1116,40 +1137,23 @@ class AnonymousUserNewsletterRegistration(FormView):
         email = form.data["email"]
         journal = self.request.journal
         token = generate_token(email)
-        try:
-            recipient = Recipient.objects.get(
-                email=email,
-                journal=journal,
-                newsletter_token=token,
-            )
-            if not recipient.accepted_subscription:
-                return HttpResponseRedirect(
-                    reverse(
-                        "confirm_anonymous_newsletter_subscription",
-                        kwargs={"token": token},
-                    ),
-                )
-            else:
-                self.request.session["anonymous_recipient"] = recipient.id
-                return redirect(reverse("edit_newsletters"))
-        except Recipient.DoesNotExist:
-            Recipient.objects.create(email=email, journal=journal, newsletter_token=token)
-            acceptance_url = self.request.build_absolute_uri(
-                reverse(
-                    "confirm_anonymous_newsletter_subscription",
-                    kwargs={"token": token},
-                ),
-            )
-            send_mail(
-                "Newsletter registration",
-                setting_handler.get_setting(
-                    "email",
-                    "subscribe_custom_email_message",
-                    self.request.journal,
-                ).processed_value.format(journal, acceptance_url),
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-            )
+        # TODO: If a recipient with the given email already exists, we will send another email.
+        Recipient.objects.get_or_create(
+            email=email,
+            journal=journal,
+            newsletter_token=token,
+        )
+        acceptance_url = self.request.build_absolute_uri(reverse("edit_newsletters")) + f"?token={token}"
+        send_mail(
+            "Newsletter registration",
+            setting_handler.get_setting(
+                "email",
+                "subscribe_custom_email_message",
+                self.request.journal,
+            ).processed_value.format(journal, acceptance_url),
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+        )
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
@@ -1158,31 +1162,3 @@ class AnonymousUserNewsletterRegistration(FormView):
 
 class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
     template_name = "elements/accounts/anonymous_subscription_email_sent.html"
-
-
-class AnonymousUserNewsletterConfirmation(FormView):
-    template_name = "elements/accounts/anonymous_subscription_acceptance.html"
-    form_class = forms.AnonymousNewsletterSubscriptionAcceptanceForm
-
-    def get_context_data(self, **kwargs):  # noqa
-        context = super().get_context_data()
-        token = self.kwargs["token"]
-        try:
-            recipient = Recipient.objects.get(newsletter_token=token)
-            context["recipient"] = recipient
-        except Recipient.DoesNotExist:
-            context = {"error": True}
-        return context
-
-    def form_valid(self, request, *args, **kwargs):  # noqa
-        context = self.get_context_data()
-        recipient = context["recipient"]
-        form = context["form"]
-        if not recipient.accepted_subscription:
-            recipient.accepted_subscription = True
-            recipient.save()
-        self.request.session["anonymous_recipient"] = recipient.id
-        return super().form_valid(form)
-
-    def get_success_url(self):  # noqa
-        return reverse("edit_newsletters")

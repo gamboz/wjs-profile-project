@@ -233,7 +233,6 @@ class Recipient(models.Model):
     news = models.BooleanField(verbose_name=_("Generic news topic"), default=False)
     newsletter_token = models.CharField(_("newsletter token for anonymous users"), max_length=500, blank=True)
     email = models.EmailField(_("Anonymous user email"), blank=True, unique=True)
-    accepted_subscription = models.BooleanField(_("Subscription accepted as anonymous user"), default=False)
 
     class Meta:
         verbose_name = _("recipient")
