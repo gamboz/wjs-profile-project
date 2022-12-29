@@ -12,10 +12,9 @@
         <button class="success button" type="submit"><i
                 class="fa fa-check">&nbsp;</i>{% trans "Save preferences" %}
         </button>
-        <button class="button" type="submit" id="unsubsribe-button"><i
+        <a class="button" href="{% url "unsubscribe_newsletter" object.pk %}" id="unsubscribe-button"><i
                 class="fa fa-times">&nbsp;</i>{% trans "Unsubscribe" %}
-        </button>
-
+        </a>
     </form>
 {% endblock body %}
 
@@ -28,20 +27,6 @@
     {{ block.super }}
     {{ form.media.js }}
     <script>
-        $(document).ready(function () {
-            var unsubscribeBtn = $('#unsubsribe-button')
-
-            function unselect() {
-                $.each($("#id_topics option:selected"), function () {
-                    $(this).prop('selected', false);
-                });
-            }
-
-            unsubscribeBtn.click(function () {
-                $('#id_news').prop("checked", false);
-                unselect()
-            })
-        });
     </script>
 {% endblock js %}
 

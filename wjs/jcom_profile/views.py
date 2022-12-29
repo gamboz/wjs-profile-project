@@ -16,7 +16,7 @@ from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.forms import modelformset_factory
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -1111,18 +1111,10 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
         url = reverse("edit_newsletters")
         if user.is_anonymous():
             url += f"?token={self.object.newsletter_token}"
-        if "topics" not in self.request.POST and "news" not in self.request.POST:
-            message = "Unsubscription successful."
-            if user.is_anonymous():
-                self.object.delete()
-                url = reverse("website_index")
-        else:
-            message = "Newsletter preferences updated."
-
         messages.add_message(
             self.request,
             messages.SUCCESS,
-            message,
+            "Newsletter preferences updated.",
         )
         return url
 
@@ -1162,3 +1154,30 @@ class AnonymousUserNewsletterRegistration(FormView):
 
 class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
     template_name = "elements/accounts/anonymous_subscription_email_sent.html"
+
+
+def unsubscribe_newsletter(request, recipient_pk):
+    """
+    Unsubscribe from newsletter.
+
+    Anonymous users' recipient subscription is deleted, while registered users' ones are emptied.
+    """
+    user = request.user
+    try:
+        recipient = Recipient.objects.get(pk=recipient_pk)
+    except Recipient.DoesNotExist:
+        return Http404
+    if user.is_anonymous():
+        recipient.delete()
+        response = HttpResponseRedirect(reverse("website_index"))
+    else:
+        recipient.news = False
+        recipient.topics.all().delete()
+        recipient.save()
+        response = HttpResponseRedirect(reverse("core_edit_profile"))
+    messages.add_message(
+        request,
+        messages.SUCCESS,
+        "Unsubscription successful",
+    )
+    return response

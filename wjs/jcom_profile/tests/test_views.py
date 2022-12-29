@@ -453,6 +453,24 @@ def test_register_to_newsletter_as_anonymous_user(journal, custom_newsletter_set
 
 
 @pytest.mark.django_db
+def test_anonymous_user_newsletter_edit_without_token_raises_error(journal):
+    client = Client()
+    url = f"/{journal.code}/update/newsletters/"
+    response = client.get(url)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_anonymous_user_newsletter_edit_with_nonexistent_token_raises_error(journal):
+    client = Client()
+    anonymous_email = "anonymous@email.com"
+    nonexistent_newsletter_token = generate_token(anonymous_email)
+    url = f"/{journal.code}/update/newsletters/?token={nonexistent_newsletter_token}"
+    response = client.get(url)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_anonymous_user_newsletter_unsubscription(journal):
     client = Client()
     anonymous_email = "anonymous@email.com"

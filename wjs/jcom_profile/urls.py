@@ -102,6 +102,11 @@ urlpatterns = [
         views.AnonymousUserNewsletterConfirmationEmailSent.as_view(),
         name="register_newsletters_email_sent",
     ),
+    url(
+        r"^newsletters/unsubscribe/(?P<recipient_pk>\d+)$",
+        views.unsubscribe_newsletter,
+        name="unsubscribe_newsletter",
+    ),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)
