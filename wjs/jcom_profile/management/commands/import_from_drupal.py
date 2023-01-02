@@ -1,16 +1,14 @@
 """Data migration POC."""
-import os
 from collections import namedtuple
 from datetime import datetime, timedelta
 from io import BytesIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
-from uuid import uuid4
 
 import lxml.html
 import pytz
 import requests
+from core import files as core_files
 from core import models as core_models
-from django.conf import settings
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -51,52 +49,6 @@ HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
 #     "Letter":
 #     "Book Review":
 #     "Conference Review": 9,
-
-
-# Adapted from plugins/imports/logic.py
-def rewrite_image_paths(html: HtmlElement, base_url=None, auth=None):
-    """Rewrite all <img> src paths."""
-    images = html.findall(".//img")
-    for image in images:
-        img_src = image.attrib["src"].split("?")[0]
-        path = download_and_store_image(img_src, base_url, auth)
-        image.attrib["src"] = path
-
-
-def download_and_store_image(image_source_url, base_url=None, auth=None):
-    """Downaload a media file."""
-    if not image_source_url.startswith("http"):
-        if not base_url:
-            logger.error("Unknown image src for %s", image_source_url)
-            return None
-        image_source_url = f"{base_url}{image_source_url}"
-    image = requests.get(image_source_url, auth=auth)
-    image.raw.decode_content = True
-    name = os.path.basename(image_source_url)
-
-    fileurl = save_media_file(
-        name,
-        image.content,
-    )
-
-    return fileurl
-
-
-def save_media_file(original_filename, source_file):
-    """Save a file."""
-    filename = str(uuid4()) + str(os.path.splitext(original_filename)[1])
-    filepath = "{media_root}/{filename}".format(
-        media_root=settings.MEDIA_ROOT,
-        filename=filename,
-    )
-    fileurl = "{media_url}{filename}".format(
-        media_url=settings.MEDIA_URL,
-        filename=filename,
-    )
-    with open(filepath, "wb") as file:
-        file.write(source_file)
-
-    return fileurl
 
 
 class Command(BaseCommand):
@@ -649,7 +601,7 @@ class Command(BaseCommand):
         self.promote_headings(html)
         self.drop_toc(html)
         self.drop_how_to_cite(html)
-        rewrite_image_paths(html, base_url=self.options["base_url"], auth=self.basic_auth)
+        self.mangle_images(html, article)
         return lxml.html.tostring(html)
 
     def promote_headings(self, html: HtmlElement):
@@ -699,3 +651,48 @@ class Command(BaseCommand):
             p.drop_tree()
 
         htc_h2.drop_tree()
+
+    # Adapted from plugins/imports/logic.py
+    def mangle_images(self, html: HtmlElement, article):
+        """Download alll <img>s and adapt the "src" attribute."""
+        images = html.findall(".//img")
+        for image in images:
+            img_src = image.attrib["src"].split("?")[0]
+            path = self.download_and_store_article_file(img_src, article)
+            image.attrib["src"] = path
+
+    def download_and_store_article_file(self, image_source_url, article):
+        """Downaload a media file and link it to the article."""
+        image_name = image_source_url.split("/")[-1]
+        if not image_source_url.startswith("http"):
+            if "base_url" not in self.options:
+                logger.error("Unknown image src for %s", image_source_url)
+                return None
+            image_source_url = f"{self.options['base_url']}{image_source_url}"
+        image_file = self.uploaded_file(image_source_url, name=image_name)
+        new_url = self.link_file_to_article(image_file, article)
+        return new_url
+
+    # Adapted from plugins/imports/ojs/importers.py
+    def link_file_to_article(self, file, article):
+        """Link and save a "File" obj to an article."""
+        janeway_file = core_files.save_file_to_article(
+            file,
+            article,
+            article.owner,
+            label=None,  # [*]
+        )
+        # [*] I could try to look for some IPTC metadata in the image
+        # itself (Exif would probably useless as it is mostly related
+        # to the picture technical details). See e.g. `exiv2 -P I ...`
+        # Cannot estimate at the moment
+        # https://trackers.sissamedialab.it/it-help/issue1770
+
+        janeway_file.date_uploaded = article.date_published
+        # maybe janeway_file.mime_type = ...
+        # maybe janeway_file.original_filename = ...
+        janeway_file.save()
+
+        core_models.File.objects.filter(id=janeway_file.pk).update(last_modified=article.date_published)
+
+        return janeway_file.uuid_filename
