@@ -263,11 +263,7 @@ class Command(BaseCommand):
             logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
 
     def set_abstract(self, article, raw_data):
-        """Set body and abstract.
-
-        Take care of escaping & co.
-        Take care of images included in body.
-        """
+        """Set the abstract."""
         expected_language = "und"
         if raw_data["language"] != expected_language:
             logger.error(
@@ -598,9 +594,9 @@ class Command(BaseCommand):
         html = lxml.html.fromstring(body)
 
         # src/themes/material/assets/toc.js expects
-        # - the root element of the article to have id="main_article"
+        # - the root element of the article must have id="main_article"
         html.set("id", "main_article")
-        # - the headings that go in the toc to be h2-level, but Drupal has them at h3-level
+        # - the headings that go in the toc must be h2-level, but Drupal has them at h3-level
         self.promote_headings(html)
         self.drop_toc(html)
         self.drop_how_to_cite(html)
