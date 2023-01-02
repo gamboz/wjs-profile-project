@@ -1,13 +1,16 @@
 """Data migration POC."""
+import os
 from collections import namedtuple
 from datetime import datetime, timedelta
 from io import BytesIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
+from uuid import uuid4
 
 import lxml.html
 import pytz
 import requests
 from core import models as core_models
+from django.conf import settings
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -48,6 +51,52 @@ HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
 #     "Letter":
 #     "Book Review":
 #     "Conference Review": 9,
+
+
+# Adapted from plugins/imports/logic.py
+def rewrite_image_paths(html: HtmlElement, base_url=None, auth=None):
+    """Rewrite all <img> src paths."""
+    images = html.findall(".//img")
+    for image in images:
+        img_src = image.attrib["src"].split("?")[0]
+        path = download_and_store_image(img_src, base_url, auth)
+        image.attrib["src"] = path
+
+
+def download_and_store_image(image_source_url, base_url=None, auth=None):
+    """Downaload a media file."""
+    if not image_source_url.startswith("http"):
+        if not base_url:
+            logger.error("Unknown image src for %s", image_source_url)
+            return None
+        image_source_url = f"{base_url}{image_source_url}"
+    image = requests.get(image_source_url, auth=auth)
+    image.raw.decode_content = True
+    name = os.path.basename(image_source_url)
+
+    fileurl = save_media_file(
+        name,
+        image.content,
+    )
+
+    return fileurl
+
+
+def save_media_file(original_filename, source_file):
+    """Save a file."""
+    filename = str(uuid4()) + str(os.path.splitext(original_filename)[1])
+    filepath = "{media_root}/{filename}".format(
+        media_root=settings.MEDIA_ROOT,
+        filename=filename,
+    )
+    fileurl = "{media_url}{filename}".format(
+        media_url=settings.MEDIA_URL,
+        filename=filename,
+    )
+    with open(filepath, "wb") as file:
+        file.write(source_file)
+
+    return fileurl
 
 
 class Command(BaseCommand):
@@ -600,6 +649,7 @@ class Command(BaseCommand):
         self.promote_headings(html)
         self.drop_toc(html)
         self.drop_how_to_cite(html)
+        rewrite_image_paths(html, base_url=self.options["base_url"], auth=self.basic_auth)
         return lxml.html.tostring(html)
 
     def promote_headings(self, html: HtmlElement):
