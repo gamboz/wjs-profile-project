@@ -232,7 +232,7 @@ class Recipient(models.Model):
     topics = models.ManyToManyField("submission.Keyword", verbose_name=_("Newsletters topics"), blank=True)
     news = models.BooleanField(verbose_name=_("Generic news topic"), default=False)
     newsletter_token = models.CharField(_("newsletter token for anonymous users"), max_length=500, blank=True)
-    email = models.EmailField(_("Anonymous user email"), blank=True, unique=True)
+    email = models.EmailField(_("Anonymous user email"), blank=True, null=True, unique=True)
 
     class Meta:
         verbose_name = _("recipient")
