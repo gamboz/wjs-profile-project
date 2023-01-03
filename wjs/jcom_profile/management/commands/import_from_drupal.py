@@ -238,6 +238,7 @@ class Command(BaseCommand):
         """Find info about the article "attachments", download them and import them as galleys."""
         # First, let's drop all existing files
         # see plugin imports.ojs.importers.import_galleys
+        # import pudb; pudb.set_trace()
         for galley in article.galley_set.all():
             galley.unlink_files()
             galley.delete()
@@ -301,6 +302,17 @@ class Command(BaseCommand):
         - [ ] how-to-cite
         ...
         """
+        for galley in article.galley_set.all():
+            galley.unlink_files()
+            galley.delete()
+        # article_files = core_models.File.objects.filter(article_id=article.pk)
+        # for file in article_files:
+        #     try:
+        #         file.unlink_file()
+        #         file.delete()
+        #     except:
+        #         pass
+
         if self.options["skip_files"]:
             article.save()
             return
@@ -329,18 +341,19 @@ class Command(BaseCommand):
         name = "body.html"
         admin = core_models.Account.objects.filter(is_admin=True).first()
         fake_request = FakeRequest(user=admin)
-        body_bytes = self.process_body(article, body_dict["value"])
+        body_bytes = self.process_body(article, body)
         body_as_file = File(BytesIO(body_bytes), name)
-        save_galley(
+        new_galley = save_galley(
             article,
             request=fake_request,
             uploaded_file=body_as_file,
             is_galley=True,
-            label="Body (TBV)",
+            label=f'{raw_data["field_id"]}.html',
             save_to_disk=True,
             public=True,
         )
-        article.body = body
+        article.render_galley = new_galley
+        self.mangle_images(article)
         article.save()
         logger.debug("  %s - body (as html galley)", raw_data["field_id"])
 
@@ -601,7 +614,6 @@ class Command(BaseCommand):
         self.promote_headings(html)
         self.drop_toc(html)
         self.drop_how_to_cite(html)
-        self.mangle_images(html, article)
         return lxml.html.tostring(html)
 
     def promote_headings(self, html: HtmlElement):
@@ -653,13 +665,30 @@ class Command(BaseCommand):
         htc_h2.drop_tree()
 
     # Adapted from plugins/imports/logic.py
-    def mangle_images(self, html: HtmlElement, article):
-        """Download alll <img>s and adapt the "src" attribute."""
+    def mangle_images(self, article):
+        """Download all <img>s in the article's galley and adapt the "src" attribute."""
+        # import pudb; pudb.set_trace()
+        underling_file: core_models.File = article.get_render_galley.file
+        # NB: cannot use `body` from the json dict here because it has already been modified
+        galley_string: str = underling_file.get_file(article)
+        html: HtmlElement = lxml.html.fromstring(galley_string)
         images = html.findall(".//img")
         for image in images:
             img_src = image.attrib["src"].split("?")[0]
-            path = self.download_and_store_article_file(img_src, article)
-            image.attrib["src"] = path
+            img_obj = self.download_and_store_article_file(img_src, article)
+            article.render_galley.images.add(img_obj)
+            # TBV: the `src` attribute is relative to the article's URL
+            image.attrib["src"] = img_obj.label
+        underling_file.text = lxml.html.tostring(html, pretty_print=False)
+        underling_file.save()
+
+    # <div class="fig" data-doi=""><div id="F1" class="fig-inline-img-set">
+    # <div class="acta-fig-image-caption-wrapper"><div class="fig-expansion"><div class="fig-inline-img"><a href="dm-15-1-8064-g1.png" class="figure-expand-popup" title="Figure 1"><img data-img="dm-15-1-8064-g1.png" src="dm-15-1-8064-g1.png" alt="Figure 1" class="responsive-img"></a></div></div></div>
+
+    # <div class="fig-caption">
+    # <span class="fig-label">Figure 1</span>
+    # <p>Distribution of events in MMM data, by decades.</p>
+    # </div>
 
     def download_and_store_article_file(self, image_source_url, article):
         """Downaload a media file and link it to the article."""
@@ -670,8 +699,8 @@ class Command(BaseCommand):
                 return None
             image_source_url = f"{self.options['base_url']}{image_source_url}"
         image_file = self.uploaded_file(image_source_url, name=image_name)
-        new_url = self.link_file_to_article(image_file, article)
-        return new_url
+        new_janeway_file = self.link_file_to_article(image_file, article)
+        return new_janeway_file
 
     # Adapted from plugins/imports/ojs/importers.py
     def link_file_to_article(self, file, article):
@@ -695,4 +724,4 @@ class Command(BaseCommand):
 
         core_models.File.objects.filter(id=janeway_file.pk).update(last_modified=article.date_published)
 
-        return janeway_file.uuid_filename
+        return janeway_file
