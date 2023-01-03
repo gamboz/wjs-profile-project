@@ -1,7 +1,7 @@
 """Data migration POC."""
 from collections import namedtuple
 from datetime import datetime, timedelta
-from io import BytesIO
+from io import BytesIO, StringIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 import lxml.html
@@ -10,12 +10,13 @@ import requests
 from core import files as core_files
 from core import models as core_models
 from django.core.files import File
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from identifiers import models as identifiers_models
 from journal import models as journal_models
 from lxml.html import HtmlElement
-from production.logic import save_galley
+from production.logic import save_galley, save_galley_image
 from requests.auth import HTTPBasicAuth
 from submission import models as submission_models
 from utils.logger import get_logger
@@ -57,8 +58,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Command entry point."""
         self.options = options
+        # TODO: who whould this user be???
+        admin = core_models.Account.objects.filter(is_admin=True).first()
+        self.fake_request = FakeRequest(user=admin)
+
         for raw_data in self.find_articles():
-            # TODO: cycle through pagination
             try:
                 self.process(raw_data)
             except Exception as e:
@@ -238,16 +242,13 @@ class Command(BaseCommand):
         """Find info about the article "attachments", download them and import them as galleys."""
         # First, let's drop all existing files
         # see plugin imports.ojs.importers.import_galleys
-        # import pudb; pudb.set_trace()
+        import pudb; pudb.set_trace()
         for galley in article.galley_set.all():
             galley.unlink_files()
             galley.delete()
 
         if not self.options["skip_files"]:
             attachments = raw_data["field_attachments"]
-            # TODO: who whould this user be???
-            admin = core_models.Account.objects.filter(is_admin=True).first()
-            fake_request = FakeRequest(user=admin)
             # "attachments" are only references to "file" nodes
             for file_node in attachments:
                 file_dict = self.fetch_data_dict(file_node["file"]["uri"])
@@ -255,7 +256,7 @@ class Command(BaseCommand):
                 uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
                 save_galley(
                     article,
-                    request=fake_request,
+                    request=self.fake_request,
                     uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
                     is_galley=True,
                     label=file_node["description"],
@@ -302,7 +303,7 @@ class Command(BaseCommand):
         - [ ] how-to-cite
         ...
         """
-        for galley in article.galley_set.all():
+        if galley := article.render_galley:
             galley.unlink_files()
             galley.delete()
         # article_files = core_models.File.objects.filter(article_id=article.pk)
@@ -339,13 +340,11 @@ class Command(BaseCommand):
                 logger.error("Body has a summary. What should I do?")
 
         name = "body.html"
-        admin = core_models.Account.objects.filter(is_admin=True).first()
-        fake_request = FakeRequest(user=admin)
         body_bytes = self.process_body(article, body)
         body_as_file = File(BytesIO(body_bytes), name)
         new_galley = save_galley(
             article,
-            request=fake_request,
+            request=self.fake_request,
             uploaded_file=body_as_file,
             is_galley=True,
             label=f'{raw_data["field_id"]}.html',
@@ -667,20 +666,32 @@ class Command(BaseCommand):
     # Adapted from plugins/imports/logic.py
     def mangle_images(self, article):
         """Download all <img>s in the article's galley and adapt the "src" attribute."""
-        # import pudb; pudb.set_trace()
-        underling_file: core_models.File = article.get_render_galley.file
+        render_galley = article.get_render_galley
+        galley_file: core_models.File = render_galley.file
         # NB: cannot use `body` from the json dict here because it has already been modified
-        galley_string: str = underling_file.get_file(article)
+        galley_string: str = galley_file.get_file(article)
         html: HtmlElement = lxml.html.fromstring(galley_string)
         images = html.findall(".//img")
         for image in images:
             img_src = image.attrib["src"].split("?")[0]
-            img_obj = self.download_and_store_article_file(img_src, article)
-            article.render_galley.images.add(img_obj)
+            img_obj: core_models.File = self.download_and_store_article_file(img_src, article)
             # TBV: the `src` attribute is relative to the article's URL
             image.attrib["src"] = img_obj.label
-        underling_file.text = lxml.html.tostring(html, pretty_print=False)
-        underling_file.save()
+
+        uploaded_file = SimpleUploadedFile(
+            name=galley_file.original_filename,
+            content=lxml.html.tostring(html, pretty_print=False),
+            content_type=galley_file.mime_type,
+        )
+
+        # see core.File.get_file_path
+        path_parts = ("articles", article.id)
+        core_files.overwrite_file(
+            uploaded_file=uploaded_file,
+            file_to_replace=galley_file,
+            path_parts=path_parts,
+        )
+        galley_file.save()
 
     # <div class="fig" data-doi=""><div id="F1" class="fig-inline-img-set">
     # <div class="acta-fig-image-caption-wrapper"><div class="fig-expansion"><div class="fig-inline-img"><a href="dm-15-1-8064-g1.png" class="figure-expand-popup" title="Figure 1"><img data-img="dm-15-1-8064-g1.png" src="dm-15-1-8064-g1.png" alt="Figure 1" class="responsive-img"></a></div></div></div>
@@ -699,29 +710,15 @@ class Command(BaseCommand):
                 return None
             image_source_url = f"{self.options['base_url']}{image_source_url}"
         image_file = self.uploaded_file(image_source_url, name=image_name)
-        new_janeway_file = self.link_file_to_article(image_file, article)
-        return new_janeway_file
-
-    # Adapted from plugins/imports/ojs/importers.py
-    def link_file_to_article(self, file, article):
-        """Link and save a "File" obj to an article."""
-        janeway_file = core_files.save_file_to_article(
-            file,
-            article,
-            article.owner,
-            label=None,  # [*]
+        new_file: core_models.File = save_galley_image(
+            article.get_render_galley,
+            request=self.fake_request,
+            uploaded_file=image_file,
+            label="Galley Image",  # [*]
         )
-        # [*] I could try to look for some IPTC metadata in the image
+        # [*] I tryed to look for some IPTC metadata in the image
         # itself (Exif would probably useless as it is mostly related
-        # to the picture technical details). See e.g. `exiv2 -P I ...`
-        # Cannot estimate at the moment
-        # https://trackers.sissamedialab.it/it-help/issue1770
-
-        janeway_file.date_uploaded = article.date_published
-        # maybe janeway_file.mime_type = ...
-        # maybe janeway_file.original_filename = ...
-        janeway_file.save()
-
-        core_models.File.objects.filter(id=janeway_file.pk).update(last_modified=article.date_published)
-
-        return janeway_file
+        # to the picture technical details) with `exiv2 -P I ...`, but
+        # found 3 maybe-useful metadata on ~1600 files and abandoned
+        # this idea.
+        return new_file
