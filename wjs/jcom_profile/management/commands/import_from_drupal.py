@@ -1,7 +1,7 @@
 """Data migration POC."""
 from collections import namedtuple
 from datetime import datetime, timedelta
-from io import BytesIO, StringIO
+from io import BytesIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 import lxml.html
@@ -242,7 +242,7 @@ class Command(BaseCommand):
         """Find info about the article "attachments", download them and import them as galleys."""
         # First, let's drop all existing files
         # see plugin imports.ojs.importers.import_galleys
-        import pudb; pudb.set_trace()
+
         for galley in article.galley_set.all():
             galley.unlink_files()
             galley.delete()
@@ -296,23 +296,10 @@ class Command(BaseCommand):
         logger.debug("  %s - abstract", raw_data["field_id"])
 
     def set_body(self, article, raw_data):
-        """Manage the body.
-
-        Take care of
-        - [ ] images included in body
-        - [ ] how-to-cite
-        ...
-        """
+        """Manage the body."""
         if galley := article.render_galley:
             galley.unlink_files()
             galley.delete()
-        # article_files = core_models.File.objects.filter(article_id=article.pk)
-        # for file in article_files:
-        #     try:
-        #         file.unlink_file()
-        #         file.delete()
-        #     except:
-        #         pass
 
         if self.options["skip_files"]:
             article.save()
@@ -603,7 +590,14 @@ class Command(BaseCommand):
         return response.json()
 
     def process_body(self, article, body: str) -> bytes:
-        """Rewrite and adapt body to match Janeway's expectations."""
+        """Rewrite and adapt body to match Janeway's expectations.
+
+        Take care of
+        - TOC (heading levels)
+        - how-to-cite
+
+        Images included in body are done elsewhere since they require an existing galley.
+        """
         html = lxml.html.fromstring(body)
 
         # src/themes/material/assets/toc.js expects
@@ -678,6 +672,7 @@ class Command(BaseCommand):
             # TBV: the `src` attribute is relative to the article's URL
             image.attrib["src"] = img_obj.label
 
+        # Probably could also use a django.core.files.File
         uploaded_file = SimpleUploadedFile(
             name=galley_file.original_filename,
             content=lxml.html.tostring(html, pretty_print=False),
@@ -693,14 +688,6 @@ class Command(BaseCommand):
         )
         galley_file.save()
 
-    # <div class="fig" data-doi=""><div id="F1" class="fig-inline-img-set">
-    # <div class="acta-fig-image-caption-wrapper"><div class="fig-expansion"><div class="fig-inline-img"><a href="dm-15-1-8064-g1.png" class="figure-expand-popup" title="Figure 1"><img data-img="dm-15-1-8064-g1.png" src="dm-15-1-8064-g1.png" alt="Figure 1" class="responsive-img"></a></div></div></div>
-
-    # <div class="fig-caption">
-    # <span class="fig-label">Figure 1</span>
-    # <p>Distribution of events in MMM data, by decades.</p>
-    # </div>
-
     def download_and_store_article_file(self, image_source_url, article):
         """Downaload a media file and link it to the article."""
         image_name = image_source_url.split("/")[-1]
@@ -714,7 +701,7 @@ class Command(BaseCommand):
             article.get_render_galley,
             request=self.fake_request,
             uploaded_file=image_file,
-            label="Galley Image",  # [*]
+            label=image_name,  # [*]
         )
         # [*] I tryed to look for some IPTC metadata in the image
         # itself (Exif would probably useless as it is mostly related
