@@ -1141,7 +1141,7 @@ class AnonymousUserNewsletterRegistration(FormView):
             self.request.build_absolute_uri(reverse("edit_newsletters")) + f"?{urlencode({'token': token})}"
         )
         send_mail(
-            "Newsletter registration",
+            _("Newsletter registration"),
             setting_handler.get_setting(
                 "email",
                 "subscribe_custom_email_message",

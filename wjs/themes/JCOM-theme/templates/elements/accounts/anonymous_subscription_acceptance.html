@@ -1,5 +1,5 @@
 {% if error %}
-    <p>The requested subscription does not exist.</p>
+    <p>{% trans "The requested subscription does not exist." %}</p>
 {% else %}
     <form action="" method="post">
         {% csrf_token %}
