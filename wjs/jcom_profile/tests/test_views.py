@@ -1,4 +1,5 @@
 import random
+from urllib.parse import urlencode
 
 import pytest
 from core import models as core_models
@@ -446,7 +447,9 @@ def test_register_to_newsletter_as_anonymous_user(journal, custom_newsletter_set
     assert redirect_url == reverse("register_newsletters_email_sent")
     assert len(mail.outbox) == 1
     newsletter_email = mail.outbox[0]
-    acceptance_url = request.build_absolute_uri(reverse("edit_newsletters")) + f"?token={newsletter_token}"
+    acceptance_url = (
+        request.build_absolute_uri(reverse("edit_newsletters")) + f"?{urlencode({'token': newsletter_token})}"
+    )
     assert newsletter_email.subject == "Newsletter registration"
     assert newsletter_email.body == setting_handler.get_setting(
         "email",
@@ -469,7 +472,7 @@ def test_anonymous_user_newsletter_edit_with_nonexistent_token_raises_error(jour
     client = Client()
     anonymous_email = "anonymous@email.com"
     nonexistent_newsletter_token = generate_token(anonymous_email)
-    url = f"/{journal.code}/update/newsletters/?token={nonexistent_newsletter_token}"
+    url = f"/{journal.code}/update/newsletters/?{urlencode({'token': nonexistent_newsletter_token})}"
     response = client.get(url)
     assert response.status_code == 403
 

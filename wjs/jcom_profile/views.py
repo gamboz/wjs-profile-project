@@ -2,6 +2,7 @@
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Iterable
+from urllib.parse import urlencode
 
 import pandas as pd
 from core import files as core_files
@@ -1110,7 +1111,7 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
         user = self.request.user
         url = reverse("edit_newsletters")
         if user.is_anonymous():
-            url += f"?token={self.object.newsletter_token}"
+            url += f"?{urlencode({'token': self.object.newsletter_token})}"
         messages.add_message(
             self.request,
             messages.SUCCESS,
@@ -1135,7 +1136,9 @@ class AnonymousUserNewsletterRegistration(FormView):
             journal=journal,
             newsletter_token=token,
         )
-        acceptance_url = self.request.build_absolute_uri(reverse("edit_newsletters")) + f"?token={token}"
+        acceptance_url = (
+            self.request.build_absolute_uri(reverse("edit_newsletters")) + f"?{urlencode({'token': token})}"
+        )
         send_mail(
             "Newsletter registration",
             setting_handler.get_setting(
