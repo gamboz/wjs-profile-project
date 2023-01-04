@@ -1,5 +1,6 @@
 """Hooks."""
 from django.template.loader import render_to_string
+from django.utils.translation import ugettext as _
 
 
 def prova_hook(request_context):
@@ -21,10 +22,10 @@ def extra_edit_profile_parameters_hook(request_context):
         rendered = render_to_string(
             template_name,
             {
-                "card_title": "Edit assignment parameters",
-                "card_paragraph": "Go to your your assignment parameters by clicking the button below.",
-                "url_name": "assignment_parameters",
-                "button_text": "Assignment parameters",
+                "card_title": _("Edit assignment parameters"),
+                "card_paragraph": _("Go to your your assignment parameters by clicking the button below."),
+                "url_name": _("assignment_parameters"),
+                "button_text": _("Assignment parameters"),
             },
         )
     return rendered
@@ -36,10 +37,10 @@ def extra_edit_subscription_hook(request_context):
     rendered = render_to_string(
         template_name,
         {
-            "card_title": "Newsletters",
-            "card_paragraph": "Edit your subscription settings by clicking the button below.",
-            "url_name": "edit_newsletters",
-            "button_text": "Edit my subscription",
+            "card_title": _("Newsletters"),
+            "card_paragraph": _("Edit your subscription settings by clicking the button below."),
+            "url_name": _("edit_newsletters"),
+            "button_text": _("Edit my subscription"),
         },
     )
     return rendered
