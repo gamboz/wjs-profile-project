@@ -21,6 +21,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
+from django.utils.translation import ugettext as _
 from django.views import View
 from django.views.generic import (
     CreateView,
@@ -1115,7 +1116,7 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
         messages.add_message(
             self.request,
             messages.SUCCESS,
-            "Newsletter preferences updated.",
+            _("Newsletter preferences updated."),
         )
         return url
 
@@ -1181,6 +1182,6 @@ def unsubscribe_newsletter(request, recipient_pk):
     messages.add_message(
         request,
         messages.SUCCESS,
-        "Unsubscription successful",
+        _("Unsubscription successful"),
     )
     return response
