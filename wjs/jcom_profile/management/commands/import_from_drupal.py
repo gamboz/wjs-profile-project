@@ -700,6 +700,8 @@ class Command(BaseCommand):
             if count > max_expected:
                 logger.warning("Too many elements after How-to-cite's H2 in WRITEME!!!")
                 break
+            if not p:
+                break
             if p.tag != "p":
                 break
             if p.text.strip() == "":
