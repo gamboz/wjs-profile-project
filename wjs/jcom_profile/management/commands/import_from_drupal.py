@@ -9,6 +9,7 @@ import pytz
 import requests
 from core import files as core_files
 from core import models as core_models
+from core.logic import handle_article_large_image_file
 from django.core.files import File
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand
@@ -93,6 +94,12 @@ class Command(BaseCommand):
             "--auth",
             help='HTTP Basic Auth in the form "user:passwd" (should be useful only for test sites).',
         )
+        parser.add_argument(
+            "--article-image-meta-only",
+            action="store_true",
+            help='Set the article image as "meta" only. By default it is set as "large".'
+            " See also https://janeway.readthedocs.io/en/latest/published/articles.html#images",
+        )
 
     def find_articles(self):
         """Find all articles to process.
@@ -155,6 +162,7 @@ class Command(BaseCommand):
         self.set_identifiers(article, raw_data)
         self.set_history(article, raw_data)
         self.set_files(article, raw_data)
+        self.set_image(article, raw_data)
         self.set_abstract(article, raw_data)
         self.set_body(article, raw_data)
         self.set_keywords(article, raw_data)
@@ -301,6 +309,27 @@ class Command(BaseCommand):
                 public=True,
             )
         logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
+
+    def set_image(self, article, raw_data):
+        """Download and set the "social" image of the article."""
+        if not raw_data["field_image"]:
+            return
+        images_list = raw_data["field_image"]
+        if len(images_list) != 1:
+            logger.warning(
+                "Found %s image nodes for %s (expecing 1)",
+                len(images_list),
+                raw_data["field_id"],
+            )
+        image_node = raw_data["field_image"]["file"]
+        image_dict = self.fetch_data_dict(image_node["uri"])
+        image_file: File = self.uploaded_file(image_dict["url"], image_dict["name"])
+        if self.options["article_image_meta_only"]:
+            article.meta_image = image_file
+        else:
+            handle_article_large_image_file(image_file, article, self.fake_request)
+        article.save()
+        logger.debug("  %s - article image", raw_data["field_id"])
 
     def set_abstract(self, article, raw_data):
         """Set the abstract."""
@@ -699,7 +728,7 @@ class Command(BaseCommand):
             if count > max_expected:
                 logger.warning("Too many elements after How-to-cite's H2 in WRITEME!!!")
                 break
-            if not p:
+            if p is None:
                 break
             if p.tag != "p":
                 break
