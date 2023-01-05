@@ -85,11 +85,6 @@ class Command(BaseCommand):
             "--auth",
             help='HTTP Basic Auth in the form "user:passwd" (should be useful only for test sites).',
         )
-        parser.add_argument(
-            "--skip-files",
-            help="Skip files download/uplaod (only import metadata).",
-            action="store_true",
-        )
 
     def find_articles(self):
         """Find all articles to process.
@@ -335,10 +330,6 @@ class Command(BaseCommand):
             galley.unlink_files()
             galley.delete()
 
-        if self.options["skip_files"]:
-            article.save()
-            return
-
         # Body (NB: it's a galley with mime-type in files.HTML_MIMETYPES)
         body_dict = raw_data["body"]
         if not body_dict:
@@ -472,28 +463,27 @@ class Command(BaseCommand):
 
         issue.save()
 
-        if not self.options["skip_files"]:
-            # Handle cover image
-            if issue_data.get("field_image", None):
-                image_node = issue_data.get("field_image")
-                assert image_node["file"]["resource"] == "file"
-                # Drop eventual existing cover images
-                if issue.cover_image:
-                    issue.cover_image.delete()
-                if issue.large_image:
-                    issue.large_image.delete()
-                # Get the new cover
-                # see imports.ojs.importers.import_issue_metadata
-                file_dict = self.fetch_data_dict(image_node["file"]["uri"])
-                issue_cover = self.uploaded_file(file_dict["url"], file_dict["name"])
-                # A Janeway issue has both cover_image ("Image
-                # representing the the cover of a printed issue or
-                # volume"), and large_image ("landscape hero image used in
-                # the carousel and issue page"). The second one appears in
-                # the issue page. Using that.
-                # NO: issue.cover_image = ..
-                issue.large_image = issue_cover
-                logger.debug("  %s - issue cover (%s)", raw_data["field_id"], file_dict["name"])
+        # Handle cover image
+        if issue_data.get("field_image", None):
+            image_node = issue_data.get("field_image")
+            assert image_node["file"]["resource"] == "file"
+            # Drop eventual existing cover images
+            if issue.cover_image:
+                issue.cover_image.delete()
+            if issue.large_image:
+                issue.large_image.delete()
+            # Get the new cover
+            # see imports.ojs.importers.import_issue_metadata
+            file_dict = self.fetch_data_dict(image_node["file"]["uri"])
+            issue_cover = self.uploaded_file(file_dict["url"], file_dict["name"])
+            # A Janeway issue has both cover_image ("Image
+            # representing the the cover of a printed issue or
+            # volume"), and large_image ("landscape hero image used in
+            # the carousel and issue page"). The second one appears in
+            # the issue page. Using that.
+            # NO: issue.cover_image = ..
+            issue.large_image = issue_cover
+            logger.debug("  %s - issue cover (%s)", raw_data["field_id"], file_dict["name"])
 
         # must ensure that a SectionOrdering exists for this issue,
         # otherwise issue.articles.add() will fail
