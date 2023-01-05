@@ -9,7 +9,11 @@ import pytz
 import requests
 from core import files as core_files
 from core import models as core_models
-from core.logic import handle_article_large_image_file
+from core.logic import (
+    handle_article_large_image_file,
+    handle_article_thumb_image_file,
+    resize_and_crop,
+)
 from django.core.files import File
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand
@@ -328,6 +332,10 @@ class Command(BaseCommand):
             article.meta_image = image_file
         else:
             handle_article_large_image_file(image_file, article, self.fake_request)
+        if self.options["article_image_thumbnail"]:
+            handle_article_thumb_image_file(image_file, article, self.fake_request)
+            thumb_size = [138, 138]
+            resize_and_crop(article.thumbnail_image_file.self_article_path(), thumb_size)
         article.save()
         logger.debug("  %s - article image", raw_data["field_id"])
 
