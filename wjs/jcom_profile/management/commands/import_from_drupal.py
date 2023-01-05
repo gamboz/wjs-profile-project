@@ -1,6 +1,6 @@
 """Data migration POC."""
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
@@ -431,11 +431,13 @@ class Command(BaseCommand):
 
         # Drupal has "created" and "changed", but they are not what we
         # need here.
-        # TODO:
-        # - can I leave this empty??? ⇨ no, it defaults to now()
-        # - should I evince from the issue number??? ⇨ maybe...
-        # - maybe I can use the publication date of the issue's editorial? ⇨ not all issues have an editorial
-        date_published = timezone.datetime(year, 1, 1, tzinfo=rome_timezone)
+        # - I cannot leave this empty, it defaults to now()
+        # - I could evince from the issue number(maybe)
+        # - I will set it to the first article's published_date, then,
+        #   when I wrap up the article "publication process", I will
+        #   compare the dates of the issue and the article, and set
+        #   the publication date of the issue to the oldest of the two
+        date_published = article.date_published
 
         # TODO: JCOM has "special issues" published alongside normal
         # issues, while Janeway has "collections", that are orthogonal
@@ -618,7 +620,9 @@ class Command(BaseCommand):
         article.stage = submission_models.STAGE_PUBLISHED
         article.snapshot_authors()
         article.close_core_workflow_objects()
-        article.date_published = timezone.now() - timedelta(days=1)
+        if article.date_published < article.issue.date_published:
+            article.issue.date_published = article.date_published
+            article.issue.save()
         article.save()
         logger.debug("  %s - Janeway publication process", raw_data["field_id"])
 
