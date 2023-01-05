@@ -147,6 +147,7 @@ class Command(BaseCommand):
     def process(self, raw_data):
         """Process an article's raw json data."""
         logger.debug("Processing %s (nid=%s)", raw_data["field_id"], raw_data["nid"])
+        self.wjapp = self.data_from_wjapp(raw_data)
         article = self.create_article(raw_data)
         self.set_identifiers(article, raw_data)
         self.set_history(article, raw_data)
@@ -159,7 +160,7 @@ class Command(BaseCommand):
         self.publish_article(article, raw_data)
 
     def create_article(self, raw_data):
-        """Create a stub for an article with basics metadata.
+        """Create a stub for an article with basic metadata.
 
         - All the rest (author, kwds, etc.) will be added by someone else.
         - If article already exists in Janeway, update it.
@@ -222,48 +223,81 @@ class Command(BaseCommand):
         article.save()
 
     def set_history(self, article, raw_data):
-        """Set the review history date: received, accepted, published dates."""
-        for drupal_field_name, janeway_field_name in (
-            ("field_received_date", "date_submitted"),
-            ("field_accepted_date", "date_accepted"),
-            ("field_published_date", "date_published"),
-        ):
-            timestamp = raw_data[drupal_field_name]
+        """Set the review history date: received, accepted, published dates.
+
+        Fields names are as follow:
+        | wjapp           | Drupal               | Janeway        |
+        +-----------------+----------------------+----------------+
+        | publicationDate | field_published_date | date_published |
+        | ...             |                      |                |
+        """
+        # Do publication date first, because we should always have it
+        # and the other two are expected to exist after a certain
+        # publication date.
+        timestamp = raw_data["field_published_date"]
+        if not timestamp:
+            logger.error("Missing publication date for %s. This is unexpected...", raw_data["field_id"])
+            timestamp = self.wjapp.get("publicationDate", None)
             if not timestamp:
-                # timestamp = self.get_dates_from_wjapp()...
-                if article.date_published >= HISTORY_EXPECTED_DATE:
-                    logger.warning("Missing %s in %s", drupal_field_name, raw_data["nid"])
+                logger.error("Even more fun: no publication date for %s even on wjapp.", raw_data["field_id"])
+                timestamp = timezone.now().timestamp()
+        article.date_published = rome_timezone.localize(datetime.fromtimestamp(int(timestamp)))
+
+        # submission / received date
+        timestamp = raw_data["field_received_date"]
+        if timestamp:
+            article.date_submitted = rome_timezone.localize(datetime.fromtimestamp(int(timestamp)))
+        elif article.date_published >= HISTORY_EXPECTED_DATE:
+            timestamp = self.wjapp.get("submissionDate", None)
+            if timestamp:
+                article.date_submitted = rome_timezone.localize(datetime.fromtimestamp(int(timestamp)))
             else:
-                setattr(article, janeway_field_name, rome_timezone.localize(datetime.fromtimestamp(int(timestamp))))
+                logger.error("Missing submission date for %s.", raw_data["field_id"])
+        # else... it's ok not having submission date before HISTORY_EXPECTED_DATE
+
+        # acceptance date
+        timestamp = raw_data["field_accepted_date"]
+        if timestamp:
+            article.date_accepted = rome_timezone.localize(datetime.fromtimestamp(int(timestamp)))
+        elif article.date_published >= HISTORY_EXPECTED_DATE:
+            timestamp = self.wjapp.get("acceptanceDate", None)
+            if timestamp:
+                article.date_accepted = rome_timezone.localize(datetime.fromtimestamp(int(timestamp)))
+            else:
+                logger.error("Missing acceptance date for %s.", raw_data["field_id"])
+        # else... it's ok not having acceptance date before HISTORY_EXPECTED_DATE
+
         article.save()
         logger.debug("  %s - history", raw_data["field_id"])
 
     def set_files(self, article, raw_data):
         """Find info about the article "attachments", download them and import them as galleys."""
-        # First, let's drop all existing files
+        # First, let's drop all existing galleys
         # see plugin imports.ojs.importers.import_galleys
-
+        #
+        # Must set render_galley to None or get a "violates foreign
+        # key constraint" on render_galley when I delete all galleys
+        article.render_galley = None
         for galley in article.galley_set.all():
             galley.unlink_files()
             galley.delete()
 
-        if not self.options["skip_files"]:
-            attachments = raw_data["field_attachments"]
-            # "attachments" are only references to "file" nodes
-            for file_node in attachments:
-                file_dict = self.fetch_data_dict(file_node["file"]["uri"])
-                file_download_url = file_dict["url"]
-                uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
-                save_galley(
-                    article,
-                    request=self.fake_request,
-                    uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
-                    is_galley=True,
-                    label=file_node["description"],
-                    save_to_disk=True,
-                    public=True,
-                )
-            logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
+        attachments = raw_data["field_attachments"]
+        # "attachments" are only references to "file" nodes
+        for file_node in attachments:
+            file_dict = self.fetch_data_dict(file_node["file"]["uri"])
+            file_download_url = file_dict["url"]
+            uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
+            save_galley(
+                article,
+                request=self.fake_request,
+                uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
+                is_galley=True,
+                label=file_node["description"],
+                save_to_disk=True,
+                public=True,
+            )
+        logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
 
     def set_abstract(self, article, raw_data):
         """Set the abstract."""
@@ -709,3 +743,20 @@ class Command(BaseCommand):
         # found 3 maybe-useful metadata on ~1600 files and abandoned
         # this idea.
         return new_file
+
+    def data_from_wjapp(self, raw_data):
+        """Get data from wjapp."""
+        url = "https://robur.medialab.sissa.it/rogers-test-jcom-utf/services/jsonresponse"
+        params = {
+            "pubId": "JCOM-TEST-UTF_2001_2021_A06",
+            "apiKey": "1234x",
+        }
+        response = requests.get(url=url, params=params, verify=False)
+        if response.status_code != 200:
+            logger.warning(
+                "Got HTTP code %s from wjapp for %s",
+                response.status_code,
+                raw_data["field_id"],
+            )
+            return {}
+        return response.json()
