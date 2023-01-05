@@ -62,6 +62,14 @@ class Command(BaseCommand):
         admin = core_models.Account.objects.filter(is_admin=True).first()
         self.fake_request = FakeRequest(user=admin)
 
+        # There is no point in importing the same things for every
+        # article, so I'm keeping track of what I've already imported
+        # to be able to do it once only.
+        self.seen_issues = {}
+        self.seen_keywords = {}
+        self.seen_sections = {}
+        self.seen_authors = {}
+
         for raw_data in self.find_articles():
             try:
                 self.process(raw_data)
@@ -373,6 +381,9 @@ class Command(BaseCommand):
         # Drop all article's kwds (and KeywordArticles, used for kwd ordering)
         article.keywords.all().delete()
         for order, kwd_node in enumerate(raw_data.get("field_keywords", [])):
+            if kwd_node["uri"] in self.seen_keywords:
+                continue
+            self.seen_keywords[kwd_node["uri"]] = True
             kwd_dict = self.fetch_data_dict(kwd_node["uri"])
             keyword, created = submission_models.Keyword.objects.get_or_create(word=kwd_dict["name"])
             submission_models.KeywordArticle.objects.get_or_create(
@@ -387,7 +398,11 @@ class Command(BaseCommand):
     def set_issue(self, article, raw_data):
         """Create and set issue / collection and volume."""
         # adapting imports.ojs.importers.get_or_create_issue
-        issue_data = self.fetch_data_dict(raw_data["field_issue"]["uri"])
+        issue_uri = raw_data["field_issue"]["uri"]
+        if issue_uri in self.seen_issues:
+            return
+        self.seen_issues[issue_uri] = True
+        issue_data = self.fetch_data_dict(issue_uri)
 
         # in Drupal, volume is a dedicated document type, but in
         # Janeway it is only a number
@@ -487,8 +502,13 @@ class Command(BaseCommand):
 
         # must ensure that a SectionOrdering exists for this issue,
         # otherwise issue.articles.add() will fail
-        section_data = self.fetch_data_dict(raw_data["field_type"]["uri"])
-        section_name = section_data["name"]
+        section_uri = raw_data["field_type"]["uri"]
+        if section_uri not in self.seen_sections:
+            section_data = self.fetch_data_dict(raw_data["field_type"]["uri"])
+            section_name = section_data["name"]
+            self.seen_sections[section_uri] = section_name
+        else:
+            section_name = self.seen_sections[section_uri]
         section, _ = submission_models.Section.objects.get_or_create(
             journal=article.journal,
             name=section_name,
@@ -521,7 +541,11 @@ class Command(BaseCommand):
         # Add authors
         first_author = None
         for order, author_node in enumerate(raw_data["field_authors"]):
-            author_dict = self.fetch_data_dict(author_node["uri"])
+            author_uri = author_node["uri"]
+            if author_uri in self.seen_authors:
+                continue
+            self.seen_authors[author_uri] = True
+            author_dict = self.fetch_data_dict(author_uri)
             # TODO: Here I'm expecting emails to be already lowercase and NFKC-normalized.
             email = author_dict["field_email"]
             if not email:
