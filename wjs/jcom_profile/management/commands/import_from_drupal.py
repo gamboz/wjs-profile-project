@@ -104,6 +104,11 @@ class Command(BaseCommand):
             help='Set the article image as "meta" only. By default it is set as "large".'
             " See also https://janeway.readthedocs.io/en/latest/published/articles.html#images",
         )
+        parser.add_argument(
+            "--article-image-thumbnail",
+            action="store_true",
+            help="Create a thumbnail for the article from the large image.",
+        )
 
     def find_articles(self):
         """Find all articles to process.
