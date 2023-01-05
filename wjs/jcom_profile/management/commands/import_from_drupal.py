@@ -657,7 +657,7 @@ class Command(BaseCommand):
         article.snapshot_authors()
         article.close_core_workflow_objects()
         if article.date_published < article.issue.date_published:
-            article.issue.date_published = article.date_published
+            article.issue.date = article.date_published
             article.issue.save()
         article.save()
         logger.debug("  %s - Janeway publication process", raw_data["field_id"])
