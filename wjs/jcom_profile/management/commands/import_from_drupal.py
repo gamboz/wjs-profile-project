@@ -470,13 +470,12 @@ class Command(BaseCommand):
             issue.save()
             logger.debug("  %s - new issue %s", raw_data["field_id"], issue)
 
-        if issue_data.get("description"):
-            logger.error("Matteo doesn't expect this. Don't confuse him please!!!")
-            issue.issue_description = issue_data["description"]
         # issue.short_description or issue.issue_description is shown
-        # in the "collections" page. Temporarily using the title. See
-        # also https://gitlab.sissamedialab.it/wjs/specs/-/issues/145
-        issue.issue_description = issue_data["title"]
+        # in the "collections" page.
+        description = ""
+        if issue_data.get("field_description"):
+            description = issue_data["field_description"]
+        issue.issue_description = description
 
         issue.save()
 
