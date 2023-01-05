@@ -84,10 +84,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Add arguments to command."""
-        parser.add_argument(
+        filters = parser.add_mutually_exclusive_group()
+        filters.add_argument(
             "--id",
             help='Pubication ID of the article to process (e.g. "JCOM_2106_2022_A01").'
             " If not given, all articles are queried and processed.",
+        )
+        filters.add_argument(
+            "--year",
+            help="Process all articles of this year.",
         )
         parser.add_argument(
             "--base-url",
@@ -103,6 +108,11 @@ class Command(BaseCommand):
             action="store_true",
             help='Set the article image as "meta" only. By default it is set as "large".'
             " See also https://janeway.readthedocs.io/en/latest/published/articles.html#images",
+        )
+        parser.add_argument(
+            "--article-image-thumbnail",
+            action="store_true",
+            help="Create a thumbnail for the article from the large image.",
         )
 
     def find_articles(self):
@@ -127,6 +137,8 @@ class Command(BaseCommand):
         params = {}
         if self.options["id"]:
             params.setdefault("field_id", self.options["id"])
+        elif self.options["year"]:
+            params.setdefault("field_year", str(int(datetime(int(self.options["year"]), 1, 1).timestamp())))
         else:
             params.setdefault("type", "Document")
         response = requests.get(url, params, auth=self.basic_auth)
