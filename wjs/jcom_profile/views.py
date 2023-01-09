@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.forms import modelformset_factory
@@ -30,6 +31,7 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
+from journal import logic as journal_logic
 from repository import models as preprint_models
 from security.decorators import (
     article_edit_user_required,
@@ -1185,3 +1187,42 @@ def unsubscribe_newsletter(request, recipient_pk):
         _("Unsubscription successful"),
     )
     return response
+
+
+def filter_articles(request, section=None, keyword=None, author=None):
+    """
+    Filter articles by section, author or keyword.
+
+    Section, author and keyword are provided in the url.
+    """
+    sections = submission_models.Section.objects.filter(journal=request.journal, is_filterable=True)
+    page, show, _, _, _, _ = journal_logic.handle_article_controls(request, sections)
+    filters = {}
+    sort = request.POST.get("sort", "-date_published")
+    if section:
+        filters["section"] = section
+    if keyword:
+        filters["keyword"] = keyword
+    if author:
+        filters["owner"] = author
+    article_objects = submission_models.Article.objects.filter(**filters)
+
+    paginator = Paginator(article_objects, show)
+
+    try:
+        articles = paginator.page(page)
+    except PageNotAnInteger:
+        articles = paginator.page(1)
+    except EmptyPage:
+        articles = paginator.page(paginator.num_pages)
+
+    template = "journal/filtered_articles.html"
+    context = {
+        "articles": articles,
+        "sections": sections,
+        "filters": filters,
+        "sort": sort,
+        "show": show,
+    }
+    return render(request, template, context)
+    pass
