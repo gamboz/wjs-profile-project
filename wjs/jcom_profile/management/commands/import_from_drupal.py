@@ -313,18 +313,32 @@ class Command(BaseCommand):
             galley.unlink_files()
             galley.delete()
 
+        expected_types = {
+            "application/pdf": [0, "PDF"],
+            "application/epub+zip": [0, "EPUB"],
+        }
         attachments = raw_data["field_attachments"]
         # "attachments" are only references to "file" nodes
         for file_node in attachments:
             file_dict = self.fetch_data_dict(file_node["file"]["uri"])
             file_download_url = file_dict["url"]
             uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
+            label = file_node["description"]
+            if type_data := expected_types.get(file_dict["mime"], None):
+                type_data[0] += 1
+                if type_data[0] != 1:
+                    logger.error(
+                        "Got %s galleys with mime %s (was expecting at most 1)",
+                        type_data[0],
+                        file_dict["mime"],
+                    )
+                label = type_data[1]
             save_galley(
                 article,
                 request=self.fake_request,
                 uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
                 is_galley=True,
-                label=file_node["description"],
+                label=label,
                 save_to_disk=True,
                 public=True,
             )
