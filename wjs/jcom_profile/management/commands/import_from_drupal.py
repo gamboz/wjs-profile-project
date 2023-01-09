@@ -44,6 +44,11 @@ BODY_EXPECTED_DATE = timezone.datetime(2017, 1, 1, tzinfo=rome_timezone)
 # they are probably artificial.
 HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
 
+# Janeway and wjapp country names do not completely overlap (sigh...)
+COUNTRIES_MAPPING = {
+    "United Kingdom of Great Britain and Northern Ireland (the)": "United Kingdom",
+}
+
 # TODO: rethink sections order?
 # SECTION_ORDER =
 #     "Editorial":
@@ -719,6 +724,7 @@ class Command(BaseCommand):
                 source = "jcom"
                 mapping = wjs_models.Correspondence.objects.get(user_cod=corresponding_author_usercod, source=source)
                 main_author = mapping.account
+                self.set_author_country(main_author)
 
         article.owner = main_author
         article.correspondence_author = main_author
@@ -901,3 +907,14 @@ class Command(BaseCommand):
             )
             return {}
         return response.json()
+
+    def set_author_country(self, author: core_models.Account):
+        """Set the author's country according to wjapp info."""
+        country_name = self.wjapp["countryName"]
+        country_name = COUNTRIES_MAPPING.get(country_name, country_name)
+        try:
+            country = core_models.Country.objects.get(name=country_name)
+        except core_models.Country.DoesNotExist:
+            logger.error("""Unknown country "%s" for %s""", country_name, self.wjapp["userCod"])
+        author.country = country
+        author.save()
