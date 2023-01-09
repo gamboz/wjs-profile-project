@@ -602,10 +602,9 @@ class Command(BaseCommand):
 
     def set_authors(self, article, raw_data):
         """Find and set the article's authors, creating them if necessary."""
-        # TODO: article.owner = user
-        # TODO: article.authors = [user]
-        # article.correspondence_author = ???  # This info is missing / lost
-        # Add authors
+        # For old documents, the corresponding/correspondence/main
+        # author info is lost. I get what I can from wjapp, and just
+        # use the first author when I don't have the info.
         first_author = None
         for order, author_node in enumerate(raw_data["field_authors"]):
             author_uri = author_node["uri"]
@@ -675,8 +674,18 @@ class Command(BaseCommand):
             )
 
         # Set the primary author
-        article.owner = first_author
-        article.correspondence_author = first_author
+        main_author = first_author
+        if article.date_published >= HISTORY_EXPECTED_DATE:
+            corresponding_author_usercod = self.wjapp.get("userCod", None)
+            if corresponding_author_usercod is None:
+                logger.warning("Cannot find corresponding author for %s from wjapp", raw_data["field_id"])
+            else:
+                source = "jcom"
+                mapping = wjs_models.Correspondence.objects.get(user_cod=corresponding_author_usercod, source=source)
+                main_author = mapping.account
+
+        article.owner = main_author
+        article.correspondence_author = main_author
         article.save()
         logger.debug("  %s - authors (%s)", raw_data["field_id"], article.authors.count())
 
