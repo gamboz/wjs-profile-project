@@ -446,6 +446,8 @@ class Command(BaseCommand):
                 logger.error("Body has a summary. What should I do?")
 
         name = "body.html"
+        label = "HTML"
+        # or maybe `label = f'{raw_data["field_id"]}.html'`
         body_bytes = self.process_body(article, body)
         body_as_file = File(BytesIO(body_bytes), name)
         new_galley = save_galley(
@@ -453,7 +455,7 @@ class Command(BaseCommand):
             request=self.fake_request,
             uploaded_file=body_as_file,
             is_galley=True,
-            label=f'{raw_data["field_id"]}.html',
+            label=label,
             save_to_disk=True,
             public=True,
         )
