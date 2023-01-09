@@ -84,10 +84,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Add arguments to command."""
-        parser.add_argument(
+        filters = parser.add_mutually_exclusive_group()
+        filters.add_argument(
             "--id",
             help='Pubication ID of the article to process (e.g. "JCOM_2106_2022_A01").'
             " If not given, all articles are queried and processed.",
+        )
+        filters.add_argument(
+            "--year",
+            help="Process all articles of this year.",
         )
         parser.add_argument(
             "--base-url",
@@ -165,6 +170,11 @@ class Command(BaseCommand):
 
     def process(self, raw_data):
         """Process an article's raw json data."""
+        if interesting_year := self.options["year"]:
+            article_year = rome_timezone.localize(datetime.fromtimestamp(int(raw_data["field_year"]))).year
+            if article_year < int(interesting_year):
+                return
+
         logger.debug("Processing %s (nid=%s)", raw_data["field_id"], raw_data["nid"])
         self.wjapp = self.data_from_wjapp(raw_data)
         article = self.create_article(raw_data)
@@ -423,11 +433,13 @@ class Command(BaseCommand):
         # Drop all article's kwds (and KeywordArticles, used for kwd ordering)
         article.keywords.all().delete()
         for order, kwd_node in enumerate(raw_data.get("field_keywords", [])):
-            if kwd_node["uri"] in self.seen_keywords:
-                continue
-            self.seen_keywords[kwd_node["uri"]] = True
-            kwd_dict = self.fetch_data_dict(kwd_node["uri"])
-            keyword, created = submission_models.Keyword.objects.get_or_create(word=kwd_dict["name"])
+            if keyword_pk := self.seen_keywords.get(kwd_node["uri"], None):
+                keyword = submission_models.Keyword.objects.get(pk=keyword_pk)
+            else:
+                kwd_dict = self.fetch_data_dict(kwd_node["uri"])
+                keyword, created = submission_models.Keyword.objects.get_or_create(word=kwd_dict["name"])
+                self.seen_keywords[kwd_node["uri"]] = keyword.pk
+
             submission_models.KeywordArticle.objects.get_or_create(
                 article=article,
                 keyword=keyword,
@@ -441,9 +453,51 @@ class Command(BaseCommand):
         """Create and set issue / collection and volume."""
         # adapting imports.ojs.importers.get_or_create_issue
         issue_uri = raw_data["field_issue"]["uri"]
-        if issue_uri in self.seen_issues:
-            return
-        self.seen_issues[issue_uri] = True
+        if issue_pk := self.seen_issues.get(issue_uri, None):
+            issue = journal_models.Issue.objects.get(pk=issue_pk)
+        else:
+            issue = self.create_new_issue(article, raw_data)
+
+        # must ensure that a SectionOrdering exists for this issue,
+        # otherwise issue.articles.add() will fail
+        section_uri = raw_data["field_type"]["uri"]
+        if session_pk := self.seen_sections.get(section_uri, None):
+            section = submission_models.Section.objects.get(pk=session_pk)
+            # TODO: FIXME!!!
+            section_order = section.sectionordering_set.first().order
+        else:
+            section_data = self.fetch_data_dict(raw_data["field_type"]["uri"])
+            section_name = section_data["name"]
+
+            # TODO: J. has order of sections in issue + order of articles in section
+            #       we just do order of article in issue (no relation with article's section)
+            # Temporary workaround:
+            section_order = int(section_data["weight"])
+            # As an alternative, I could impose it:
+            # ... = SECTION_ORDER(section_name)
+
+            section, _ = submission_models.Section.objects.get_or_create(
+                journal=article.journal,
+                name=section_name,
+            )
+            self.seen_sections[section_uri] = section.pk
+        article.section = section
+
+        journal_models.SectionOrdering.objects.get_or_create(
+            issue=issue,
+            section=section,
+            defaults={"order": section_order},
+        )
+
+        article.primary_issue = issue
+        article.save()
+        issue.articles.add(article)
+        issue.save()
+        logger.debug("  %s - issue (%s)", raw_data["field_id"], issue.id)
+
+    def create_new_issue(self, article, raw_data) -> journal_models.Issue:
+        """Create a new issue from json data."""
+        issue_uri = raw_data["field_issue"]["uri"]
         issue_data = self.fetch_data_dict(issue_uri)
 
         # in Drupal, volume is a dedicated document type, but in
@@ -499,6 +553,7 @@ class Command(BaseCommand):
                 "issue_title": issue_data["title"],
             },
         )
+        self.seen_issues[issue_uri] = issue.pk
 
         # Force this to correct previous imports
         issue.date = date_published
@@ -543,38 +598,7 @@ class Command(BaseCommand):
             issue.large_image = issue_cover
             logger.debug("  %s - issue cover (%s)", raw_data["field_id"], file_dict["name"])
 
-        # must ensure that a SectionOrdering exists for this issue,
-        # otherwise issue.articles.add() will fail
-        section_uri = raw_data["field_type"]["uri"]
-        if section_uri not in self.seen_sections:
-            section_data = self.fetch_data_dict(raw_data["field_type"]["uri"])
-            section_name = section_data["name"]
-            self.seen_sections[section_uri] = section_name
-        else:
-            section_name = self.seen_sections[section_uri]
-        section, _ = submission_models.Section.objects.get_or_create(
-            journal=article.journal,
-            name=section_name,
-        )
-        article.section = section
-
-        # TODO: J. has order of sections in issue + order of articles in section
-        #       we just do order of article in issue (no relation with article's section)
-        # Temporary workaround:
-        section_order = int(section_data["weight"])
-        # As an alternative, I could impose it:
-        # ... = SECTION_ORDER(section_name)
-        journal_models.SectionOrdering.objects.get_or_create(
-            issue=issue,
-            section=section,
-            defaults={"order": section_order},
-        )
-
-        article.primary_issue = issue
-        article.save()
-        issue.articles.add(article)
-        issue.save()
-        logger.debug("  %s - issue (%s)", raw_data["field_id"], issue.id)
+        return issue
 
     def set_authors(self, article, raw_data):
         """Find and set the article's authors, creating them if necessary."""
@@ -585,52 +609,53 @@ class Command(BaseCommand):
         first_author = None
         for order, author_node in enumerate(raw_data["field_authors"]):
             author_uri = author_node["uri"]
-            if author_uri in self.seen_authors:
-                continue
-            self.seen_authors[author_uri] = True
-            author_dict = self.fetch_data_dict(author_uri)
-            # TODO: Here I'm expecting emails to be already lowercase and NFKC-normalized.
-            email = author_dict["field_email"]
-            if not email:
-                email = f"{author_dict['field_id']}@invalid.com"
-                # Some known authors that do not have an email:
-                # - VACCELERATE: it's a consortium
-                if article.date_published >= HISTORY_EXPECTED_DATE:
-                    logger.warning("Missing email for author %s on %s.", author_dict["field_id"], raw_data["nid"])
-            # yeah... one was not stripped... 😢
-            email = email.strip()
-            author, _ = core_models.Account.objects.get_or_create(
-                email=email,
-                first_name=author_dict["field_name"],  # TODO: this contains first+middle; split!
-                last_name=author_dict["field_surname"],
-            )
-            author.add_account_role("author", article.journal)
-
-            # Store away wjapp's userCod
-            if author_dict["field_id"]:
-                source = "jcom"
-                assert article.journal.code == "JCOM"
-                try:
-                    usercod = int(author_dict["field_id"])
-                except ValueError:
+            if author_pk := self.seen_authors.get(author_uri, None):
+                author = core_models.Account.objects.get(pk=author_pk)
+            else:
+                author_dict = self.fetch_data_dict(author_uri)
+                # TODO: Here I'm expecting emails to be already lowercase and NFKC-normalized.
+                email = author_dict["field_email"]
+                if not email:
+                    email = f"{author_dict['field_id']}@invalid.com"
+                    # Some known authors that do not have an email:
+                    # - VACCELERATE: it's a consortium
                     if article.date_published >= HISTORY_EXPECTED_DATE:
-                        logger.warning(
-                            "Non-integer usercod for author %s (%s) on %s (%s)",
-                            author_dict["field_surname"],
-                            author_dict["field_id"],
-                            raw_data["field_id"],
-                            raw_data["nid"],
+                        logger.warning("Missing email for author %s on %s.", author_dict["field_id"], raw_data["nid"])
+                # yeah... one was not stripped... 😢
+                email = email.strip()
+                author, _ = core_models.Account.objects.get_or_create(
+                    email=email,
+                    first_name=author_dict["field_name"],  # TODO: this contains first+middle; split!
+                    last_name=author_dict["field_surname"],
+                )
+                self.seen_authors[author_uri] = author.pk
+                author.add_account_role("author", article.journal)
+
+                # Store away wjapp's userCod
+                if author_dict["field_id"]:
+                    source = "jcom"
+                    assert article.journal.code == "JCOM"
+                    try:
+                        usercod = int(author_dict["field_id"])
+                    except ValueError:
+                        if article.date_published >= HISTORY_EXPECTED_DATE:
+                            logger.warning(
+                                "Non-integer usercod for author %s (%s) on %s (%s)",
+                                author_dict["field_surname"],
+                                author_dict["field_id"],
+                                raw_data["field_id"],
+                                raw_data["nid"],
+                            )
+                    else:
+                        mapping, _ = wjs_models.Correspondence.objects.get_or_create(
+                            account=author,
+                            user_cod=usercod,
+                            source=source,
                         )
-                else:
-                    mapping, _ = wjs_models.Correspondence.objects.get_or_create(
-                        account=author,
-                        user_cod=usercod,
-                        source=source,
-                    )
-                    # `used` indicates that this usercod from this source
-                    # has been used to create the core.Account record
-                    mapping.used = True
-                    mapping.save()
+                        # `used` indicates that this usercod from this source
+                        # has been used to create the core.Account record
+                        mapping.used = True
+                        mapping.save()
 
             # Arbitrarly selecting the first author as owner and
             # correspondence_author for this article. This is a
@@ -745,7 +770,7 @@ class Command(BaseCommand):
                 break
             if p.tag != "p":
                 break
-            if p.text.strip() == "":
+            if p.text is not None and p.text.strip() == "":
                 p.drop_tree()
                 break
             p.drop_tree()
@@ -807,6 +832,7 @@ class Command(BaseCommand):
 
     def data_from_wjapp(self, raw_data):
         """Get data from wjapp."""
+        return {}
         url = "https://robur.medialab.sissa.it/rogers-test-jcom-utf/services/jsonresponse"
         params = {
             "pubId": "JCOM-TEST-UTF_2001_2021_A06",
