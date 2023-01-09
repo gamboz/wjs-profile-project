@@ -841,13 +841,22 @@ class Command(BaseCommand):
 
     def data_from_wjapp(self, raw_data):
         """Get data from wjapp."""
-        return {}
-        url = "https://robur.medialab.sissa.it/rogers-test-jcom-utf/services/jsonresponse"
+        # No point in interrogating wjapp before JCOM moved there
+        timestamp = raw_data["field_published_date"]
+        if not timestamp:
+            logger.error("Missing publication date for %s. This is unexpected...", raw_data["field_id"])
+        else:
+            if rome_timezone.localize(datetime.fromtimestamp(int(timestamp))) < HISTORY_EXPECTED_DATE:
+                return {}
+
+        # Should parametrize url and store apikey outside repo, but exposed data is public anyway.
+        url = "https://jcom.sissa.it/jcom/services/jsonpublished"
+        apikey = "3zqDa8V4EpXq"
         params = {
-            "pubId": "JCOM-TEST-UTF_2001_2021_A06",
-            "apiKey": "1234x",
+            "pubId": raw_data["field_id"],
+            "apiKey": apikey,
         }
-        response = requests.get(url=url, params=params, verify=False)
+        response = requests.get(url=url, params=params)
         if response.status_code != 200:
             logger.warning(
                 "Got HTTP code %s from wjapp for %s",
