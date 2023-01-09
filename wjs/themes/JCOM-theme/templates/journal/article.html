@@ -387,6 +387,16 @@
                                     {% trans "Dates" %}
                                 </h4>
                                 <table class="sidebar-table">
+                                    {% if article.date_submitted %}
+                                        <tr>
+                                            <th>
+                                                {% trans "Received" %}
+                                            </th>
+                                            <td>
+                                                {{ article.date_submitted|date:"Y-m-d" }}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
                                     {% if article.date_accepted %}
                                         <tr>
                                             <th>
