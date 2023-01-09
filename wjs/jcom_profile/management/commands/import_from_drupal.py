@@ -181,6 +181,7 @@ class Command(BaseCommand):
         self.set_identifiers(article, raw_data)
         self.set_history(article, raw_data)
         self.set_files(article, raw_data)
+        self.set_supplementary_material(article, raw_data)
         self.set_image(article, raw_data)
         self.set_abstract(article, raw_data)
         self.set_body(article, raw_data)
@@ -328,6 +329,25 @@ class Command(BaseCommand):
                 public=True,
             )
         logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
+
+    def set_supplementary_material(self, article, raw_data):
+        """Import JCOM's supllementary material as another galley."""
+        supplementary_materials = raw_data["field_additional_files"]
+        # "supplementary_materials" are references to "file" nodes
+        for file_node in supplementary_materials:
+            file_dict = self.fetch_data_dict(file_node["file"]["uri"])
+            file_download_url = file_dict["url"]
+            uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
+            save_galley(
+                article,
+                request=self.fake_request,
+                uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
+                is_galley=True,
+                label=file_node["description"],
+                save_to_disk=True,
+                public=True,
+            )
+        logger.debug("  %s - supplementary_materials (as galleys)", raw_data["field_id"])
 
     def set_image(self, article, raw_data):
         """Download and set the "social" image of the article."""
