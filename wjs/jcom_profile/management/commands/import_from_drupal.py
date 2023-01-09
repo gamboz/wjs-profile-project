@@ -431,7 +431,7 @@ class Command(BaseCommand):
     def set_keywords(self, article, raw_data):
         """Create and set keywords."""
         # Drop all article's kwds (and KeywordArticles, used for kwd ordering)
-        article.keywords.all().delete()
+        article.keywords.clear()
         for order, kwd_node in enumerate(raw_data.get("field_keywords", [])):
             if keyword_pk := self.seen_keywords.get(kwd_node["uri"], None):
                 keyword = submission_models.Keyword.objects.get(pk=keyword_pk)
