@@ -339,28 +339,29 @@ class Command(BaseCommand):
                 save_to_disk=True,
                 public=True,
             )
-        logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
+        logger.debug("  %s - attachments / galleys (%s)", raw_data["field_id"], len(attachments))
 
     def decide_galley_label(self, raw_data, file_node, file_dict):
         """Decide the galley's label."""
+        # Remember that we can have ( PDF + EPUB galley ) x languages (usually two),
+        # so a label of just "PDF" might not be sufficient.
         label = file_node["description"]
-        expected_types = {  # FIXME! JCOM_2002_2021_A01 has multiple languages (2 PDF + 2EPUB)
-            "application/pdf": [0, "PDF"],
-            "application/epub+zip": [0, "EPUB"],
+        if label:
+            return label
+        mime_to_extension = {
+            "application/pdf": ".pdf",
+            "application/epub+zip": ".epub",
         }
-        if type_data := expected_types.get(file_dict["mime"], None):
-            type_data[0] += 1
-            if type_data[0] > 2:
-                logger.error(
-                    "Got %s galleys with mime %s (was expecting at most 2)",
-                    type_data[0],
-                    file_dict["mime"],
-                )
-            label = type_data[1]
+        extension = mime_to_extension.get(file_dict["mime"], None)
+        if extension is None:
+            logger.error("""Unknown mime type "%s" for %s""", file_dict["mime"], raw_data["field_id"])
+            extension = ".boh"
+        label = raw_data["field_id"] + extension
         return label
 
     def set_supplementary_material(self, article, raw_data):
         """Import JCOM's supllementary material as another galley."""
+        logger.error("DELETE OLD SUPP MAT!!!")
         supplementary_materials = raw_data["field_additional_files"]
         # "supplementary_materials" are references to "file" nodes
         for file_node in supplementary_materials:
