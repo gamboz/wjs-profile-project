@@ -1,4 +1,5 @@
 """Data migration POC."""
+import re
 from collections import namedtuple
 from datetime import datetime
 from io import BytesIO
@@ -345,18 +346,17 @@ class Command(BaseCommand):
         """Decide the galley's label."""
         # Remember that we can have ( PDF + EPUB galley ) x languages (usually two),
         # so a label of just "PDF" might not be sufficient.
-        label = file_node["description"]
-        if label:
-            return label
+        lang = re.search(r"_([a-z]{2,3})\.", file_dict["name"])
         mime_to_extension = {
-            "application/pdf": ".pdf",
-            "application/epub+zip": ".epub",
+            "application/pdf": "PDF",
+            "application/epub+zip": "EPUB",
         }
-        extension = mime_to_extension.get(file_dict["mime"], None)
-        if extension is None:
+        label = mime_to_extension.get(file_dict["mime"], None)
+        if label is None:
             logger.error("""Unknown mime type "%s" for %s""", file_dict["mime"], raw_data["field_id"])
-            extension = ".boh"
-        label = raw_data["field_id"] + extension
+            label = "Other"
+        if lang is not None:
+            label = f"{label} ({lang.group(1)})"
         return label
 
     def set_supplementary_material(self, article, raw_data):
