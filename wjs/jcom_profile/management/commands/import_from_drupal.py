@@ -46,7 +46,12 @@ HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
 
 # Janeway and wjapp country names do not completely overlap (sigh...)
 COUNTRIES_MAPPING = {
+    "Netherlands (the)": "Netherlands",
+    "Philippines (the)": "Philippines",
+    "Russian Federation (the)": "Russian Federation",
     "United Kingdom of Great Britain and Northern Ireland (the)": "United Kingdom",
+    "United States of America (the)": "United States",
+    "Taiwan": "Taiwan, Province of China",
 }
 
 # TODO: rethink sections order?
@@ -416,7 +421,11 @@ class Command(BaseCommand):
                 expected_format,
             )
         if abstract_dict["summary"] != "":
-            logger.warning("Dropping short-abstract (summary) for %s.", raw_data["field_id"])
+            logger.debug(
+                "  %s - dropping short-abstract (%s chars)",
+                raw_data["field_id"],
+                len(abstract_dict["summary"]),
+            )
         article.abstract = abstract
         logger.debug("  %s - abstract", raw_data["field_id"])
 
@@ -436,13 +445,9 @@ class Command(BaseCommand):
         body = body_dict.get("value", None)
         if body and "This item is available only in the original language." in body:
             body = None
-        expected_format = "full"
-        if body_dict["format"] != expected_format:
-            logger.error(
-                "Body's format is %s (different from expected %s).",
-                body_dict["format"],
-                expected_format,
-            )
+        expected_formats = ("full", "filtered_html")
+        if body_dict["format"] not in expected_formats:
+            logger.error("""Unexpected body's format: "%s" for %s.""", body_dict["format"], raw_data["field_id"])
         if body_dict["summary"] != "":
             if body_dict["summary"] != '<div class="tex2jax"></div>':
                 logger.error("Body has a summary. What should I do?")
@@ -908,6 +913,9 @@ class Command(BaseCommand):
     def set_author_country(self, author: core_models.Account):
         """Set the author's country according to wjapp info."""
         country_name = self.wjapp["countryName"]
+        if country_name is None:
+            logger.warning("No country for %s", self.wjapp["userCod"])
+            return
         country_name = COUNTRIES_MAPPING.get(country_name, country_name)
         try:
             country = core_models.Country.objects.get(name=country_name)
