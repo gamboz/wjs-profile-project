@@ -21,7 +21,7 @@ from django.utils import timezone
 from identifiers import models as identifiers_models
 from journal import models as journal_models
 from lxml.html import HtmlElement
-from production.logic import save_galley, save_galley_image
+from production.logic import save_galley, save_galley_image, save_supp_file
 from requests.auth import HTTPBasicAuth
 from submission import models as submission_models
 from utils.logger import get_logger
@@ -357,16 +357,13 @@ class Command(BaseCommand):
             file_dict = self.fetch_data_dict(file_node["file"]["uri"])
             file_download_url = file_dict["url"]
             uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
-            save_galley(
+            save_supp_file(
                 article,
                 request=self.fake_request,
                 uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
-                is_galley=True,
                 label=file_node["description"],
-                save_to_disk=True,
-                public=True,
             )
-        logger.debug("  %s - supplementary_materials (as galleys)", raw_data["field_id"])
+        logger.debug("  %s - supplementary_materials (%s)", raw_data["field_id"], len(supplementary_materials))
 
     def set_image(self, article, raw_data):
         """Download and set the "social" image of the article."""
