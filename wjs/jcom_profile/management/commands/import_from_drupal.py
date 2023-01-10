@@ -323,26 +323,13 @@ class Command(BaseCommand):
             galley.unlink_files()
             galley.delete()
 
-        expected_types = {
-            "application/pdf": [0, "PDF"],
-            "application/epub+zip": [0, "EPUB"],
-        }
         attachments = raw_data["field_attachments"]
         # "attachments" are only references to "file" nodes
         for file_node in attachments:
             file_dict = self.fetch_data_dict(file_node["file"]["uri"])
             file_download_url = file_dict["url"]
             uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
-            label = file_node["description"]
-            if type_data := expected_types.get(file_dict["mime"], None):
-                type_data[0] += 1
-                if type_data[0] != 1:
-                    logger.error(
-                        "Got %s galleys with mime %s (was expecting at most 1)",
-                        type_data[0],
-                        file_dict["mime"],
-                    )
-                label = type_data[1]
+            label = self.decide_galley_label(raw_data, file_node, file_dict)
             save_galley(
                 article,
                 request=self.fake_request,
@@ -353,6 +340,24 @@ class Command(BaseCommand):
                 public=True,
             )
         logger.debug("  %s - attachments (as galleys)", raw_data["field_id"])
+
+    def decide_galley_label(self, raw_data, file_node, file_dict):
+        """Decide the galley's label."""
+        label = file_node["description"]
+        expected_types = {  # FIXME! JCOM_2002_2021_A01 has multiple languages (2 PDF + 2EPUB)
+            "application/pdf": [0, "PDF"],
+            "application/epub+zip": [0, "EPUB"],
+        }
+        if type_data := expected_types.get(file_dict["mime"], None):
+            type_data[0] += 1
+            if type_data[0] > 2:
+                logger.error(
+                    "Got %s galleys with mime %s (was expecting at most 2)",
+                    type_data[0],
+                    file_dict["mime"],
+                )
+            label = type_data[1]
+        return label
 
     def set_supplementary_material(self, article, raw_data):
         """Import JCOM's supllementary material as another galley."""
