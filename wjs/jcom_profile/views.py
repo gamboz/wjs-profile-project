@@ -8,13 +8,13 @@ import pandas as pd
 from core import files as core_files
 from core import logic
 from core import models as core_models
+from core.models import Account
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.forms import modelformset_factory
@@ -31,7 +31,6 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
-from journal import logic as journal_logic
 from repository import models as preprint_models
 from security.decorators import (
     article_edit_user_required,
@@ -42,6 +41,7 @@ from submission import decorators
 from submission import forms as submission_forms
 from submission import logic as submission_logic
 from submission import models as submission_models
+from submission.models import Article, Keyword, Section
 from utils import setting_handler
 from utils.logger import get_logger
 
@@ -1195,34 +1195,26 @@ def filter_articles(request, section=None, keyword=None, author=None):
 
     Section, author and keyword are provided in the url.
     """
-    sections = submission_models.Section.objects.filter(journal=request.journal, is_filterable=True)
-    page, show, _, _, _, _ = journal_logic.handle_article_controls(request, sections)
     filters = {}
-    sort = request.POST.get("sort", "-date_published")
+    title, paragraph, filtered_object = "", "", None
     if section:
         filters["section"] = section
+        title = _("Filter by section")
+        paragraph = _("Articles that use this section are listed below.")
+        filtered_object = get_object_or_404(Section, pk=section).name
     if keyword:
-        filters["keyword"] = keyword
+        filters["keywords__pk"] = keyword
+        title = _("Filter by keyword")
+        paragraph = _("Articles that use this keyword are listed below.")
+        filtered_object = get_object_or_404(Keyword, pk=keyword).word
     if author:
         filters["owner"] = author
-    article_objects = submission_models.Article.objects.filter(**filters)
+        title = _("Filter by author")
+        paragraph = _("Articles by the author are listed below.")
+        filtered_object = get_object_or_404(Account, pk=author).full_name
 
-    paginator = Paginator(article_objects, show)
-
-    try:
-        articles = paginator.page(page)
-    except PageNotAnInteger:
-        articles = paginator.page(1)
-    except EmptyPage:
-        articles = paginator.page(paginator.num_pages)
+    articles = Article.objects.filter(**filters).order_by("date_published")
 
     template = "journal/filtered_articles.html"
-    context = {
-        "articles": articles,
-        "sections": sections,
-        "filters": filters,
-        "sort": sort,
-        "show": show,
-    }
+    context = {"articles": articles, "title": title, "paragraph": paragraph, "filtered_object": filtered_object}
     return render(request, template, context)
-    pass
