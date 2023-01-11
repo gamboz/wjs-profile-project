@@ -10,9 +10,9 @@
 {% block title %}{{ article.frozen_authors.0.last_name | striptags }} | {{ article.title | striptags }} |
     {{ journal_settings.general.journal_name | striptags }} {% endblock title %}
 
-{#{% block head %}#}
-{#    {% include "elements/article_meta_tags.html" %}#}
-{#{% endblock %}#}
+{% block head %}
+    {% include "elements/article_meta_tags.html" %}
+{% endblock head %}
 
 {% block body %}
     <div class="row">
@@ -220,7 +220,7 @@
         <div class="col m4">
             <div class="card">
                 <div class="card-content">
-                    {#                    {% include "common/elements/altmetric_badges.html" with article=article %}#}
+                    {% include "common/elements/altmetric_badges.html" with article=article %}
                     <h4>
                         {% trans "Share" %}
                     </h4>
@@ -292,7 +292,7 @@
                         </div>
                     {% endif %}
 
-                    {#                    {% include "elements/journal/article_issue_list.html" %}#}
+                    {% include "elements/journal/article_issue_list.html" %}
                     <div class="spacer">
                         <div class="divider"></div>
                     </div>
@@ -476,11 +476,11 @@
         </div>
 
     </div>
-    {#    {% include "elements/summary_modal.html" %}#}
-    {#    {% include "elements/public_reviews.html" %}#}
-    {#    {% for table in tables_in_galley %}#}
-    {#        {% include "elements/journal/table_modal.html" with content=table.content tableid=table.id %}#}
-    {#    {% endfor %}#}
+    {% include "elements/summary_modal.html" %}
+    {% include "elements/public_reviews.html" %}
+    {% for table in tables_in_galley %}
+        {% include "elements/journal/table_modal.html" with content=table.content tableid=table.id %}
+    {% endfor %}
 {% endblock body %}
 
 {% block js %}

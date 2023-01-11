@@ -1195,7 +1195,7 @@ def filter_articles(request, section=None, keyword=None, author=None):
 
     Section, author and keyword are provided in the url.
     """
-    filters = {}
+    filters = {"stage": submission_models.STAGE_PUBLISHED}
     title, paragraph, filtered_object = "", "", None
     if section:
         filters["section"] = section
