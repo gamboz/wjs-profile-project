@@ -1,5 +1,4 @@
 """Data migration POC."""
-import os
 import re
 from collections import namedtuple
 from datetime import datetime
@@ -379,6 +378,19 @@ class Command(BaseCommand):
 
     def set_image(self, article, raw_data):
         """Download and set the "social" image of the article."""
+        # Clean up possibly existing files from previous imports.
+        #
+        # In theory, the file_obj could be shared with other articles,
+        # but during import I'm sure that it is not the case. So I
+        # just delete everything.
+        # NB: file_obj.delete() calls file_obj.unlink_file()
+        if article.large_image_file:
+            article.large_image_file.delete()
+            article.large_image_file = None
+        if article.thumbnail_image_file:
+            article.thumbnail_image_file.delete()
+            article.thumbnail_image_file = None
+
         if not raw_data["field_image"]:
             return
         images_list = raw_data["field_image"]
@@ -395,28 +407,12 @@ class Command(BaseCommand):
             article.meta_image = image_file
         else:
             handle_article_large_image_file(image_file, article, self.fake_request)
-        import pudb; pudb.set_trace()
         if self.options["article_image_thumbnail"]:
-            thumb_name = self.make_thumb_name(image_dict["name"])
-            new_file: core_models.File = core_files.copy_local_file_to_article(
-                file_to_handle=article.large_image_file.self_article_path(),
-                file_name=thumb_name,
-                article=article,
-                owner=article.owner,
-                )
-            with open(new_file.self_article_path(), 'rb') as new_file_path:
-                new_django_file: File = File(new_file_path, thumb_name)
-                handle_article_thumb_image_file(new_django_file, article, self.fake_request)
+            handle_article_thumb_image_file(image_file, article, self.fake_request)
             thumb_size = [138, 138]
             resize_and_crop(article.thumbnail_image_file.self_article_path(), thumb_size)
         article.save()
         logger.debug("  %s - article image", raw_data["field_id"])
-
-    def make_thumb_name(self, name):
-        """Make the name of the thumbnail image as name_san_extension-small.extension."""
-        [name_sans_extension, extension] = os.path.splitext(name)
-        small = "-small"
-        return name_sans_extension + small + extension
 
     def set_abstract(self, article, raw_data):
         """Set the abstract."""
