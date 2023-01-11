@@ -8,7 +8,6 @@ from urllib.parse import parse_qsl, urlsplit, urlunsplit
 import lxml.html
 import pytz
 import requests
-from core import files as core_files
 from core import models as core_models
 from core.logic import (
     handle_article_large_image_file,
@@ -16,7 +15,6 @@ from core.logic import (
     resize_and_crop,
 )
 from django.core.files import File
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from identifiers import models as identifiers_models
@@ -473,7 +471,6 @@ class Command(BaseCommand):
 
         name = "body.html"
         label = "HTML"
-        # or maybe `label = f'{raw_data["field_id"]}.html'`
         body_bytes = self.process_body(article, body)
         body_as_file = File(BytesIO(body_bytes), name)
         new_galley = save_galley(
@@ -864,21 +861,8 @@ class Command(BaseCommand):
             # TBV: the `src` attribute is relative to the article's URL
             image.attrib["src"] = img_obj.label
 
-        # Probably could also use a django.core.files.File
-        uploaded_file = SimpleUploadedFile(
-            name=galley_file.original_filename,
-            content=lxml.html.tostring(html, pretty_print=False),
-            content_type=galley_file.mime_type,
-        )
-
-        # see core.File.get_file_path
-        path_parts = ("articles", article.id)
-        core_files.overwrite_file(
-            uploaded_file=uploaded_file,
-            file_to_replace=galley_file,
-            path_parts=path_parts,
-        )
-        galley_file.save()
+        with open(galley_file.self_article_path(), "wb") as out_file:
+            out_file.write(lxml.html.tostring(html, pretty_print=False))
 
     def download_and_store_article_file(self, image_source_url, article):
         """Downaload a media file and link it to the article."""
