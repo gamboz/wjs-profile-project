@@ -121,9 +121,9 @@ class Command(BaseCommand):
             " See also https://janeway.readthedocs.io/en/latest/published/articles.html#images",
         )
         parser.add_argument(
-            "--article-image-thumbnail",
-            action="store_true",
-            help="Create a thumbnail for the article from the large image.",
+            "--article-image-no-thumbnail",
+            action="store_false",
+            help="Do NOT create a thumbnail for the article from the large image.",
         )
 
     def find_articles(self):
@@ -407,7 +407,7 @@ class Command(BaseCommand):
             article.meta_image = image_file
         else:
             handle_article_large_image_file(image_file, article, self.fake_request)
-        if self.options["article_image_thumbnail"]:
+        if not self.options["article_image_no_thumbnail"]:
             handle_article_thumb_image_file(image_file, article, self.fake_request)
             thumb_size = [138, 138]
             resize_and_crop(article.thumbnail_image_file.self_article_path(), thumb_size)
