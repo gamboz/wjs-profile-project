@@ -1,4 +1,5 @@
 """Data migration POC."""
+import os
 import re
 from collections import namedtuple
 from datetime import datetime
@@ -120,7 +121,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--article-image-no-thumbnail",
-            action="store_false",
+            action="store_true",
             help="Do NOT create a thumbnail for the article from the large image.",
         )
 
@@ -412,11 +413,18 @@ class Command(BaseCommand):
         else:
             handle_article_large_image_file(image_file, article, self.fake_request)
         if not self.options["article_image_no_thumbnail"]:
+            image_file.name = self.make_thumb_name(image_file.name)
             handle_article_thumb_image_file(image_file, article, self.fake_request)
             thumb_size = [138, 138]
             resize_and_crop(article.thumbnail_image_file.self_article_path(), thumb_size)
         article.save()
         logger.debug("  %s - article image", raw_data["field_id"])
+
+    def make_thumb_name(self, name):
+        """Make the name of the thumbnail image as name_san_extension-small.extension."""
+        [name_sans_extension, extension] = os.path.splitext(name)
+        small = "-small"
+        return name_sans_extension + small + extension
 
     def set_abstract(self, article, raw_data):
         """Set the abstract."""
