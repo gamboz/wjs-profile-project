@@ -314,13 +314,15 @@ class Command(BaseCommand):
         """Find info about the article "attachments", download them and import them as galleys."""
         # First, let's drop all existing galleys
         # see plugin imports.ojs.importers.import_galleys
-        #
-        # Must set render_galley to None or get a "violates foreign
-        # key constraint" on render_galley when I delete all galleys
-        article.render_galley = None
         for galley in article.galley_set.all():
-            galley.unlink_files()
+            for file_obj in galley.images.all():
+                file_obj.delete()
+            galley.images.clear()
+            galley.file.delete()
+            galley.file = None
             galley.delete()
+        article.galley_set.clear()
+        article.render_galley = None
 
         attachments = raw_data["field_attachments"]
         # "attachments" are only references to "file" nodes
@@ -359,7 +361,11 @@ class Command(BaseCommand):
 
     def set_supplementary_material(self, article, raw_data):
         """Import JCOM's supllementary material as another galley."""
-        logger.error("DELETE OLD SUPP MAT!!!")
+        for supp_file in article.supplementary_files.all():
+            supp_file.file.delete()
+            supp_file.file = None
+        article.supplementary_files.clear()
+
         supplementary_materials = raw_data["field_additional_files"]
         # "supplementary_materials" are references to "file" nodes
         for file_node in supplementary_materials:
@@ -448,9 +454,7 @@ class Command(BaseCommand):
 
     def set_body(self, article, raw_data):
         """Manage the body."""
-        if galley := article.render_galley:
-            galley.unlink_files()
-            galley.delete()
+        # All galleys have already been deleted in `set_files`.
 
         # Body (NB: it's a galley with mime-type in files.HTML_MIMETYPES)
         body_dict = raw_data["body"]
