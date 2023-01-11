@@ -1,4 +1,5 @@
 """Data migration POC."""
+import os
 import re
 from collections import namedtuple
 from datetime import datetime
@@ -394,12 +395,28 @@ class Command(BaseCommand):
             article.meta_image = image_file
         else:
             handle_article_large_image_file(image_file, article, self.fake_request)
+        import pudb; pudb.set_trace()
         if self.options["article_image_thumbnail"]:
-            handle_article_thumb_image_file(image_file, article, self.fake_request)
+            thumb_name = self.make_thumb_name(image_dict["name"])
+            new_file: core_models.File = core_files.copy_local_file_to_article(
+                file_to_handle=article.large_image_file.self_article_path(),
+                file_name=thumb_name,
+                article=article,
+                owner=article.owner,
+                )
+            with open(new_file.self_article_path(), 'rb') as new_file_path:
+                new_django_file: File = File(new_file_path, thumb_name)
+                handle_article_thumb_image_file(new_django_file, article, self.fake_request)
             thumb_size = [138, 138]
             resize_and_crop(article.thumbnail_image_file.self_article_path(), thumb_size)
         article.save()
         logger.debug("  %s - article image", raw_data["field_id"])
+
+    def make_thumb_name(self, name):
+        """Make the name of the thumbnail image as name_san_extension-small.extension."""
+        [name_sans_extension, extension] = os.path.splitext(name)
+        small = "-small"
+        return name_sans_extension + small + extension
 
     def set_abstract(self, article, raw_data):
         """Set the abstract."""
