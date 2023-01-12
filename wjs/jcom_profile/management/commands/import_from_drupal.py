@@ -54,17 +54,19 @@ COUNTRIES_MAPPING = {
     "Taiwan": "Taiwan, Province of China",
 }
 
-# TODO: rethink sections order?
-# SECTION_ORDER =
-#     "Editorial":
-#     "Focus":
-#     "Article":
-#     "Practice insight":
-#     "Essay":
-#     "Comment":
-#     "Letter":
-#     "Book Review":
-#     "Conference Review": 9,
+# Default order of sections in any issue.
+# It is not possible to mix different types (e.g. A1 E1 A2...)
+SECTION_ORDER = {
+    "Editorial": 1,
+    "Article": 2,
+    "Practice insight": 3,
+    "Essay": 4,
+    "Focus": 5,
+    "Comment": 6,
+    "Letter": 7,
+    "Book Review": 8,
+    "Conference Review": 9,
+}
 
 
 class Command(BaseCommand):
@@ -313,8 +315,9 @@ class Command(BaseCommand):
 
     def set_files(self, article, raw_data):
         """Find info about the article "attachments", download them and import them as galleys."""
+        # See also plugin imports.ojs.importers.import_galleys.
+
         # First, let's drop all existing galleys
-        # see plugin imports.ojs.importers.import_galleys
         for galley in article.galley_set.all():
             for file_obj in galley.images.all():
                 file_obj.delete()
@@ -326,7 +329,7 @@ class Command(BaseCommand):
         article.render_galley = None
 
         attachments = raw_data["field_attachments"]
-        # "attachments" are only references to "file" nodes
+        # Drupal "attachments" are only references to "file" nodes
         for file_node in attachments:
             file_dict = self.fetch_data_dict(file_node["file"]["uri"])
             file_download_url = file_dict["url"]
@@ -528,25 +531,15 @@ class Command(BaseCommand):
             issue = journal_models.Issue.objects.get(pk=issue_pk)
         else:
             issue = self.create_new_issue(article, raw_data)
+            # this should not be necessary...
+            journal_models.SectionOrdering.objects.filter(issue=issue).delete()
 
-        # must ensure that a SectionOrdering exists for this issue,
-        # otherwise issue.articles.add() will fail
         section_uri = raw_data["field_type"]["uri"]
         if session_pk := self.seen_sections.get(section_uri, None):
             section = submission_models.Section.objects.get(pk=session_pk)
-            # TODO: FIXME!!!
-            section_order = section.sectionordering_set.first().order
         else:
             section_data = self.fetch_data_dict(raw_data["field_type"]["uri"])
             section_name = section_data["name"]
-
-            # TODO: J. has order of sections in issue + order of articles in section
-            #       we just do order of article in issue (no relation with article's section)
-            # Temporary workaround:
-            section_order = int(section_data["weight"])
-            # As an alternative, I could impose it:
-            # ... = SECTION_ORDER(section_name)
-
             section, _ = submission_models.Section.objects.get_or_create(
                 journal=article.journal,
                 name=section_name,
@@ -554,11 +547,21 @@ class Command(BaseCommand):
             self.seen_sections[section_uri] = section.pk
         article.section = section
 
+        # Must ensure that a SectionOrdering exists for this issue,
+        # otherwise issue.articles.add() will fail.
+        #
+        # Drupal has a `section_data["weight"]`, but we decided to
+        # go with a default ordereing, which seems more "orderly".
+        section_order = SECTION_ORDER[section.name]
         journal_models.SectionOrdering.objects.get_or_create(
             issue=issue,
             section=section,
             defaults={"order": section_order},
         )
+
+        # If it should be needed to force-sort articles, check
+        # `issue.order_articles_in_sections(sort_field='date_published',
+        # order='asc')` in journal.views.mange_issues
 
         article.primary_issue = issue
         article.save()
