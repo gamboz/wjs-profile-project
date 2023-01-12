@@ -32,7 +32,7 @@ def test_filter_articles_by_author(editor, published_articles):
     assert response.status_code == 200
     assert response.context["title"] == "Filter by author"
     assert response.context["paragraph"] == "Articles by the author are listed below."
-    assert response.context["filtered_object"] == editor.full_name
+    assert response.context["filtered_object"] == editor.full_name()
 
     for article in response.context["articles"]:
         assert article.owner.pk == author

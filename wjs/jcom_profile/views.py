@@ -1211,7 +1211,7 @@ def filter_articles(request, section=None, keyword=None, author=None):
         filters["owner"] = author
         title = _("Filter by author")
         paragraph = _("Articles by the author are listed below.")
-        filtered_object = get_object_or_404(Account, pk=author).full_name
+        filtered_object = get_object_or_404(Account, pk=author).full_name()
 
     articles = Article.objects.filter(**filters).order_by("date_published")
 
