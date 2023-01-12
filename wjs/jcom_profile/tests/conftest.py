@@ -224,6 +224,9 @@ def article(admin, coauthor, article_journal, sections):
 
 @pytest.fixture
 def published_articles(admin, editor, article_journal, sections, keywords):
+    """Create articles in published stage.
+
+    Correspondence author (owner), keywords and section are random"""
     for i in range(10):
         owner = random.choice([admin, editor])
         article = submission_models.Article.objects.create(
