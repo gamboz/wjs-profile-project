@@ -447,12 +447,12 @@ class Command(BaseCommand):
         abstract = abstract_dict.get("value", None)
         if abstract and "This item is available only in the original language." in abstract:
             abstract = None
-        expected_format = "filtered_html"
-        if abstract_dict["format"] != expected_format:
+        expected_formats = ("full", "filtered_html")
+        if abstract_dict["format"] not in expected_formats:
             logger.error(
-                "Abstract's format is %s (different from expected %s).",
+                """Unexpected abstract's format: "%s" for %s.""",
                 abstract_dict["format"],
-                expected_format,
+                raw_data["field_id"],
             )
         if abstract_dict["summary"] != "":
             logger.debug(
