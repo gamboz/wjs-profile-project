@@ -219,7 +219,7 @@ class Command(BaseCommand):
             identifier=raw_data["field_id"],
         )
         if not article:
-            logger.debug("Cannot find article with DOI=%s. Creating a new one.", raw_data["field_doi"])
+            logger.debug("Cannot find article with pubid=%s. Creating a new one.", raw_data["field_id"])
             article = submission_models.Article.objects.create(
                 journal=journal,
                 title=raw_data["title"],
