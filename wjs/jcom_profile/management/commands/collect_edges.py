@@ -6,6 +6,27 @@ from core.models import Account
 from django.core.management.base import BaseCommand
 from submission.models import Article
 
+# Jaal allows only 20 categories for the color. I'll keep only 18
+# countries plus NA and Other...
+COUNTRIES = {
+    "US": "United States",
+    "IE": "Ireland",
+    "GB": "United Kingdom",
+    "IT": "Italy",
+    "PH": "Philippines",
+    "DE": "Germany",
+    "NL": "Netherlands",
+    "CN": "China",
+    "CA": "Canada",
+    "IN": "India",
+    "PT": "Portugal",
+    "AT": "Australia",
+    "ES": "Spain",
+    "BR": "Brazil",
+    "RU": "Russian Federation",
+    None: "NA",
+}
+
 
 @dataclass
 class Node:
@@ -15,8 +36,7 @@ class Node:
     def __str__(self):
         country = self.author.country
         if country is not None:
-            country = country.name.replace(",", "-")
-            country = country.replace(" ", "-")
+            country = COUNTRIES.get(country.code, "Others")
         else:
             country = "NA"
         return f"{self.author.full_name().replace(',','')},{country},{self.num_papers}"
