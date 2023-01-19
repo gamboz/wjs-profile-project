@@ -8,7 +8,7 @@ import pandas as pd
 from core import files as core_files
 from core import logic
 from core import models as core_models
-from core.models import Account
+from core.models import Account, Galley
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1241,5 +1241,24 @@ class JcomArticleRedirect(RedirectView):
             kwargs={
                 "identifier_type": "pubid",
                 "identifier": kwargs["jcom_id"],
+            },
+        )
+
+
+class JcomFileRedirect(RedirectView):
+    permanent = False
+    query_string = True
+
+    def get_redirect_url(self, *args, **kwargs):  # noqa
+        try:
+            galley = Galley.objects.get(file__original_filename=kwargs["jcom_file"], public=True)
+        except Galley.DoesNotExist:
+            return Http404
+
+        return reverse(
+            "article_download_galley",
+            kwargs={
+                "article_id": galley.article.pk,
+                "galley_id": galley.pk,
             },
         )
