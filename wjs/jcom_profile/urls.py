@@ -113,7 +113,12 @@ urlpatterns = [
     url(
         r"archive/(?P<n1>[\w.-]+)/(?P<n2>[\w.-]+)/(?P<jcom_id>[\w.-]+)/$",
         views.JcomArticleRedirect.as_view(),
-        name="jcom_redirect",
+        name="jcom_redirect_article",
+    ),
+    url(
+        r"sites/default/files/documents/(?P<jcom_file>[\w.-]+)/$",
+        views.JcomFileRedirect.as_view(),
+        name="jcom_redirect_file",
     ),
 ]
 
