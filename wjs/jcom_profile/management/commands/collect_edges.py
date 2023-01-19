@@ -2,25 +2,44 @@
 from dataclasses import dataclass
 from itertools import combinations
 
+from core.models import Account
 from django.core.management.base import BaseCommand
 from submission.models import Article
 
 
 @dataclass
 class Node:
-    id_: int
-    country: str
+    author: Account
     num_papers: int = 0
 
     def __str__(self):
-        return f"{self.id_},{self.country},{self.num_papers}"
+        country = self.author.country
+        if country is not None:
+            country = country.name.replace(",", "-")
+            country = country.replace(" ", "-")
+        else:
+            country = "NA"
+        return f"{self.author.full_name().replace(',','')},{country},{self.num_papers}"
+
+    @staticmethod
+    def header():
+        """Return headers suitable for Jaal."""
+        return "id,country,num_papers"
 
 
 @dataclass
 class Edge:
-    from_: int  # must match with type of Node.id_
-    to: int  # must match with type of Node.id_
+    from_: Account  # must match with type of Node.id_
+    to_: Account  # must match with type of Node.id_
     weigth: int = 0
+
+    def __str__(self):
+        return f"{self.from_.full_name().replace(',','')},{self.to_.full_name().replace(',','')},{self.weigth}"
+
+    @staticmethod
+    def header():
+        """Return headers suitable for Jaal."""
+        return "from,to,weight"
 
 
 class Command(BaseCommand):
@@ -30,33 +49,46 @@ class Command(BaseCommand):
         """Command entry point."""
         nodes = {}
         edges = {}
-        for article in Article.objects.all():
+        # TODO: I care only about authors of published papers.
+        #       - write me more djangoso!
+        #       - filter by article.is_published
+        if limit := options["limit"]:
+            articles = Article.objects.all()[:limit]
+        else:
+            articles = Article.objects.all()
+        for article in articles:
             for author in article.authors.all():
-                country = author.country
-                if country is not None:
-                    country = country.name.replace(",", "-")
-                    country = country.replace(" ", "-")
-                else:
-                    country = "NA"
                 node = nodes.setdefault(
                     author.pk,
                     Node(
-                        id=author.pk,
-                        country=country,
+                        author=author,
                         num_papers=0,
                     ),
                 )
                 node.num_papers += 1
-            authors_ids = [a.id for a in article.authors.all()]
-            for from_to_tuple in combinations(authors_ids, 2):
-                # what about a couple of authors who wrote together different papers?
-                edges.setdefault(from_to_tuple, from_to_tuple)
+
+            for (from_, to_) in combinations(article.authors.all(), 2):
+                edge = edges.setdefault(
+                    f"{from_.id}-{to_.id}",
+                    Edge(from_, to_, weigth=0),
+                )
+                edge.weigth += 1
 
         with open("/tmp/edges.csv", "wt") as edge_file:
-            edge_file.write("from,to,weigth\n")
-            edge_file.write("\n".join([f"{f},{t}" for f, t in edges.values()]))
+            edge_file.write(Edge.header())
+            edge_file.write("\n")
+            edge_file.write("\n".join([e.__str__() for e in edges.values()]))
             edge_file.write("\n")
         with open("/tmp/nodes.csv", "wt") as node_file:
-            node_file.write("id,country,num_papers\n")
+            node_file.write(Node.header())
+            node_file.write("\n")
             node_file.write("\n".join([n.__str__() for n in nodes.values()]))
             node_file.write("\n")
+
+    def add_arguments(self, parser):
+        """Add arguments to command."""
+        parser.add_argument(
+            "--limit",
+            type=int,
+            help="Limit the number of articles to process.",
+        )
