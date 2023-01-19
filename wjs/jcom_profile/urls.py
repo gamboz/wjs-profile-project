@@ -110,6 +110,11 @@ urlpatterns = [
     url(r"^articles/keyword/(?P<keyword>[\w.-]+)/$", views.filter_articles, name="articles_by_keyword"),
     url(r"^articles/section/(?P<section>[\w.-]+)/$", views.filter_articles, name="articles_by_section"),
     url(r"^articles/author/(?P<author>[\w.-]+)/$", views.filter_articles, name="articles_by_author"),
+    url(
+        r"archive/(?P<n1>[\w.-]+)/(?P<n2>[\w.-]+)/(?P<jcom_id>[\w.-]+)/$",
+        views.JcomArticleRedirect.as_view(),
+        name="jcom_redirect",
+    ),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)

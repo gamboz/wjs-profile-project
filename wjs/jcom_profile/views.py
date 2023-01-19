@@ -29,6 +29,7 @@ from django.views.generic import (
     CreateView,
     DetailView,
     FormView,
+    RedirectView,
     TemplateView,
     UpdateView,
 )
@@ -1228,3 +1229,17 @@ def filter_articles(request, section=None, keyword=None, author=None):
     template = "journal/filtered_articles.html"
     context = {"articles": articles, "title": title, "paragraph": paragraph, "filtered_object": filtered_object}
     return render(request, template, context)
+
+
+class JcomArticleRedirect(RedirectView):
+    permanent = False
+    query_string = True
+
+    def get_redirect_url(self, *args, **kwargs):  # noqa
+        return reverse(
+            "article_view_custom_identifier",
+            kwargs={
+                "identifier_type": "pubid",
+                "identifier": kwargs["jcom_id"],
+            },
+        )
