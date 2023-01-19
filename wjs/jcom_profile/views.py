@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import validate_email
 from django.db import IntegrityError
 from django.forms import modelformset_factory
@@ -1213,7 +1214,16 @@ def filter_articles(request, section=None, keyword=None, author=None):
         paragraph = _("Articles by the author are listed below.")
         filtered_object = get_object_or_404(Account, pk=author).full_name()
 
-    articles = Article.objects.filter(**filters).order_by("-date_published")
+    filtered_articles = Article.objects.filter(**filters).order_by("-date_published")
+
+    paginator = Paginator(filtered_articles, 10)
+    page = request.GET.get("page")
+    try:
+        articles = paginator.page(page)
+    except PageNotAnInteger:
+        articles = paginator.page(1)
+    except EmptyPage:
+        articles = paginator.page(paginator.num_pages)
 
     template = "journal/filtered_articles.html"
     context = {"articles": articles, "title": title, "paragraph": paragraph, "filtered_object": filtered_object}
