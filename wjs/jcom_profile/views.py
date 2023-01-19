@@ -1208,7 +1208,7 @@ def filter_articles(request, section=None, keyword=None, author=None):
         paragraph = _("Articles that use this keyword are listed below.")
         filtered_object = get_object_or_404(Keyword, pk=keyword).word
     if author:
-        filters["frozenauthor__author__in"] = author
+        filters["frozenauthor__author__in"] = [author]
         title = _("Filter by author")
         paragraph = _("Articles by the author are listed below.")
         filtered_object = get_object_or_404(Account, pk=author).full_name()
