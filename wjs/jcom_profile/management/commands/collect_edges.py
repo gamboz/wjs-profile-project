@@ -39,7 +39,7 @@ class Node:
             country = COUNTRIES.get(country.code, "Others")
         else:
             country = "NA"
-        return f"{self.author.full_name().replace(',','')},{country},{self.num_papers}"
+        return f"{self.author.full_name().replace(',','')},{country:.<15},{self.num_papers}"
 
     @staticmethod
     def header():
