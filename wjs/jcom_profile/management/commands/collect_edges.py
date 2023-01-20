@@ -104,6 +104,13 @@ class Command(BaseCommand):
             node_file.write("\n")
             node_file.write("\n".join([n.__str__() for n in nodes.values()]))
             node_file.write("\n")
+        if options["run"]:
+            import pandas as pd
+            from jaal import Jaal
+
+            node_df = pd.read_csv("/tmp/nodes.csv")
+            edges_df = pd.read_csv("/tmp/edges.csv")
+            Jaal(edges_df, node_df=node_df).plot()
 
     def add_arguments(self, parser):
         """Add arguments to command."""
@@ -111,4 +118,9 @@ class Command(BaseCommand):
             "--limit",
             type=int,
             help="Limit the number of articles to process.",
+        )
+        parser.add_argument(
+            "--run",
+            action="store_true",
+            help="After collecting the data, run the Jaal interface.",
         )
