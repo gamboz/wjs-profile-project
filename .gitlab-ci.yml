@@ -26,7 +26,7 @@ include:
     ref: ${CI_COMMIT_REF_NAME}
     file: '.gitlab-ci-run-tests.yml'
   - project: 'wjs/wjs-profile-project'
-    ref: feature/issue-167__pre-production-instance
+    ref: master
     file: '.gitlab-ci-pkg-deploy-to-pp.yml'
 
 
