@@ -4,12 +4,14 @@ import random
 
 import pytest
 import pytest_factoryboy
-from core.models import Account, Role, Setting
+from core.models import Account, File, Role, Setting
 from django.conf import settings
 from django.core import management
 from django.urls.base import clear_script_prefix
 from django.utils import timezone, translation
+from identifiers.models import Identifier
 from journal import models as journal_models
+from journal.models import Issue, IssueType
 from journal.tests.utils import make_test_journal
 from press.models import Press
 from submission import models as submission_models
@@ -17,6 +19,7 @@ from submission.models import Keyword
 from utils import setting_handler
 from utils.install import update_issue_types, update_settings, update_xsl_files
 from utils.management.commands.install_janeway import ROLES_RELATIVE_PATH
+from utils.testing.helpers import create_galley
 
 from wjs.jcom_profile.factories import ArticleFactory, SpecialIssueFactory, UserFactory
 from wjs.jcom_profile.models import (
@@ -242,6 +245,13 @@ def published_articles(admin, editor, article_journal, sections, keywords):
             stage="Published",
         )
         article.keywords.add(random.choice(keywords))
+        Identifier.objects.create(id_type="pubid", article=article, identifier=f"JCOM_0101_2022_R0{article.pk}")
+        for file_ext in ["_es.pdf", "_en.pdf", ".epub"]:
+            file_obj = File.objects.create(original_filename=f"JCOM_0101_2022_R0{article.pk}{file_ext}")
+            galley = create_galley(article, file_obj)
+            galley.article = article
+            galley.last_modified = timezone.now()
+            galley.save()
     return submission_models.Article.objects.all()
 
 
@@ -350,6 +360,24 @@ def special_issue(article, editors, article_journal, director_role):
     article_wrapper.save()
 
     return special_issue
+
+
+@pytest.fixture
+def issue_type(article_journal):
+    return IssueType.objects.create(journal=article_journal, code="1", pretty_name="Issue type")
+
+
+@pytest.fixture
+def issue(issue_type, published_articles):
+    issue = Issue.objects.create(
+        journal=issue_type.journal,
+        date=timezone.now(),
+        issue="1",
+        issue_title=f"Issue 01, {timezone.now().year}",
+        issue_type=issue_type,
+    )
+    issue.articles.add(*published_articles)
+    return issue
 
 
 # Name the fixture a bit differently. This code, without the second
