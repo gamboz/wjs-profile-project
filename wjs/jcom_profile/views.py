@@ -33,6 +33,7 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
+from journal.models import Issue
 from repository import models as preprint_models
 from security.decorators import (
     article_edit_user_required,
@@ -1231,6 +1232,27 @@ def filter_articles(request, section=None, keyword=None, author=None):
     return render(request, template, context)
 
 
+class JcomIssueRedirect(RedirectView):
+    permanent = False
+    query_string = True
+
+    def get_redirect_url(self, *args, **kwargs):  # noqa
+        issues = Issue.objects.filter(volume=kwargs["volume"], issue=kwargs["issue"]).order_by("-date")
+        if issues.count() > 1:
+            logger.warning(
+                f"Warning, more than 1 issue found for volume {kwargs['volume']} and issue {kwargs['issue']}",
+            )
+        if not issues.first():
+            raise Http404()
+
+        return reverse(
+            "journal_issue",
+            kwargs={
+                "issue_id": issues.first().pk,
+            },
+        )
+
+
 class JcomArticleRedirect(RedirectView):
     permanent = False
     query_string = True
@@ -1253,7 +1275,7 @@ class JcomFileRedirect(RedirectView):
         try:
             galley = Galley.objects.get(file__original_filename=kwargs["jcom_file"], public=True)
         except Galley.DoesNotExist:
-            return Http404
+            raise Http404()
 
         return reverse(
             "article_download_galley",
