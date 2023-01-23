@@ -1253,20 +1253,6 @@ class JcomIssueRedirect(RedirectView):
         )
 
 
-class JcomArticleRedirect(RedirectView):
-    permanent = False
-    query_string = True
-
-    def get_redirect_url(self, *args, **kwargs):  # noqa
-        return reverse(
-            "article_view_custom_identifier",
-            kwargs={
-                "identifier_type": "pubid",
-                "identifier": kwargs["jcom_id"],
-            },
-        )
-
-
 class JcomFileRedirect(RedirectView):
     permanent = False
     query_string = True

@@ -116,11 +116,6 @@ urlpatterns = [
         name="jcom_redirect_issue",
     ),
     url(
-        r"archive/(?P<volume>[\w.-]+)/(?P<issue>[\w.-]+)/(?P<jcom_id>[\w.-]+)/$",
-        views.JcomArticleRedirect.as_view(),
-        name="jcom_redirect_article",
-    ),
-    url(
         r"sites/default/files/documents/(?P<jcom_file>[\w.-]+)/$",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
