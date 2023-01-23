@@ -1257,6 +1257,13 @@ class JcomFileRedirect(RedirectView):
     permanent = False
     query_string = True
 
+    # TODO: manage errors in file name  _0 _1 ...
+    # TODO: manage language in file name _en _pt ...
+    # Examples:
+    # JCOM_2106_2022_A04.epub      --> galley.label == "EPUB"
+    # JCOM_2106_2022_A04_0.epub    --> galley.label == "EPUB"
+    # JCOM_2107_2022_A05_en_0.epub --> galley.label == "EPUB (en)"
+
     def get_redirect_url(self, *args, **kwargs):  # noqa
         try:
             galley = Galley.objects.get(file__original_filename=kwargs["jcom_file"], public=True)
