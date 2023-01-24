@@ -12,12 +12,11 @@ from django.utils import timezone, translation
 from identifiers.models import Identifier
 from journal import models as journal_models
 from journal.models import Issue, IssueType
-from journal.tests.utils import make_test_journal
 from press.models import Press
 from submission import models as submission_models
 from submission.models import Keyword
 from utils import setting_handler
-from utils.install import update_issue_types, update_settings, update_xsl_files
+from utils.install import update_issue_types
 from utils.management.commands.install_janeway import ROLES_RELATIVE_PATH
 from utils.testing.helpers import create_galley
 
@@ -31,7 +30,7 @@ from wjs.jcom_profile.models import (
 from wjs.jcom_profile.utils import generate_token
 
 USERNAME = "user"
-JOURNAL_CODE = "CODE"
+JOURNAL_CODE = "TST"
 
 EXTRAFIELDS_FRAGMENTS = [
     # Profession - a <select>
@@ -47,8 +46,8 @@ EXTRAFIELDS_FRAGMENTS = [
     'id="id_gdpr_checkbox"',
 ]
 
-INVITE_BUTTON = """<li>
-        <a href="/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
+INVITE_BUTTON = f"""<li>
+        <a href="/{JOURNAL_CODE}/admin/core/account/invite/" class="btn btn-high btn-success">Invite</a>
     </li>"""
 
 ASSIGNMENT_PARAMETERS_SPAN = """<span class="card-title">Edit assignment parameters</span>"""  # noqa
@@ -172,36 +171,21 @@ def set_jcom_theme(journal):
 @pytest.fixture
 def journal(press):
     """Prepare a journal."""
-    journal_kwargs = {
-        "code": JOURNAL_CODE,
-        "domain": "sitetest.org",
-    }
-    journal = make_test_journal(**journal_kwargs)
+    journal = journal_models.Journal.objects.create(code=JOURNAL_CODE, domain="testserver.org")
+    journal.title = "Test Journal: A journal of tests"
+    journal.save()
+    update_issue_types(journal)
     set_jcom_theme(journal)
-    yield journal
+
+    return journal
 
 
 @pytest.fixture
-def article_journal(press):
-    """Create a journal for a test article."""
-    # FIXME: Can't figure out why the journal fixtures does not work with article submission
-    update_xsl_files()
-    update_settings()
-    journal_one = journal_models.Journal(code="TST", domain="testserver")
-    journal_one.title = "Test Journal: A journal of tests"
-    journal_one.save()
-    update_issue_types(journal_one)
-    set_jcom_theme(journal_one)
-
-    return journal_one
-
-
-@pytest.fixture
-def sections(article_journal):
+def sections(journal):
     with translation.override("en"):
         for i in range(3):
             submission_models.Section.objects.create(
-                journal=article_journal,
+                journal=journal,
                 name=f"section{i}",
                 public_submissions=False,
             )
@@ -209,11 +193,11 @@ def sections(article_journal):
 
 
 @pytest.fixture
-def article(admin, coauthor, article_journal, sections):
+def article(admin, coauthor, journal, sections):
     article = submission_models.Article.objects.create(
         abstract="Abstract",
-        journal=article_journal,
-        journal_id=article_journal.id,
+        journal=journal,
+        journal_id=journal.id,
         title="Title",
         correspondence_author=admin,
         owner=admin,
@@ -225,7 +209,7 @@ def article(admin, coauthor, article_journal, sections):
 
 
 @pytest.fixture
-def published_articles(admin, editor, article_journal, sections, keywords):
+def published_articles(admin, editor, journal, sections, keywords):
     """Create articles in published stage.
 
     Correspondence author (owner), keywords and section are random"""
@@ -233,8 +217,8 @@ def published_articles(admin, editor, article_journal, sections, keywords):
         owner = random.choice([admin, editor])
         article = submission_models.Article.objects.create(
             abstract=f"Abstract{i}",
-            journal=article_journal,
-            journal_id=article_journal.id,
+            journal=journal,
+            journal_id=journal.id,
             title=f"Title{i}",
             correspondence_author=owner,
             owner=owner,
@@ -299,7 +283,7 @@ def keywords():
 
 
 @pytest.fixture
-def directors(director_role, article_journal):
+def directors(director_role, journal):
     directors = []
     for i in range(3):
         director = Account.objects.create(
@@ -311,16 +295,16 @@ def directors(director_role, article_journal):
         )
         EditorAssignmentParameters.objects.create(
             editor=director,
-            journal=article_journal,
+            journal=journal,
             workload=random.randint(1, 10),
         )
-        director.add_account_role("director", article_journal)
+        director.add_account_role("director", journal)
         directors.append(director)
     return directors
 
 
 @pytest.fixture
-def editors(roles, article_journal):
+def editors(roles, journal):
     editors = []
     for i in range(3):
         editor = Account.objects.create(
@@ -330,12 +314,12 @@ def editors(roles, article_journal):
             last_name=f"Editor{i}",
             is_active=True,
         )
-        editor.add_account_role("editor", article_journal)
+        editor.add_account_role("editor", journal)
         editor.save()
 
         EditorAssignmentParameters.objects.create(
             editor=editor,
-            journal=article_journal,
+            journal=journal,
             workload=random.randint(1, 10),
         )
 
@@ -344,11 +328,11 @@ def editors(roles, article_journal):
 
 
 @pytest.fixture
-def special_issue(article, editors, article_journal, director_role):
+def special_issue(article, editors, journal, director_role):
     special_issue = SpecialIssue.objects.create(
         name="Special issue",
         short_name="special-issue",
-        journal=article_journal,
+        journal=journal,
         open_date=timezone.now(),
         close_date=timezone.now() + timezone.timedelta(1),
     )
@@ -363,8 +347,8 @@ def special_issue(article, editors, article_journal, director_role):
 
 
 @pytest.fixture
-def issue_type(article_journal):
-    return IssueType.objects.create(journal=article_journal, code="1", pretty_name="Issue type")
+def issue_type(journal):
+    return IssueType.objects.create(journal=journal, code="1", pretty_name="Issue type")
 
 
 @pytest.fixture
