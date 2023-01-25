@@ -2,7 +2,6 @@
 import lxml.html
 import pytest
 from core.middleware import SiteSettingsMiddleware
-from core.models import Account, Role
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import cache
 from django.test import Client
@@ -20,7 +19,7 @@ class TestFilesStage:
     """Tests related to the file-submission stage."""
 
     @pytest.mark.django_db
-    def test_additional_files_form_title_obeys_setting(self, journal, clear_script_prefix_fix):
+    def test_additional_files_form_title_obeys_setting(self, roles, journal, jcom_user):
         """The title of the additional files field should obey its setting."""
         # TODO: flip-flapping when the order of the tests change!!!
         # set the setting
@@ -34,27 +33,21 @@ class TestFilesStage:
 
         client = Client()
 
-        user = Account.objects.get_or_create(username="testuser", email="a@b.c")[0]
-        user.is_active = True
-        user.jcomprofile.gdpr_checkbox = True
-        user.jcomprofile.save()
-        user.save()
-
         # start a submission
         article = Article.objects.create(
             journal=journal,
             title="A title",
             current_step=3,
-            owner=user,
-            correspondence_author=user,
+            owner=jcom_user.janeway_account,
+            correspondence_author=jcom_user.janeway_account,
         )
         # for the value of "step", see submission.models.Article::step_to_url
         # Magic here ⮧ (see utils/install/roles.json)
-        Role.objects.create(name="Author", slug="author")
-        logic.add_user_as_author(user=user, article=article)
+        logic.add_user_as_author(user=jcom_user.janeway_account, article=article)
 
         # visit the correct page
-        client.force_login(user)
+        cache.clear()
+        client.force_login(jcom_user.janeway_account)
         url = f"/{journal.code}/submit/{article.pk}/files/"
         response = client.get(url)
         # I'm expecting an "OK" response, not a redirect to /login or
