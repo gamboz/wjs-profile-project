@@ -56,7 +56,7 @@ ASSIGNMENT_PARAMETERS_SPAN = """<span class="card-title">Edit assignment paramet
 ASSIGNMENT_PARAMS = """<span class="card-title">Edit assignment parameters</span>"""
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(autouse=True)
 def clear_cache():
     """Clear cache after any test to avoid flip-flapping test results due Janeway journal/press domain."""
     yield
