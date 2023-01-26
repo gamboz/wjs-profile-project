@@ -1,4 +1,3 @@
-import random
 import re
 
 import pytest
@@ -7,7 +6,6 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 from identifiers.models import Identifier
-from submission import models as submission_models
 from utils.testing.helpers import create_galley
 
 
@@ -29,22 +27,14 @@ def test_redirect_issues_from_jcom_to_janeway_url(issue):
 
 
 @pytest.fixture
-def published_article_with_standard_galleys(admin, article_journal, sections, keywords):
+def published_article_with_standard_galleys(admin, article_journal, sections, keywords, article_factory):
     """Create articles in published stage with PDF and EPUB galleys."""
     # TODO: replace me with fb_article
-    article = submission_models.Article.objects.create(
-        abstract="Abstract",
+    article = article_factory(
         journal=article_journal,
-        title="Title",
-        correspondence_author=admin,
-        owner=admin,
-        date_submitted=timezone.now(),
-        date_accepted=timezone.now(),
         date_published=timezone.now(),
-        section=random.choice(sections),
         stage="Published",
     )
-    article.keywords.add(random.choice(keywords))
     Identifier.objects.create(
         id_type="pubid",
         article=article,
