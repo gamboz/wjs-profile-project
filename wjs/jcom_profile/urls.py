@@ -115,10 +115,9 @@ urlpatterns = [
         views.JcomIssueRedirect.as_view(),
         name="jcom_redirect_issue",
     ),
-    # TODO: verify me!
     url(
         "sites/default/files/documents/"
-        r"(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?(?P<extension>\.pdf|.epub)/$",
+        r"(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),

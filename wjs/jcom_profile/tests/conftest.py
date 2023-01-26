@@ -251,6 +251,12 @@ def published_articles(admin, editor, article_journal, sections, keywords):
             galley = create_galley(article, file_obj)
             galley.article = article
             galley.last_modified = timezone.now()
+            (language, extension) = file_ext.split(".")
+            label = extension.upper()
+            if language != "":
+                language = language.replace("_", "")
+                label = f"{label} ({language})"
+            galley.label = label
             galley.save()
     return submission_models.Article.objects.all()
 
