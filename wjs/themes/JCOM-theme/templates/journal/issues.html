@@ -25,7 +25,23 @@
                 </div>
             {% endfor %}
         {% endfor %}
-        <!-- <hr/> -->
+        <hr/>
+        {% for volume in volumes %}
+            <div class="row">
+                <div class="card">
+                    <div class="col s6 l3">
+                        {% with volume_meta=volume.list|first %}
+                            <h2>Volume {{ volume_meta.volume }}, {{ volume_meta.date.year }}</h2>
+                        {% endwith %}
+                    </div>
+                    {% for issue in volume.list %}
+                        <div class="col s3 l1">
+                            <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
         <!-- {% for issue in issues %} -->
         <!--     <div class="col m12 l6 xl4"> -->
         <!--         <div class="card horizontal"> -->
