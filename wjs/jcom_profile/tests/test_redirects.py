@@ -105,8 +105,8 @@ def test_redirect_galley_from_jcom_to_janeway_url(issue, published_article_with_
 
 
 @pytest.mark.django_db
-def test_redirect_nonexistent_galley_from_jcom_to_janeway_url(issue, published_articles):
+def test_redirect_nonexistent_galley_from_jcom_to_janeway_url(article_journal):
     client = Client()
-    url = reverse("jcom_redirect_file", kwargs={"jcom_file": "nonexistent_file.pdf"})
+    url = reverse("jcom_redirect_file", kwargs={"pubid": "nonexisting", "extension": "pdf"})
     response = client.get(url, follow=True)
     assert response.status_code == 404
