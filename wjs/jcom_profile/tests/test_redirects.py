@@ -52,11 +52,13 @@ def published_article_with_standard_galleys(admin, article_journal, sections, ke
     )
     for extension in ["pdf", "epub"]:
         file_obj = File.objects.create(
-            # TODO: verify if the original file name always appears in
-            # the link (check simple galleys, original language
-            # vs. translations and any combination of these with the
-            # manual errors _0 _1...) and verify if during import we
-            # collect and stre the original file name in the galley.
+            # TODO: we could use the original_filename to match the
+            # requested galley, but first we must verify if the
+            # original file name always appears in the link (check
+            # simple galleys, original language vs. translations and
+            # any combination of these with the manual errors _0
+            # _1...) and verify if during import we collect and store
+            # the original file name in the galley.
             original_filename=f"Anything.{extension}",
         )
         galley = create_galley(article, file_obj)
