@@ -28,16 +28,18 @@
         <hr/>
         {% for volume in volumes %}
             <div class="row">
-                <div class="card">
+                <div class="card-panel">
                     <div class="col s6 l3">
                         {% with volume_meta=volume.list|first %}
-                            <h2>Volume {{ volume_meta.volume }}, {{ volume_meta.date.year }}</h2>
+                            <span class="card-title">Volume {{ volume_meta.volume }}, {{ volume_meta.date.year }}</span>
                         {% endwith %}
                     </div>
                     {% for issue in volume.list %}
-                        <div class="col s3 l1">
-                            <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
+                    <div class="col">
+                      <div class="card-content">
+                        <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
                         </div>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
