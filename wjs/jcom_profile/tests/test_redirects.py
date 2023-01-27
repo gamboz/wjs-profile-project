@@ -27,9 +27,8 @@ def test_redirect_issues_from_jcom_to_janeway_url(issue):
 
 
 @pytest.fixture
-def published_article_with_standard_galleys(admin, article_journal, sections, keywords, article_factory):
+def published_article_with_standard_galleys(article_journal, article_factory):
     """Create articles in published stage with PDF and EPUB galleys."""
-    # TODO: replace me with fb_article
     article = article_factory(
         journal=article_journal,
         date_published=timezone.now(),
