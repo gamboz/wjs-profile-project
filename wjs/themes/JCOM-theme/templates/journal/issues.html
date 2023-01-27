@@ -5,6 +5,12 @@
 {% block title %}
     {% trans "Volumes and Issues" %}
 {% endblock title %}
+{% block css %}
+<style>
+  .no-margin a { margin-right: 0px !important;}
+  .no-margin span { margin-right: 2em !important;}
+</style>
+{% endblock css %}
 {% block body %}
     {% if request.user %}
         {% user_has_role request 'editor' as user_is_editor %}
@@ -28,19 +34,21 @@
         <hr/>
         {% for volume in volumes %}
             <div class="row">
-                <div class="card-panel">
-                    <div class="col s6 l3">
-                        {% with volume_meta=volume.list|first %}
-                            <span class="card-title">Volume {{ volume_meta.volume }}, {{ volume_meta.date.year }}</span>
-                        {% endwith %}
-                    </div>
-                    {% for issue in volume.list %}
-                    <div class="col">
-                      <div class="card-content">
-                        <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
+                <div class="col s12">
+                    <div class="card">
+                        <div class="card-content">
+                            {% with volume_meta=volume.list|first %}
+                                <span class="card-title">Volume {{ volume_meta.volume }}, {{ volume_meta.date.year }}</span>
+                            {% endwith %}
+                        </div>
+                        <div class="card-action no-margin">
+                            {% for issue in volume.list %}
+                                <span>
+                                  <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
+                                </span>
+                            {% endfor %}
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         {% endfor %}
