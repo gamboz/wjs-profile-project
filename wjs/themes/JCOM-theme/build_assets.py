@@ -25,7 +25,18 @@ def process_scss():
         "sass",
         "jcom.scss",
     )
-    compiled_css_from_file = sass.compile(filename=app_scss_file)
+    include_path_materialize = os.path.join(
+        os.path.dirname(__file__),
+        "assets",
+        "materialize-src",
+        "sass",
+    )
+    include_path_jcom = os.path.dirname(app_scss_file)
+    import pudb; pudb.set_trace()
+    compiled_css_from_file = sass.compile(
+        filename=app_scss_file,
+        include_paths=[include_path_jcom, include_path_materialize],
+    )
 
     # Open the CSS file and write into it
     with open(THEME_CSS_FILE, "w", encoding="utf-8") as write_file:
@@ -46,6 +57,10 @@ def create_paths():
 
 def build():
     """Build assets and copy them to static folder."""
-    override_css_dir = create_paths()
+    print("JCOM SCSS START")
+    create_paths()
+    print("JCOM PATHS DONE")
     process_scss()
+    print("JCOM SCSS DONE")
     call_command("collectstatic", "--noinput")
+    print("JCOM collectstatic DONE")
