@@ -1237,7 +1237,10 @@ class JcomIssueRedirect(RedirectView):
     query_string = True
 
     def get_redirect_url(self, *args, **kwargs):  # noqa
-        issues = Issue.objects.filter(volume=kwargs["volume"], issue=kwargs["issue"]).order_by("-date")
+        issues = Issue.objects.filter(
+            volume=kwargs["volume"],
+            issue=int(kwargs["issue"]),
+        ).order_by("-date")
         if issues.count() > 1:
             logger.warning(
                 f"Warning, more than 1 issue found for volume {kwargs['volume']} and issue {kwargs['issue']}",

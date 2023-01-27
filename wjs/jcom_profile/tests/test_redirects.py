@@ -12,7 +12,7 @@ from utils.testing.helpers import create_galley
 @pytest.mark.django_db
 def test_redirect_issues_from_jcom_to_janeway_url(issue):
     client = Client()
-    url = reverse("jcom_redirect_issue", kwargs={"volume": "1", "issue": issue.issue})
+    url = reverse("jcom_redirect_issue", kwargs={"volume": "01", "issue": f"{issue.issue:>02}"})
     expected_redirect_url = reverse(
         "journal_issue",
         kwargs={
