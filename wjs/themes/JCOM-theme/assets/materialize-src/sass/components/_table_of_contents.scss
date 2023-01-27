@@ -13,7 +13,7 @@
     display: inline-block;
     font-weight: 300;
     color: #757575;
-    padding-left: 16px;
+    padding-left: 20px;
     height: 1.5rem;
     line-height: 1.5rem;
     letter-spacing: .4;
@@ -21,12 +21,12 @@
 
     &:hover {
       color: lighten(#757575, 20%);
-      padding-left: 15px;
+      padding-left: 19px;
       border-left: 1px solid $primary-color;
     }
     &.active {
       font-weight: 500;
-      padding-left: 14px;
+      padding-left: 18px;
       border-left: 2px solid $primary-color;
     }
   }

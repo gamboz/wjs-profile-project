@@ -1,9 +1,5 @@
 .modal {
-  &:focus {
-    outline: none;
-  }
-
-  @extend .z-depth-5;
+  @extend .z-depth-4;
 
   display: none;
   position: fixed;

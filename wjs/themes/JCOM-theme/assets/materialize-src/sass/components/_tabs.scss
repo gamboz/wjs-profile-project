@@ -45,12 +45,6 @@
     text-transform: uppercase;
 
     a {
-      &:focus,
-      &:focus.active {
-        background-color: transparentize($tabs-underline-color, .8);
-        outline: none;
-      }
-
       &:hover,
       &.active {
         background-color: transparent;
@@ -65,12 +59,12 @@
       font-size: 14px;
       text-overflow: ellipsis;
       overflow: hidden;
-      transition: color .28s ease, background-color .28s ease;
+      transition: color .28s ease;
     }
 
     &.disabled a,
     &.disabled a:hover {
-      color: rgba($tabs-text-color, .4);
+      color: rgba($tabs-text-color, .7);
       cursor: default;
     }
   }
@@ -83,7 +77,7 @@
   }
 }
 
-// Fixed Sidenav hide on smaller
+// Fixed sideNav hide on smaller
 @media #{$medium-and-down} {
   .tabs {
     display: flex;

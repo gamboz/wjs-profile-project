@@ -1,6 +1,16 @@
 /* Checkboxes
    ========================================================================== */
 
+/* CUSTOM CSS CHECKBOXES */
+form p {
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+form p:last-child {
+  margin-bottom: 0;
+}
+
 /* Remove default checkbox */
 [type="checkbox"]:not(:checked),
 [type="checkbox"]:checked {
@@ -12,7 +22,7 @@
 // Checkbox Styles
 [type="checkbox"] {
   // Text Label Style
-  + span:not(.lever) {
+  + label {
     position: relative;
     padding-left: 35px;
     cursor: pointer;
@@ -24,8 +34,8 @@
   }
 
   /* checkbox aspect */
-  + span:not(.lever):before,
-  &:not(.filled-in) + span:not(.lever):after {
+  + label:before,
+  &:not(.filled-in) + label:after {
     content: '';
     position: absolute;
     top: 0;
@@ -35,22 +45,22 @@
     z-index: 0;
     border: 2px solid $radio-empty-color;
     border-radius: 1px;
-    margin-top: 3px;
+    margin-top: 2px;
     transition: .2s;
   }
 
-  &:not(.filled-in) + span:not(.lever):after {
+  &:not(.filled-in) + label:after {
     border: 0;
     transform: scale(0);
   }
 
-  &:not(:checked):disabled + span:not(.lever):before {
+  &:not(:checked):disabled + label:before {
     border: none;
     background-color: $input-disabled-color;
   }
 
   // Focused styles
-  &.tabbed:focus + span:not(.lever):after {
+  &.tabbed:focus + label:after {
     transform: scale(1);
     border: 0;
     border-radius: 50%;
@@ -60,7 +70,7 @@
 }
 
 [type="checkbox"]:checked {
-  + span:not(.lever):before {
+  + label:before {
     top: -4px;
     left: -5px;
     width: 12px;
@@ -74,7 +84,7 @@
     transform-origin: 100% 100%;
   }
 
-  &:disabled + span:before {
+  &:disabled + label:before {
     border-right: 2px solid $input-disabled-color;
     border-bottom: 2px solid $input-disabled-color;
   }
@@ -82,7 +92,7 @@
 
 /* Indeterminate checkbox */
 [type="checkbox"]:indeterminate {
-  + span:not(.lever):before {
+  +label:before {
     top: -11px;
     left: -12px;
     width: 10px;
@@ -97,7 +107,7 @@
   }
 
   // Disabled indeterminate
-  &:disabled + span:not(.lever):before {
+  &:disabled + label:before {
     border-right: 2px solid $input-disabled-color;
     background-color: transparent;
   }
@@ -106,12 +116,12 @@
 // Filled in Style
 [type="checkbox"].filled-in {
   // General
-  + span:not(.lever):after {
+  + label:after {
     border-radius: 2px;
   }
 
-  + span:not(.lever):before,
-  + span:not(.lever):after {
+  + label:before,
+  + label:after {
     content: '';
     left: 0;
     position: absolute;
@@ -121,7 +131,7 @@
   }
 
   // Unchecked style
-  &:not(:checked) + span:not(.lever):before {
+  &:not(:checked) + label:before {
     width: 0;
     height: 0;
     border: 3px solid transparent;
@@ -131,7 +141,7 @@
     transform-origin: 100% 100%;
   }
 
-  &:not(:checked) + span:not(.lever):after {
+  &:not(:checked) + label:after {
     height: 20px;
     width: 20px;
     background-color: transparent;
@@ -142,7 +152,7 @@
 
   // Checked style
   &:checked {
-    + span:not(.lever):before {
+    + label:before {
       top: 0;
       left: 1px;
       width: 8px;
@@ -155,7 +165,7 @@
       transform-origin: 100% 100%;
     }
 
-    + span:not(.lever):after {
+    + label:after {
       top: 0;
       width: 20px;
       height: 20px;
@@ -166,34 +176,34 @@
   }
 
   // Focused styles
-  &.tabbed:focus + span:not(.lever):after {
+  &.tabbed:focus + label:after {
     border-radius: 2px;
     border-color: $radio-empty-color;
     background-color: rgba(0,0,0,.1);
   }
 
-  &.tabbed:checked:focus + span:not(.lever):after {
+  &.tabbed:checked:focus + label:after {
     border-radius: 2px;
     background-color: $secondary-color;
     border-color: $secondary-color;
   }
 
   // Disabled style
-  &:disabled:not(:checked) + span:not(.lever):before {
+  &:disabled:not(:checked) + label:before {
     background-color: transparent;
     border: 2px solid transparent;
   }
 
-  &:disabled:not(:checked) + span:not(.lever):after {
+  &:disabled:not(:checked) + label:after {
     border-color: transparent;
     background-color: $input-disabled-solid-color;
   }
 
-  &:disabled:checked + span:not(.lever):before {
+  &:disabled:checked + label:before {
     background-color: transparent;
   }
 
-  &:disabled:checked + span:not(.lever):after {
+  &:disabled:checked + label:after {
     background-color: $input-disabled-solid-color;
     border-color: $input-disabled-solid-color;
   }

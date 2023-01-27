@@ -1,23 +1,23 @@
 @charset "UTF-8";
 
-// Color
-@import "components/color-variables";
-@import "components/color-classes";
-
+// Colors
+@import "components/color";
 @import "jcom-color-variables";
 
 // Variables;
+@import "components/variables";
 @import "variables";
 
 // Reset
 @import "components/normalize";
 
-// Components
+// components
 @import "components/global";
 @import "components/badges";
 @import "components/icons-material-design";
 @import "components/grid";
 @import "components/navbar";
+@import "components/roboto";
 @import "components/typography";
 @import "components/transitions";
 @import "components/cards";
@@ -33,14 +33,15 @@
 @import "components/materialbox";
 @import "components/forms/forms";
 @import "components/table_of_contents";
-@import "components/sidenav";
+@import "components/sideNav";
 @import "components/preloader";
 @import "components/slider";
 @import "components/carousel";
 @import "components/tapTarget";
 @import "components/pulse";
-@import "components/datepicker";
-@import "components/timepicker";
+@import "components/date_picker/default";
+@import "components/date_picker/default.date";
+@import "components/date_picker/default.time";
 
 // customizations TBV
 @import "jcom_custom";

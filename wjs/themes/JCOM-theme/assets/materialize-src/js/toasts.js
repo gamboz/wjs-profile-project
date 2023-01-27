@@ -1,24 +1,34 @@
-(function($, anim) {
+(function($, Vel) {
   'use strict';
 
   let _defaults = {
-    html: '',
-    displayLength: 4000,
+    displayLength: Infinity,
     inDuration: 300,
     outDuration: 375,
-    classes: '',
-    completeCallback: null,
+    className: undefined,
+    completeCallback: undefined,
     activationPercent: 0.8
   };
 
   class Toast {
-    constructor(options) {
+    constructor(message, displayLength, className, completeCallback) {
+      if (!message) {
+        return;
+      }
+
+
       /**
        * Options for the toast
        * @member Toast#options
        */
-      this.options = $.extend({}, Toast.defaults, options);
-      this.message = this.options.html;
+      this.options = {
+        displayLength: displayLength,
+        className: className,
+        completeCallback: completeCallback
+      };
+
+      this.options = $.extend({}, Toast.defaults, this.options);
+      this.message = message;
 
       /**
        * Describes current pan state toast
@@ -37,24 +47,15 @@
 
       // Create new toast
       Toast._toasts.push(this);
-      let toastElement = this._createToast();
+      let toastElement = this.createToast();
       toastElement.M_Toast = this;
       this.el = toastElement;
-      this.$el = $(toastElement);
       this._animateIn();
-      this._setTimer();
+      this.setTimer();
     }
 
     static get defaults() {
       return _defaults;
-    }
-
-    /**
-     * Get Instance
-     */
-    static getInstance(el) {
-      let domElem = !!el.jquery ? el[0] : el;
-      return domElem.M_Toast;
     }
 
     /**
@@ -85,7 +86,7 @@
       document.removeEventListener('mousemove', Toast._onDragMove);
       document.removeEventListener('mouseup', Toast._onDragEnd);
 
-      $(Toast._container).remove();
+      Toast._container.parentNode.removeChild(Toast._container);
       Toast._container = null;
     }
 
@@ -121,31 +122,35 @@
         toast.time = Date.now();
 
         let totalDeltaX = toast.xPos - toast.startingXPos;
-        let activationDistance = toast.el.offsetWidth * toast.options.activationPercent;
+        let activationDistance =
+            toast.el.offsetWidth * toast.options.activationPercent;
         toast.el.style.transform = `translateX(${totalDeltaX}px)`;
-        toast.el.style.opacity = 1 - Math.abs(totalDeltaX / activationDistance);
+        toast.el.style.opacity = 1-Math.abs(totalDeltaX / activationDistance);
       }
     }
 
     /**
      * End drag handler
+     * @param {Event} e
      */
-    static _onDragEnd() {
+    static _onDragEnd(e) {
       if (!!Toast._draggedToast) {
         let toast = Toast._draggedToast;
         toast.panning = false;
         toast.el.classList.remove('panning');
 
         let totalDeltaX = toast.xPos - toast.startingXPos;
-        let activationDistance = toast.el.offsetWidth * toast.options.activationPercent;
-        let shouldBeDismissed = Math.abs(totalDeltaX) > activationDistance || toast.velocityX > 1;
+        let activationDistance =
+            toast.el.offsetWidth * toast.options.activationPercent;
+        let shouldBeDismissed = Math.abs(totalDeltaX) > activationDistance ||
+            toast.velocityX > 1;
 
         // Remove toast
         if (shouldBeDismissed) {
           toast.wasSwiped = true;
-          toast.dismiss();
+          toast.remove();
 
-          // Animate toast back to original position
+        // Animate toast back to original position
         } else {
           toast.el.style.transition = 'transform .2s, opacity .2s';
           toast.el.style.transform = '';
@@ -160,7 +165,7 @@
      * @param {Event} e
      */
     static _xPos(e) {
-      if (e.targetTouches && e.targetTouches.length >= 1) {
+      if (e.targetTouches && (e.targetTouches.length >= 1)) {
         return e.targetTouches[0].clientX;
       }
       // mouse event
@@ -170,41 +175,43 @@
     /**
      * Remove all toasts
      */
-    static dismissAll() {
-      for (let toastIndex in Toast._toasts) {
-        Toast._toasts[toastIndex].dismiss();
+    static removeAll() {
+      for(let toastIndex in Toast._toasts) {
+        Toast._toasts[toastIndex].remove();
       }
     }
+
 
     /**
      * Create toast and append it to toast container
      */
-    _createToast() {
+    createToast() {
       let toast = document.createElement('div');
       toast.classList.add('toast');
 
       // Add custom classes onto toast
-      if (!!this.options.classes.length) {
-        $(toast).addClass(this.options.classes);
+      if (this.options.className) {
+        let classes = this.options.className.split(' ');
+        let i, count;
+        for (i = 0, count = classes.length; i < count; i++) {
+          toast.classList.add(classes[i]);
+        }
       }
 
       // Set content
-      if (
-        typeof HTMLElement === 'object'
-          ? this.message instanceof HTMLElement
-          : this.message &&
-            typeof this.message === 'object' &&
-            this.message !== null &&
-            this.message.nodeType === 1 &&
-            typeof this.message.nodeName === 'string'
-      ) {
+      if ( typeof HTMLElement === 'object' ?
+           this.message instanceof HTMLElement :
+           this.message && typeof this.message === 'object' &&
+           this.message !== null && this.message.nodeType === 1 &&
+           typeof this.message.nodeName==='string'
+         ) {
         toast.appendChild(this.message);
 
-        // Check if it is jQuery object
-      } else if (!!this.message.jquery) {
-        $(toast).append(this.message[0]);
+      // Check if it is jQuery object
+      } else if (this.message instanceof jQuery) {
+        $(toast).append(this.message);
 
-        // Insert as html;
+        // Insert as text;
       } else {
         toast.innerHTML = this.message;
       }
@@ -219,21 +226,20 @@
      */
     _animateIn() {
       // Animate toast in
-      anim({
-        targets: this.el,
-        top: 0,
-        opacity: 1,
-        duration: this.options.inDuration,
-        easing: 'easeOutCubic'
+      Vel(this.el, {top: 0,  opacity: 1 }, {
+        duration: 300,
+        easing: 'easeOutCubic',
+        queue: false
       });
     }
+
 
     /**
      * Create setInterval which automatically removes toast when timeRemaining >= 0
      * has been reached
      */
-    _setTimer() {
-      if (this.timeRemaining !== Infinity) {
+    setTimer() {
+      if (this.timeRemaining !== Infinity)  {
         this.counterInterval = setInterval(() => {
           // If toast is not being dragged, decrease its time remaining
           if (!this.panning) {
@@ -242,44 +248,48 @@
 
           // Animate toast out
           if (this.timeRemaining <= 0) {
-            this.dismiss();
+            this.remove();
           }
         }, 20);
       }
     }
 
+
     /**
      * Dismiss toast with animation
      */
-    dismiss() {
+    remove() {
       window.clearInterval(this.counterInterval);
-      let activationDistance = this.el.offsetWidth * this.options.activationPercent;
+      let activationDistance =
+          this.el.offsetWidth * this.options.activationPercent;
 
-      if (this.wasSwiped) {
+      if(this.wasSwiped) {
         this.el.style.transition = 'transform .05s, opacity .05s';
         this.el.style.transform = `translateX(${activationDistance}px)`;
         this.el.style.opacity = 0;
       }
 
-      anim({
-        targets: this.el,
-        opacity: 0,
-        marginTop: -40,
-        duration: this.options.outDuration,
-        easing: 'easeOutExpo',
-        complete: () => {
-          // Call the optional callback
-          if (typeof this.options.completeCallback === 'function') {
-            this.options.completeCallback();
-          }
-          // Remove toast from DOM
-          this.$el.remove();
-          Toast._toasts.splice(Toast._toasts.indexOf(this), 1);
-          if (Toast._toasts.length === 0) {
-            Toast._removeContainer();
+      Vel(
+        this.el,
+        {opacity: 0, marginTop: '-40px'},
+        {
+          duration: this.options.outDuration,
+          easing: 'easeOutExpo',
+          queue: false,
+          complete: () => {
+            // Call the optional callback
+            if(typeof(this.options.completeCallback) === 'function') {
+              this.options.completeCallback();
+            }
+            // Remove toast from DOM
+            this.el.parentNode.removeChild(this.el);
+            Toast._toasts.splice(Toast._toasts.indexOf(this), 1);
+            if (Toast._toasts.length === 0) {
+              Toast._removeContainer();
+            }
           }
         }
-      });
+      );
     }
   }
 
@@ -303,8 +313,8 @@
    */
   Toast._draggedToast = null;
 
-  M.Toast = Toast;
-  M.toast = function(options) {
-    return new Toast(options);
+  Materialize.Toast = Toast;
+  Materialize.toast = function(message, displayLength, className, completeCallback) {
+    return new Toast(message, displayLength, className, completeCallback);
   };
-})(cash, M.anime);
+})(jQuery, Materialize.Vel);

@@ -13,33 +13,41 @@ select {
   height: $input-height;
 }
 
+
+.input-field {
+  & > select {
+    display: block;
+    position: absolute;
+    width: 0;
+    pointer-events: none;
+    height: 0;
+    top: 0;
+    left: 0;
+    opacity: 0;
+  }
+}
+
 .select-label {
   position: absolute;
 }
 
 .select-wrapper {
-  &.valid .helper-text[data-success],
-  &.invalid ~ .helper-text[data-error] {
-    @extend %hidden-text;
-  }
-
   &.valid {
     & > input.select-dropdown {
       @extend %valid-input-style;
     }
 
-    & ~ .helper-text:after {
+    & + label:after {
       @extend %custom-success-message;
     }
   }
 
   &.invalid {
-    & > input.select-dropdown,
-    & > input.select-dropdown:focus {
+    & > input.select-dropdown {
       @extend %invalid-input-style;
     }
 
-    & ~ .helper-text:after {
+    & + label:after {
       @extend %custom-error-message;
     }
   }
@@ -57,9 +65,6 @@ select {
   position: relative;
 
   input.select-dropdown {
-    &:focus {
-      border-bottom: 1px solid $input-focus-color;
-    }
     position: relative;
     cursor: pointer;
     background-color: transparent;
@@ -74,17 +79,18 @@ select {
     padding: 0;
     display: block;
     user-select:none;
-    z-index: 1;
   }
 
-  .caret {
+  span.caret {
+    color: initial;
     position: absolute;
     right: 0;
     top: 0;
     bottom: 0;
+    height: 10px;
     margin: auto 0;
-    z-index: 0;
-    fill: rgba(0,0,0,.87);
+    font-size: 10px;
+    line-height: 10px;
   }
 
   & + label {
@@ -100,11 +106,9 @@ select:disabled {
 }
 
 .select-wrapper.disabled {
-  + label {
+  span.caret,
+  & + label {
     color: $input-disabled-color;
-  }
-  .caret {
-    fill: $input-disabled-color;
   }
 }
 
@@ -125,20 +129,18 @@ select:disabled {
   background-color: transparent;
 }
 
-body.keyboard-focused {
-  .select-dropdown.dropdown-content li:focus {
-    background-color: $select-option-focus;
-  }
-}
-
 .select-dropdown.dropdown-content {
   li {
+    &.active {
+      background-color: transparent;
+    }
+
     &:hover {
       background-color: $select-option-hover;
     }
 
     &.selected {
-      background-color: $select-option-selected;
+      background-color: $select-option-focus;
     }
   }
 }
