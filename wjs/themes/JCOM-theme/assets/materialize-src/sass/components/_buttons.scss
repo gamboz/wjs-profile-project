@@ -1,6 +1,5 @@
 // shared styles
-.btn,
-.btn-flat {
+.btn-base {
   border: $button-border;
   border-radius: $button-radius;
   display: inline-block;
@@ -10,6 +9,11 @@
   text-transform: uppercase;
   vertical-align: middle;
   -webkit-tap-highlight-color: transparent; // Gets rid of tap active state
+}
+
+.btn,
+.btn-flat {
+  @extend .btn-base;
 }
 
 // Disabled shared style
@@ -294,7 +298,7 @@ button.btn-floating {
 
 // Large button
 .btn-large {
-  @extend .btn;
+  @extend .btn-base;
   height: $button-large-height;
   line-height: $button-large-height;
   font-size: $button-large-font-size;
@@ -307,7 +311,7 @@ button.btn-floating {
 
 // Small button
 .btn-small {
-  @extend .btn;
+  @extend .btn-base;
   height: $button-small-height;
   line-height: $button-small-height;
   font-size: $button-small-font-size;
