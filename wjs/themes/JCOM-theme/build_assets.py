@@ -32,7 +32,9 @@ def process_scss():
         "sass",
     )
     include_path_jcom = os.path.dirname(app_scss_file)
-    import pudb; pudb.set_trace()
+    import pudb
+
+    pudb.set_trace()
     compiled_css_from_file = sass.compile(
         filename=app_scss_file,
         include_paths=[include_path_jcom, include_path_materialize],
