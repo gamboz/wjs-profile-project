@@ -48,4 +48,4 @@ def build():
     """Build assets and copy them to static folder."""
     override_css_dir = create_paths()
     process_scss()
-    call_command('collectstatic', '--noinput')
+    call_command("collectstatic", "--noinput")
