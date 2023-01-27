@@ -6,10 +6,10 @@
     {% trans "Volumes and Issues" %}
 {% endblock title %}
 {% block css %}
-<style>
+    <style>
   .no-margin a { margin-right: 0px !important;}
   .no-margin span { margin-right: 2em !important;}
-</style>
+    </style>
 {% endblock css %}
 {% block body %}
     {% if request.user %}
@@ -44,10 +44,31 @@
                         <div class="card-action no-margin">
                             {% for issue in volume.list %}
                                 <span>
-                                  <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
+                                    <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
                                 </span>
                             {% endfor %}
                         </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        <hr/>
+        {% for volume in volumes %}
+            <div class="col m12 l6 xl4">
+                <div class="card horizontal">
+                    <div class="card-content">
+                        {% with volume_meta=volume.list|first %}
+                            <span class="card-title">Volume {{ volume_meta.volume }}, {{ volume_meta.date.year }}</span>
+                        {% endwith %}
+                            <ul class="collection">
+                              {% with sorted_issues=volume.list.reverse %}
+                            {% for issue in volume.list %}
+                                <li class="collection">
+                                    <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
+                                </li>
+                                {% endfor %}
+                                {% endwith %}
+                        </ul>
                     </div>
                 </div>
             </div>
