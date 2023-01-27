@@ -111,17 +111,13 @@ urlpatterns = [
     url(r"^articles/section/(?P<section>[\w.-]+)/$", views.filter_articles, name="articles_by_section"),
     url(r"^articles/author/(?P<author>[\w.-]+)/$", views.filter_articles, name="articles_by_author"),
     url(
-        r"archive/(?P<volume>[\w.-]+)/(?P<issue>[\w.-]+)/$",
+        r"archive/(?P<volume>\d{2})/(?P<issue>[\d-]{2,3})/$",
         views.JcomIssueRedirect.as_view(),
         name="jcom_redirect_issue",
     ),
     url(
-        r"archive/(?P<volume>[\w.-]+)/(?P<issue>[\w.-]+)/(?P<jcom_id>[\w.-]+)/$",
-        views.JcomArticleRedirect.as_view(),
-        name="jcom_redirect_article",
-    ),
-    url(
-        r"sites/default/files/documents/(?P<jcom_file>[\w.-]+)/$",
+        "sites/default/files/documents/"
+        r"(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
