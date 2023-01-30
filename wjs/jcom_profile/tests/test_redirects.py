@@ -27,10 +27,10 @@ def test_redirect_issues_from_jcom_to_janeway_url(issue):
 
 
 @pytest.fixture
-def published_article_with_standard_galleys(article_journal, article_factory):
+def published_article_with_standard_galleys(journal, article_factory):
     """Create articles in published stage with PDF and EPUB galleys."""
     article = article_factory(
-        journal=article_journal,
+        journal=journal,
         date_published=timezone.now(),
         stage="Published",
     )
@@ -104,7 +104,7 @@ def test_redirect_galley_from_jcom_to_janeway_url(issue, published_article_with_
 
 
 @pytest.mark.django_db
-def test_redirect_nonexistent_galley_from_jcom_to_janeway_url(article_journal):
+def test_redirect_nonexistent_galley_from_jcom_to_janeway_url(journal):
     client = Client()
     url = reverse("jcom_redirect_file", kwargs={"pubid": "nonexisting", "extension": "pdf"})
     response = client.get(url, follow=True)
