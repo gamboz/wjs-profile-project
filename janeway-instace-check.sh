@@ -25,14 +25,45 @@ then
     exit 1
 fi
 
+# Main group of wjs user is www-data
+usermod -g www-data wjs
+
 # Find and fix folders with wrong group
 # =====================================
-if find /home/wjs/janeway/src/files/ -type d -group www-data
+dir=/home/wjs
+x=$(find "$dir" \! -group www-data)
+if $?
 then
-    echo do you want to fix ?
-    chown  -R :www-data
+    warn "Found files with wrong group:"
+    echo "$x"
+    read -p "Do you want to correct? " -n 1 -r
+echo    # (optional) move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    chown -R :www-data "$dir"
 fi
 
-# Find and fix folders with wrong permissions
-# ===========================================
-...
+
+echo
+error "Please edit vassals ini files and ensure uwsgi runs as wjs:www-data and chmod-socket = 664!"
+echo
+
+
+# Find and fix files and folders with wrong mod
+# =============================================
+x=$(find "$dir" -perm "/g+w")
+if $?
+then
+    warn "Found files with wrong permission:"
+    echo "$x"
+    read -p "Do you want to correct? " -n 1 -r
+echo    # (optional) move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    find "$dir" -perm "/g+w" -exec chmod "g-w" {} \;
+fi
+
+
+echo
+error "Please ensure that cron jobs are run by the wjs user!"
+echo
