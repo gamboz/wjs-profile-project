@@ -79,13 +79,13 @@
             </div>
         <script type="module">
 
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
-  window.d3 = d3;
+  import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+  /* window.d3 = d3; */
 
   const nodes = [
-      {% for volume in volumes %}{% with volume_meta=volume.list|first %}{"id": "v{{ volume_meta.date.year }}", "name": "Vol.{{ volume_meta.volume }}, {{ volume_meta.date.year }}", "href": "#", "group": {{ volume_meta.volume }} },
+      {% for volume in volumes %}{% with volume_meta=volume.list|first %}{"id": "v{{ volume_meta.date.year }}", "name": "🕮{{ volume_meta.volume }}, {{ volume_meta.date.year }}", "href": "#", "group": {{ volume_meta.volume }} },
   {% endwith %}{% endfor %}
-      {% for issue in issues %}{"id": "i{{ issue.id }}", "name": "Issue {{ issue.issue }} ({{ issue.get_sorted_articles.count }} items)", "href": "{% url 'journal_issue' issue.id %}", "group": {{ issue.volume }} }{% if forloop.last %}{% else %},{% endif %}
+      {% for issue in issues %}{"id": "i{{ issue.id }}", "name": "Issue {{ issue.issue }}", "href": "{% url 'journal_issue' issue.id %}", "group": {{ issue.volume }} }{% if forloop.last %}{% else %},{% endif %}
   {% endfor %}
   ];
   const links = [
