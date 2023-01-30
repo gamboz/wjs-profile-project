@@ -43,7 +43,7 @@ def make_ods(data):
 
 @pytest.mark.django_db
 def test_si_imu_upload_one_existing_one_new(
-    journal,
+    article_journal,
     client,
     admin,
     existing_user,
@@ -102,7 +102,7 @@ def test_si_imu_upload_one_existing_one_new(
 
 @pytest.mark.django_db
 def test_si_imu_upload_two_identical_lines(
-    journal,
+    article_journal,
     client,
     admin,
     existing_user,
@@ -174,7 +174,7 @@ def test_si_imu_upload_two_identical_lines(
 
 @pytest.mark.django_db
 def test_si_imu_upload_iequal_emails(
-    journal,
+    article_journal,
     client,
     admin,
     existing_user,
@@ -237,7 +237,7 @@ def test_si_imu_upload_iequal_emails(
 
 @pytest.mark.django_db
 def test_si_imu_upload_new_author_two_contributions(
-    journal,
+    article_journal,
     client,
     admin,
     fb_special_issue,
@@ -293,7 +293,7 @@ def test_si_imu_upload_new_author_two_contributions(
 
 @pytest.mark.django_db
 def test_si_imu_upload_new_author_two_contributions_iequal_emails(
-    journal,
+    article_journal,
     client,
     admin,
     fb_special_issue,
@@ -360,7 +360,7 @@ WRONG_DATA = (
 @pytest.mark.parametrize("wrong_data", WRONG_DATA)
 @pytest.mark.django_db
 def test_si_imu_upload_two_authors_same_email_different_metadata(
-    journal,
+    article_journal,
     client,
     admin,
     fb_special_issue,
@@ -421,7 +421,7 @@ def test_si_imu_upload_two_authors_same_email_different_metadata(
 
 @pytest.mark.django_db
 def test_si_imu_new_author_and_contribution(
-    journal,
+    article_journal,
     client,
     admin,
     fb_special_issue,
@@ -455,7 +455,7 @@ def test_si_imu_new_author_and_contribution(
 
 @pytest.mark.django_db
 def test_si_imu_new_author_same_as_exising(
-    journal,
+    article_journal,
     client,
     admin,
     fb_special_issue,
@@ -491,7 +491,7 @@ def test_si_imu_new_author_same_as_exising(
 @pytest.mark.django_db
 def test_si_imu_new_author_same_as_exising_but_different_data(
     wrong_data,
-    journal,
+    article_journal,
     client,
     admin,
     fb_special_issue,
@@ -546,7 +546,7 @@ def test_si_imu_new_author_same_as_exising_but_different_data(
 @pytest.mark.parametrize("modified_data", WRONG_DATA)
 @pytest.mark.django_db
 def test_si_imu_edit_exising(
-    journal,
+    article_journal,
     client,
     admin,
     fb_special_issue,

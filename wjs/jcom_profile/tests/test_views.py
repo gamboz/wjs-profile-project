@@ -219,7 +219,7 @@ def test_email_are_sent_to_author_and_coauthors_after_article_submission_(
 def test_submitting_user_is_main_author_when_setting_is_on(
     user_as_main_author_setting,
     admin,
-    journal,
+    article_journal,
     roles,
     user_as_main_author,
 ):

@@ -2,6 +2,7 @@
 import lxml.html
 import pytest
 from core.middleware import SiteSettingsMiddleware
+from core.models import Account, Role, Setting, SettingGroup, SettingValue
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import cache
 from django.test import Client
@@ -9,7 +10,6 @@ from django.urls import reverse
 from django.utils import timezone
 from submission import logic
 from submission.models import Article, Section
-from utils import setting_handler
 
 from wjs.jcom_profile import views
 from wjs.jcom_profile.models import SpecialIssue
@@ -19,35 +19,41 @@ class TestFilesStage:
     """Tests related to the file-submission stage."""
 
     @pytest.mark.django_db
-    def test_additional_files_form_title_obeys_setting(self, roles, journal, jcom_user):
+    def test_additional_files_form_title_obeys_setting(self, journal, clear_script_prefix_fix):
         """The title of the additional files field should obey its setting."""
         # TODO: flip-flapping when the order of the tests change!!!
         # set the setting
         value = "<h2>Qui ci metto un po' <strong>di</strong> tutto</h2>"
-        setting_handler.save_setting(
-            "styling",
-            "submission_figures_data_title",
-            journal=journal,
-            value=value,
-        )
+        setting_group = SettingGroup.objects.get(name="styling")
+        setting = Setting.objects.get(name="submission_figures_data_title", group=setting_group)
+        setting_value, _ = SettingValue.objects.get_or_create(journal=journal, setting=setting)
+        setting_value.value = value
+        setting_value.save()
 
         client = Client()
+
+        user = Account.objects.get_or_create(username="testuser", email="a@b.c")[0]
+        user.is_active = True
+        user.jcomprofile.gdpr_checkbox = True
+        user.jcomprofile.save()
+        user.save()
 
         # start a submission
         article = Article.objects.create(
             journal=journal,
             title="A title",
             current_step=3,
-            owner=jcom_user.janeway_account,
-            correspondence_author=jcom_user.janeway_account,
+            owner=user,
+            correspondence_author=user,
         )
         # for the value of "step", see submission.models.Article::step_to_url
         # Magic here ⮧ (see utils/install/roles.json)
-        logic.add_user_as_author(user=jcom_user.janeway_account, article=article)
+        Role.objects.create(name="Author", slug="author")
+        logic.add_user_as_author(user=user, article=article)
 
         # visit the correct page
-        client.force_login(jcom_user.janeway_account)
-        url = f"/{journal.code}/submit/{article.pk}/files/"
+        client.force_login(user)
+        url = f"{journal.code}/{article.step_to_url()}"
         response = client.get(url)
         # I'm expecting an "OK" response, not a redirect to /login or
         # /profile (e.g. for the gdpr checkbox)
@@ -58,12 +64,8 @@ class TestFilesStage:
 
         # double check
         new_value = "ciao 🤞"
-        setting_handler.save_setting(
-            "styling",
-            "submission_figures_data_title",
-            journal=journal,
-            value=new_value,
-        )
+        setting_value.value = new_value
+        setting_value.save()
         # django tests and cache; a bit unexpected:
         # https://til.codeinthehole.com/posts/django-doesnt-flush-caches-between-tests/
         cache.clear()  # 🠄 Important!
@@ -130,7 +132,7 @@ class TestSIStage:
         SpecialIssue.objects.create(name="Test SI", journal=article.journal, open_date=yesterday)
         assert SpecialIssue.objects.open_for_submission().exists()
         # visit the correct page
-        url = f"/{article.journal.code}/submit/{article.pk}/info/"
+        url = reverse("submit_info", args=(article.pk,))
         response = client.get(url)
 
         assert response.status_code == 200
@@ -153,7 +155,7 @@ class TestSIStage:
         SpecialIssue.objects.create(name="Test SI", journal=article.journal, open_date=yesterday, close_date=tomorrow)
         assert SpecialIssue.objects.open_for_submission().exists()
         # visit the correct page
-        url = f"/{article.journal.code}/submit/{article.pk}/info/"
+        url = reverse("submit_info", args=(article.pk,))
         response = client.get(url)
 
         assert response.status_code == 200
@@ -167,17 +169,17 @@ class TestSIStage:
 
 
 @pytest.fixture
-def journal_with_three_sections(journal):
+def journal_with_three_sections(article_journal):
     """Set three sections to a journal.
 
     Two "public" (article and letter) and one not "public" (editorial).
     """
     # All journals automatically get a section, so there is no need to
     # Section.objects.create(name="Article",...
-    Section.objects.create(name="Letter", sequence=10, journal=journal, public_submissions=True).save()
-    Section.objects.create(name="Editorial", sequence=10, journal=journal, public_submissions=False).save()
-    journal.save()
-    return journal
+    Section.objects.create(name="Letter", sequence=10, journal=article_journal, public_submissions=True).save()
+    Section.objects.create(name="Editorial", sequence=10, journal=article_journal, public_submissions=False).save()
+    article_journal.save()
+    return article_journal
 
 
 @pytest.fixture
