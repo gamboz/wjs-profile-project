@@ -60,42 +60,37 @@
                         {% with volume_meta=volume.list|first %}
                             <span class="card-title">Volume {{ volume_meta.volume }}, {{ volume_meta.date.year }}</span>
                         {% endwith %}
-                            <ul class="collection">
-                              {% with sorted_issues=volume.list.reverse %}
-                            {% for issue in volume.list %}
-                                <li class="collection">
-                                    <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
-                                </li>
+                        <ul class="collection">
+                            {% with sorted_issues=volume.list.reverse %}
+                                {% for issue in volume.list %}
+                                    <li class="collection">
+                                        <a href="{% url 'journal_issue' issue.id %}">{% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}</a> ({{ issue.get_sorted_articles.count }} {% trans "items" %})
+                                    </li>
                                 {% endfor %}
-                                {% endwith %}
+                            {% endwith %}
                         </ul>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+        {% endfor %}
             <hr/>
-            <div id="prova">PROVA</div>
-<script type="module">
+            <div class="row">
+              <div id="prova" class="col s12">PROVA</div>
+            </div>
+        <!-- <script src="https://d3js.org/d3.v4.min.js"></script>             -->
+        <script type="module">
 
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+  window.d3 = d3;
 
-const div = d3.selectAll("div#prova");
-
-</script>
-            <script>
               const nodes = [
-              {% for volume in volumes %}
-              {% with volume_meta=volume.list|first %}
-                  {"id": "v{{ volume_meta.date.year }}", "name": "VOL {{ volume_meta.volume }}, {{ volume_meta.date.year }}"},
-              {% endwith %}
-              {% endfor %}
-              {% for issue in issues %}
-              {"id": "i{{ issue.id }}", "name": "Issue {{ issue.issue }} ({{ issue.get_sorted_articles.count }}) items"}{% if forloop.last %}{% else %},{% endif %}
+              {% for volume in volumes %}{% with volume_meta=volume.list|first %}{"id": "v{{ volume_meta.date.year }}", "name": "VOL {{ volume_meta.volume }}, {{ volume_meta.date.year }}", "group": {{ volume_meta.volume }} },
+              {% endwith %}{% endfor %}
+              {% for issue in issues %}{"id": "i{{ issue.id }}", "name": "Issue {{ issue.issue }} ({{ issue.get_sorted_articles.count }}) items", "group": {{ issue.volume }} }{% if forloop.last %}{% else %},{% endif %}
               {% endfor %}
               ];
               const links = [
-              {% for issue in issues %}
-              {"source": "i{{ issue.id }}", "target": "v{{ issue.date.year }}"}{% if forloop.last %}{% else %},{% endif %}
+              {% for issue in issues %}{"source": "i{{ issue.id }}", "target": "v{{ issue.date.year }}", "value": 1}{% if forloop.last %}{% else %},{% endif %}
               {% endfor %}
               ];
 // Copyright 2021 Observable, Inc.
@@ -235,60 +230,20 @@ function ForceGraph({
 }
 
 
-              chart = ForceGraph({"nodes": nodes, "links": links}, {
+ const chart = ForceGraph({"nodes": nodes, "links": links}, {
   nodeId: d => d.id,
   nodeGroup: d => d.group,
-  nodeTitle: d => `${d.id}\n${d.group}`,
+  nodeTitle: d => d.name,
   linkStrokeWidth: l => Math.sqrt(l.value),
-  width,
+  width: 800,
   height: 600,
-  invalidation // a promise to stop the simulation when the cell is re-run
-              })
+    invalidation: null // a promise to stop the simulation when the cell is re-run
+});
 
-
-
-            </script>
-        <!-- {% for issue in issues %} -->
-        <!--     <div class="col m12 l6 xl4"> -->
-        <!--         <div class="card horizontal"> -->
-        <!--             <div class="card-image"> -->
-        <!--                 <a href="{% url 'journal_issue' issue.id %}"> -->
-        <!--                     <img class="issue_image" -->
-        <!--                          src="{% if issue.cover_image %}{{ issue.cover_image.url }}{% elif journal.default_cover_image %}{{ journal.default_cover_image.url }}{% else %}{% static "common/img/sample/issue_cover.png" %}{% endif %}" -->
-        <!--                          alt="{{ issue.title }}" -->
-        <!--                          class="img-fluid" /> -->
-        <!--                 </a> -->
-        <!--             </div> -->
-        <!--             <div class="card-stacked card"> -->
-        <!--                 <div class="card-content"> -->
-        <!--                     {% if issue.pretty_issue_identifier and issue.issue_title and journal.display_issue_title %} -->
-        <!--                         <p> -->
-        <!--                             {{ issue.pretty_issue_identifier }} -->
-        <!--                             <br /> -->
-        <!--                             {{ issue.get_sorted_articles.count }} {% trans "items" %} -->
-        <!--                         </p> -->
-        <!--                     {% else %} -->
-        <!--                         <p> -->
-        <!--                             {{ issue.display_title }} -->
-        <!--                             <br /> -->
-        <!--                             {{ issue.get_sorted_articles.count }} {% trans "items" %} -->
-        <!--                         </p> -->
-        <!--                     {% endif %} -->
-        <!--                 </div> -->
-        <!--                 <div class="card-reveal"> -->
-        <!--                     <span class="card-title grey-text text-darken-4"><i class="material-icons right">{% trans "close" %}</i></span> -->
-        <!--                     <span class="grey-text text-darken-4">{{ issue.issue_title }}</span> -->
-        <!--                 </div> -->
-        <!--                 <div class="card-action"> -->
-        <!--                     <a href="{% url 'journal_issue' issue.id %}">{% trans "View Issue" %}</a> -->
-        <!--                     {% if request.user and request.user.is_staff or user_is_editor %} -->
-        <!--                         <a href="{% url 'manage_issues_id' issue.pk %}"><i class="fa fa-edit">&nbsp;</i></a> -->
-        <!--                     {% endif %} -->
-        <!--                 </div> -->
-        <!--             </div> -->
-        <!--         </div> -->
-        <!--     </div> -->
-        <!-- {% empty %} -->
-        <!-- {% endfor %} -->
+  const div = d3.selectAll("#prova").nodes()[0];
+  div.appendChild(chart)
+  window.div = div;
+  window.chart = chart;
+        </script>
     </div>
 {% endblock body %}
