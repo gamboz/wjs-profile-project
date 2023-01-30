@@ -82,16 +82,16 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
   window.d3 = d3;
 
-              const nodes = [
-              {% for volume in volumes %}{% with volume_meta=volume.list|first %}{"id": "v{{ volume_meta.date.year }}", "name": "Vol.{{ volume_meta.volume }}, {{ volume_meta.date.year }}", "group": {{ volume_meta.volume }} },
-              {% endwith %}{% endfor %}
-                  {% for issue in issues %}{"id": "i{{ issue.id }}", "name": "Issue {{ issue.issue }} ({{ issue.get_sorted_articles.count }} items)", "group": {{ issue.volume }} }{% if forloop.last %}{% else %},{% endif %}
-              {% endfor %}
-              ];
-              const links = [
-              {% for issue in issues %}{"source": "i{{ issue.id }}", "target": "v{{ issue.date.year }}", "value": 1}{% if forloop.last %}{% else %},{% endif %}
-              {% endfor %}
-              ];
+  const nodes = [
+      {% for volume in volumes %}{% with volume_meta=volume.list|first %}{"id": "v{{ volume_meta.date.year }}", "name": "Vol.{{ volume_meta.volume }}, {{ volume_meta.date.year }}", "href": "#", "group": {{ volume_meta.volume }} },
+  {% endwith %}{% endfor %}
+      {% for issue in issues %}{"id": "i{{ issue.id }}", "name": "Issue {{ issue.issue }} ({{ issue.get_sorted_articles.count }} items)", "href": "{% url 'journal_issue' issue.id %}", "group": {{ issue.volume }} }{% if forloop.last %}{% else %},{% endif %}
+  {% endfor %}
+  ];
+  const links = [
+  {% for issue in issues %}{"source": "i{{ issue.id }}", "target": "v{{ issue.date.year }}", "value": 1}{% if forloop.last %}{% else %},{% endif %}
+  {% endfor %}
+  ];
 
 // Copyright 2021 Observable, Inc.
 // Released under the ISC license.
@@ -124,6 +124,7 @@ function ForceGraph({
 } = {}) {
   // Compute values.
   const N = d3.map(nodes, nodeId).map(intern);
+  const NH = d3.map(nodes, d => d.href).map(intern);
   const LS = d3.map(links, linkSource).map(intern);
   const LT = d3.map(links, linkTarget).map(intern);
   if (nodeTitle === undefined) nodeTitle = (_, i) => N[i];
@@ -188,13 +189,15 @@ function ForceGraph({
   if (T) node.append("title").text(({index: i}) => T[i]);
 
   // Text / labels on the nodes
-  const text = svg.append("g")
-     .selectAll("text")
-     /* TODO: does not stick! ⇨ */
+  const a_links = svg.append("g")
+     .selectAll("a")
+     .data(nodes)
+     .join("a")
+     .attr("href", ({index: i}) => NH[i])
+     .append("text")
+     /* TODO: why does "font-size" not stick??? */
      .attr("font-size", "6px")
      .attr("fill", "#000")
-     .data(nodes)
-     .join("text")
      .text(({index: i}) => T[i])
      .call(drag(simulation));
 
@@ -216,8 +219,9 @@ function ForceGraph({
       .attr("cx", d => d.x)
       .attr("cy", d => d.y);
 
-    text
-       /* TODO: should not need here! ⇨ */
+    /* TODO: should not need to set the font-size here! */
+    /* TODO: why does this work??? Am I not looking at the external <a>??? */
+    a_links
       .attr("font-size", "6px")
       .attr("x", d => d.x)
       .attr("y", d => d.y);
