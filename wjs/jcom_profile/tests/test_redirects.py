@@ -109,3 +109,89 @@ def test_redirect_nonexistent_galley_from_jcom_to_janeway_url(journal):
     url = reverse("jcom_redirect_file", kwargs={"pubid": "nonexisting", "extension": "pdf"})
     response = client.get(url, follow=True)
     assert response.status_code == 404
+
+
+class TestRedirectCitationPdfUrl:
+    """Galley links should appear in the same subfolder as the paper's landing page.
+
+    An article landing page has a URL in the form:
+    article/pubid/jcom_123[*]
+    the galleys now have a link in the page with the form
+    article/id/45/galley/67/download
+    in the HTML source of this page, the citation_pdf_url should point to
+    https://.../article/pubid/jcom_123/67
+
+    Here we test that the system redirects the citation_pdf_url to the real galley URL
+    article/pubid/jcom_123/67 -> article/45/galley/67/download
+    for new-style URLs,
+    old-style URLs,
+    and old-style URLs of supplementary material (attachments)[**].
+
+    [*] NB: the URL can be
+    - article/id/ID
+    - article/pubid/jcom_123
+    - article/doi/10...
+    I'm guessing that the 3 following should agree:
+    - page URL
+    - <meta name="citation_pdf_url"
+    - <meta name=""citation_abstract_html_url
+
+    [**] Technically there should be no need for this... TODO: TBV!!!
+    """
+
+    @pytest.mark.django_db
+    def test_with_galley_id(self, journal, client, published_article_with_standard_galleys):
+        """Test new format: article/pubid/PUBID/GALLEYID."""
+        article = published_article_with_standard_galleys
+        pubid = article.get_identifier(identifier_type="pubid")
+        galley = article.galley_set.get(label="PDF")
+        url = reverse(
+            "jcom_redirect_file",  # ⇦ This...
+            kwargs={
+                "pubid": pubid,
+                "galley_id": galley.id,
+            },
+        )
+        response = client.get(url, follow=True)
+        actual_redirect_url, status_code = response.redirect_chain[-1]
+        assert status_code == 302
+        expected_redirect_url = reverse(
+            "article_download_galley",  # ⇦ ...and this are *different*!
+            kwargs={
+                "article_id": galley.article.pk,
+                "galley_id": galley.pk,
+            },
+        )
+        assert expected_redirect_url == actual_redirect_url
+
+    @pytest.mark.django_db
+    def test_with_pubid_and_extension(self, journal, client, published_article_with_standard_galleys):
+        """Test old format: article/01/01/PUBID.PDF."""
+        root = "archive/01/02/"
+        article = published_article_with_standard_galleys
+        pubid = article.get_identifier(identifier_type="pubid")
+        galley = article.galley_set.get(label="PDF")
+        url = reverse(
+            "jcom_redirect_file",
+            kwargs={
+                "root": root,
+                "pubid": pubid,
+                "extension": "pdf",
+            },
+        )
+        response = client.get(url, follow=True)
+        actual_redirect_url, status_code = response.redirect_chain[-1]
+        assert status_code == 302
+        expected_redirect_url = reverse(
+            "article_download_galley",
+            kwargs={
+                "article_id": galley.article.pk,
+                "galley_id": galley.pk,
+            },
+        )
+        assert expected_redirect_url == actual_redirect_url
+
+    @pytest.mark.django_db
+    def test_with_attachment_pubid_and_extension(self, journal, client):
+        """Test old format for supplementary fiels: article/01/01/PUBID_ATTACH_N.PDF."""
+        assert False

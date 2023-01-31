@@ -115,23 +115,29 @@ urlpatterns = [
         views.JcomIssueRedirect.as_view(),
         name="jcom_redirect_issue",
     ),
+    # url(
+    #     "sites/default/files/documents/"
+    #     r"(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$",
+    #     views.JcomFileRedirect.as_view(),
+    #     name="jcom_redirect_file",
+    # ),
+    # Replace old supplementary file url
+    #    RewriteRule "^/archive/.*/(JCOM[^/]+_ATTACH_[^/]+)$"
+    #    /dl-tracker/download.php [NC,L,E=virtual:/sites/default/files/documents/additional_file/$1]
     url(
-        "sites/default/files/documents/"
-        r"(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$",
+        r"archive/.*/(?P<pubid>[\w.()_-]+)(?P<attachment>_ATTACH_[^/]+)$",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
-    # replace RewriteRule "^/archive/.*/(JCOM[^/]+_ATTACH_[^/]+)$"
-    #         /dl-tracker/download.php [NC,L,E=virtual:/sites/default/files/documents/additional_file/$1]
+    # FIXME!!! test fails!!!
+    # Replace old galley url
+    #     sites/default/files/documents/jcom_123.pdf
+    # and old form of citation_pdf_url
+    #     RewriteRule "^/archive/.*/(JCOM[^/]+\.pdf)"
+    #     /dl-tracker/download.php [NC,L,E=virtual:/sites/default/files/documents/$1]
     url(
-        r"archive/.*/(?P<pubid>[\w.()-]+)(?P<attachment>_ATTACH_[^/]+)$",
-        views.JcomFileRedirect.as_view(),
-        name="jcom_redirect_file",
-    ),
-    # replace RewriteRule "^/archive/.*/(JCOM[^/]+\.pdf)"
-    #         /dl-tracker/download.php [NC,L,E=virtual:/sites/default/files/documents/$1]
-    url(
-        r"archive/.*/(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$",
+        r"(?P<root>archive/.*/|sites/default/files/documents/)"
+        r"(?P<pubid>[\w.()_-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
@@ -139,7 +145,7 @@ urlpatterns = [
     # same subfolder as the paper's landing page (see #107);
     # citation_pdf_url have the form article/pubid/JCOM123/galley.id
     url(
-        r"article/pubid/(?P<pubid>[\w.()-]+)/(?P<galley_id>\d+)",
+        r"article/pubid/(?P<pubid>[\w.()_-]+)/(?P<galley_id>\d+)",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
