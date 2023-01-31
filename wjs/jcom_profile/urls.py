@@ -121,6 +121,28 @@ urlpatterns = [
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
+    # replace RewriteRule "^/archive/.*/(JCOM[^/]+_ATTACH_[^/]+)$"
+    #         /dl-tracker/download.php [NC,L,E=virtual:/sites/default/files/documents/additional_file/$1]
+    url(
+        r"archive/.*/(?P<pubid>[\w.()-]+)(?P<attachment>_ATTACH_[^/]+)$",
+        views.JcomFileRedirect.as_view(),
+        name="jcom_redirect_file",
+    ),
+    # replace RewriteRule "^/archive/.*/(JCOM[^/]+\.pdf)"
+    #         /dl-tracker/download.php [NC,L,E=virtual:/sites/default/files/documents/$1]
+    url(
+        r"archive/.*/(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$",
+        views.JcomFileRedirect.as_view(),
+        name="jcom_redirect_file",
+    ),
+    # Search engines (google scholar & co.) want the PDF file in the
+    # same subfolder as the paper's landing page (see #107);
+    # citation_pdf_url have the form article/pubid/JCOM123/galley.id
+    url(
+        r"article/pubid/(?P<pubid>[\w.()-]+)/(?P<galley_id>\d+)",
+        views.JcomFileRedirect.as_view(),
+        name="jcom_redirect_file",
+    ),
 ]
 
 urlpatterns.extend(include_urls.urlpatterns)

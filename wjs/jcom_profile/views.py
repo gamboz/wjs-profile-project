@@ -1292,15 +1292,31 @@ class JcomFileRedirect(RedirectView):
         except Article.DoesNotExist:
             raise Http404()
 
-        galley_label = kwargs["extension"].upper()
-        if kwargs["language"]:
-            galley_label = f"{galley_label} ({kwargs['language']})"
+        # For citation_pdf_url URLs
+        if galley_id := kwargs.get("galley_id", None):
+            galley = get_object_or_404(
+                Galley,
+                id=galley_id,
+            )
+            # For supllementary material files
+        elif attachment_part := kwargs.get("attachment", None):
+            galley_label = kwargs["pubid"] + attachment_part
+            galley = get_object_or_404(
+                Galley,
+                label=galley_label,
+                article=article,
+            )
+        else:
+            # For old Drupal files redirects
+            galley_label = kwargs["extension"].upper()
+            if kwargs["language"]:
+                galley_label = f"{galley_label} ({kwargs['language']})"
 
-        galley = get_object_or_404(
-            Galley,
-            label=galley_label,
-            article=article,
-        )
+            galley = get_object_or_404(
+                Galley,
+                label=galley_label,
+                article=article,
+            )
 
         return reverse(
             "article_download_galley",
