@@ -41,39 +41,32 @@ def test_redirect_galley_from_jcom_to_janeway_url(issue, published_article_with_
     """Test redirect of simples galley/attachments/files from Drupal style."""
     article = published_article_with_standard_galleys
     pubid = article.get_identifier(identifier_type="pubid")
-    for language in ["", "en", "pt"]:
-        if language:
-            pesky_urls = [
-                f"sites/default/files/documents/{pubid}_{language}.pdf",
-                f"sites/default/files/documents/{pubid}_{language}_0.pdf",
-                f"sites/default/files/documents/{pubid}_{language}.epub",
-                f"sites/default/files/documents/{pubid}_{language}_1.epub",
-            ]
-        else:
-            pesky_urls = [
-                f"sites/default/files/documents/{pubid}.pdf",
-                f"sites/default/files/documents/{pubid}_0.pdf",
-                f"sites/default/files/documents/{pubid}.epub",
-                f"sites/default/files/documents/{pubid}_0.epub",
-            ]
-        client = Client()
-        for pesky_url in pesky_urls:
-            galley_label = url_to_label(pesky_url)
-            expected_galley = Galley.objects.get(article=article, label=galley_label)
+    # TODO: it would be nice to pytest.mark.parametrize this, but I'd
+    # need the pubid from the published_article fixture...
+    pesky_urls = []
+    for language in ["", "_en", "_pt"]:
+        for error in ["", "_0", "_1"]:
+            for extension in ["pdf", "epub"]:
+                pesky_urls.append(f"sites/default/files/documents/{pubid}{language}{error}.{extension}")
 
-            url = f"/{article.journal.code}/{pesky_url}"
-            response = client.get(url, follow=True)
-            actual_redirect_url, status_code = response.redirect_chain[-1]
-            assert status_code == 302
+    client = Client()
+    for pesky_url in pesky_urls:
+        galley_label = url_to_label(pesky_url)
+        expected_galley = Galley.objects.get(article=article, label=galley_label)
 
-            expected_redirect_url = reverse(
-                "article_download_galley",
-                kwargs={
-                    "article_id": article.pk,
-                    "galley_id": expected_galley.pk,
-                },
-            )
-            assert expected_redirect_url == actual_redirect_url
+        url = f"/{article.journal.code}/{pesky_url}"
+        response = client.get(url, follow=True)
+        actual_redirect_url, status_code = response.redirect_chain[-1]
+        assert status_code == 302
+
+        expected_redirect_url = reverse(
+            "article_download_galley",
+            kwargs={
+                "article_id": article.pk,
+                "galley_id": expected_galley.pk,
+            },
+        )
+        assert expected_redirect_url == actual_redirect_url
 
 
 @pytest.mark.django_db
