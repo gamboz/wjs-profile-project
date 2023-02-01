@@ -1,12 +1,9 @@
 import re
 
 import pytest
-from core.models import File, Galley
+from core.models import Galley
 from django.test import Client
 from django.urls import reverse
-from django.utils import timezone
-from identifiers.models import Identifier
-from utils.testing.helpers import create_galley
 
 
 @pytest.mark.django_db
@@ -28,7 +25,7 @@ def test_redirect_issues_from_jcom_to_janeway_url(issue):
 
 def url_to_label(url):
     """Return the expected galley label that one would expect from the give url."""
-    pattern = re.compile(r"(?P<pubid>[\w.()-]+)(?P<error>_\d)?(?P<language>_\w{2})?\.(?P<extension>pdf|epub)$")
+    pattern = re.compile(r"(?P<pubid>[\w.()-]+?)(?:_(?P<language>[a-z]{2}))?(?P<error>_\d)?\.(?P<extension>pdf|epub)$")
     if match := re.search(pattern, url):
         label = match.group("extension").upper()
         if language := match.group("language"):
@@ -46,9 +43,9 @@ def test_redirect_galley_from_jcom_to_janeway_url(issue, published_article_with_
         if language:
             pesky_urls = [
                 f"sites/default/files/documents/{pubid}_{language}.pdf",
-                f"sites/default/files/documents/{pubid}_{language}_01.pdf",
+                f"sites/default/files/documents/{pubid}_{language}_0.pdf",
                 f"sites/default/files/documents/{pubid}_{language}.epub",
-                f"sites/default/files/documents/{pubid}_{language}_01.epub",
+                f"sites/default/files/documents/{pubid}_{language}_1.epub",
             ]
         else:
             pesky_urls = [
@@ -80,7 +77,10 @@ def test_redirect_galley_from_jcom_to_janeway_url(issue, published_article_with_
 @pytest.mark.django_db
 def test_redirect_nonexistent_galley_from_jcom_to_janeway_url(journal):
     client = Client()
-    url = reverse("jcom_redirect_file", kwargs={"pubid": "nonexisting", "extension": "pdf"})
+    url = reverse(
+        "jcom_redirect_file",
+        kwargs={"root": "archive/01/02/", "pubid": "nonexisting", "extension": "pdf"},
+    )
     response = client.get(url, follow=True)
     assert response.status_code == 404
 
@@ -168,4 +168,4 @@ class TestRedirectCitationPdfUrl:
     @pytest.mark.django_db
     def test_with_attachment_pubid_and_extension(self, journal, client):
         """Test old format for supplementary fiels: article/01/01/PUBID_ATTACH_N.PDF."""
-        assert False
+        assert 1 == 0
