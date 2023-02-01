@@ -116,7 +116,7 @@ urlpatterns = [
         name="jcom_redirect_issue",
     ),
     url(
-        "sites/default/files/documents/" r"(?P<pubid>[\w.()-]+)?\.(?P<extension>pdf|epub)$",
+        r"sites/default/files/documents/(?P<pubid>[\w.()-]+)?\.(?P<extension>pdf|epub)$",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
