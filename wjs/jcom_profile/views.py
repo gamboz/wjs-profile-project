@@ -1283,6 +1283,20 @@ class JcomFileRedirect(RedirectView):
     query_string = True
 
     def get_redirect_url(self, *args, **kwargs):  # noqa
+        galley_label = kwargs["extension"].upper()
+        splitted_pubid = kwargs["pubid"].split("_")
+        language = None
+        # Very messy... but regex seems not working. I think this logic should also live in another file.
+        if splitted_pubid[-1].isdigit():
+            # If last split group of char is digit, it is an error, so I don't want to use it (drop).
+            splitted_pubid = splitted_pubid[:-1]
+        if splitted_pubid[-1].isalpha():
+            # If last split group of char is alpha, it must be language
+            language = splitted_pubid[-1]
+            splitted_pubid = splitted_pubid[:-1]
+        # Build real pubid
+        pubid = "_".join(splitted_pubid)
+
         try:
             article = Article.get_article(
                 journal=self.request.journal,
