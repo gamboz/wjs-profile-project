@@ -5,12 +5,6 @@
 {% block title %}
     {% trans "Volumes and Issues" %}
 {% endblock title %}
-{% block css %}
-    <style>
-  .no-margin a { margin-right: 0px !important;}
-  .no-margin span { margin-right: 2em !important;}
-    </style>
-{% endblock css %}
 {% block body %}
     <h2>{% trans "Volumes and Issues" %}</h2>
     {% regroup issues by volume as volumes %}
