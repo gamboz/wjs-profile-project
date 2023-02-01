@@ -119,6 +119,13 @@ class TestRedirectCitationPdfUrl:
         article = published_article_with_standard_galleys
         pubid = article.get_identifier(identifier_type="pubid")
         galley = article.galley_set.get(label="PDF")
+        # TODO: reverse() uses the `script_prefix` which is set onto
+        # the process's thread by (?) Janeway's middleware to keep
+        # track of the journal (if using a path as opposet to a
+        # domain) (?). The prefix is set by any call to the
+        # journal. But if reverse() is called before the prefix is
+        # set, it will create a URL without the journal code.
+        client.get(f"/{journal.code}/")
         url = reverse(
             "jcom_redirect_file",  # ⇦ This...
             kwargs={
@@ -126,6 +133,7 @@ class TestRedirectCitationPdfUrl:
                 "galley_id": galley.id,
             },
         )
+        # The above two calls are equivalent to f"/{journal.code}/article/pubid/{pubid}/{galley.id}"
         response = client.get(url, follow=True)
         actual_redirect_url, status_code = response.redirect_chain[-1]
         assert status_code == 302
@@ -145,6 +153,7 @@ class TestRedirectCitationPdfUrl:
         article = published_article_with_standard_galleys
         pubid = article.get_identifier(identifier_type="pubid")
         galley = article.galley_set.get(label="PDF")
+        client.get(f"/{journal.code}/")
         url = reverse(
             "jcom_redirect_file",
             kwargs={
