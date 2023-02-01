@@ -1,10 +1,19 @@
 #!/bin/bash
 
-# Minimal sanity check of a Janeway instance
+echo "=== WARNING: PSEUDO CODE ===="
+echo
+echo "This started as a script but was never completed"
+echo "and it is probably not worth-while."
+echo
+echo "Please consider it mainly as documentation."
+echo
+
+exit 1
+
+
+# Wannabe script starts here ⇩
 
 set -e
-
-instance_root="$1"
 
 # echo in red color
 error () {
@@ -19,6 +28,8 @@ info () {
     >&2 echo $(tput setaf 4)"$@"$(tput sgr0)
 }
 
+# Minimal sanity check of a Janeway instance
+instance_root="$1"
 if [[ ! -d "$instance_root/src" ]]
 then
     error "Please provide the full path of a Janway instance (i.e. where the \"src\" folder is)"
