@@ -1283,14 +1283,16 @@ class JcomFileRedirect(RedirectView):
     query_string = True
 
     def get_redirect_url(self, *args, **kwargs):  # noqa
-        try:
-            article = Article.get_article(
-                journal=self.request.journal,
-                identifier_type="pubid",
-                identifier=kwargs["pubid"],
-            )
-        except Article.DoesNotExist:
+        # NB: Article.get_article does *not* raise Article.DoesNotExist, just returns None
+        article = Article.get_article(
+            journal=self.request.journal,
+            identifier_type="pubid",
+            identifier=kwargs["pubid"],
+        )
+        if article is None:
             raise Http404()
+
+        redirect = None
 
         # For citation_pdf_url URLs
         if galley_id := kwargs.get("galley_id", None):
@@ -1298,16 +1300,32 @@ class JcomFileRedirect(RedirectView):
                 Galley,
                 id=galley_id,
             )
+            # TODO: refactor me!
+            redirect = reverse(
+                "article_download_galley",
+                kwargs={
+                    "article_id": article.pk,
+                    "galley_id": galley.pk,
+                },
+            )
             # For supllementary material files
         elif attachment_part := kwargs.get("attachment", None):
-            galley_label = kwargs["pubid"] + attachment_part
-            galley = get_object_or_404(
-                Galley,
-                label=galley_label,
-                article=article,
-            )
+            supplementary_file_label = kwargs["pubid"] + attachment_part
+            try:
+                supplementary_file = article.supplementary_files.get(file__label=supplementary_file_label)
+            except core_models.SupplementaryFile.DoesNotExist:
+                raise Http404()
+            else:
+                redirect = reverse(
+                    "article_download_supp_file",
+                    kwargs={
+                        "article_id": article.pk,
+                        "supp_file_id": supplementary_file.pk,
+                    },
+                )
+
         else:
-            # For old Drupal files redirects
+            # For old Drupal files
             galley_label = kwargs["extension"].upper()
             if language := kwargs["language"]:
                 galley_label = f"{galley_label} ({language})"
@@ -1316,11 +1334,13 @@ class JcomFileRedirect(RedirectView):
                 label=galley_label,
                 article=article,
             )
+            # TODO: refactor me!
+            redirect = reverse(
+                "article_download_galley",
+                kwargs={
+                    "article_id": article.pk,
+                    "galley_id": galley.pk,
+                },
+            )
 
-        return reverse(
-            "article_download_galley",
-            kwargs={
-                "article_id": galley.article.pk,
-                "galley_id": galley.pk,
-            },
-        )
+        return redirect

@@ -1,3 +1,4 @@
+"""Test redirects."""
 import re
 
 import pytest
@@ -24,7 +25,8 @@ def test_redirect_issues_from_jcom_to_janeway_url(issue):
 
 
 def url_to_label(url):
-    """Return the expected galley label that one would expect from the give url."""
+    """Return the galley label that one would expect from the give url."""
+    # This is the same pattern from urlconf
     pattern = re.compile(r"(?P<pubid>[\w.()-]+?)(?:_(?P<language>[a-z]{2}))?(?P<error>_\d)?\.(?P<extension>pdf|epub)$")
     if match := re.search(pattern, url):
         label = match.group("extension").upper()
@@ -175,6 +177,31 @@ class TestRedirectCitationPdfUrl:
         assert expected_redirect_url == actual_redirect_url
 
     @pytest.mark.django_db
-    def test_with_attachment_pubid_and_extension(self, journal, client):
+    def test_with_attachment_pubid_and_extension(self, journal, client, published_article_with_standard_galleys):
         """Test old format for supplementary fiels: article/01/01/PUBID_ATTACH_N.PDF."""
-        assert 1 == 0
+        article = published_article_with_standard_galleys
+        pubid = article.get_identifier(identifier_type="pubid")
+        # Cheating: I just know that this article has only one supplementary file :)
+        supplementary_file = article.supplementary_files.first()
+        # The "attachment" part of the URL is only _ATTACH_..., without the pubid
+        attachment = supplementary_file.label.replace(pubid, "")
+        client.get(f"/{journal.code}/")
+        url = reverse(
+            "jcom_redirect_file",
+            kwargs={
+                # "root": ... No need! We expect all attachments in /archive/... (see urlconf)
+                "pubid": pubid,
+                "attachment": attachment,
+            },
+        )
+        response = client.get(url, follow=True)
+        actual_redirect_url, status_code = response.redirect_chain[-1]
+        assert status_code == 302
+        expected_redirect_url = reverse(
+            "article_download_supp_file",
+            kwargs={
+                "article_id": article.pk,
+                "supp_file_id": supplementary_file.pk,
+            },
+        )
+        assert expected_redirect_url == actual_redirect_url
