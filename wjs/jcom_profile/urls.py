@@ -119,7 +119,7 @@ urlpatterns = [
     #    RewriteRule "^/archive/.*/(JCOM[^/]+_ATTACH_[^/]+)$"
     #    /dl-tracker/download.php [NC,L,E=virtual:/sites/default/files/documents/additional_file/$1]
     url(
-        r"archive/.*/(?P<pubid>[\w.()-]+)(?P<attachment>_ATTACH_[^/]+)$",
+        r"archive/.*/(?P<pubid>[\w.()-]+?)(?P<attachment>_ATTACH_[^/]+)$",
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
