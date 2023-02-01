@@ -170,7 +170,7 @@ class TestRedirectCitationPdfUrl:
         assert expected_redirect_url == actual_redirect_url
 
     @pytest.mark.django_db
-    def test_with_attachment_pubid_and_extension(self, journal, client, published_article_with_standard_galleys):
+    def test_with_pubid_and_attachment(self, journal, client, published_article_with_standard_galleys):
         """Test old format for supplementary fiels: article/01/01/PUBID_ATTACH_N.PDF."""
         article = published_article_with_standard_galleys
         pubid = article.get_identifier(identifier_type="pubid")
