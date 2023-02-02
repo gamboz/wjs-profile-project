@@ -256,3 +256,6 @@ class Genealogy(models.Model):
         Article,
         related_name="ancestors",
     )
+
+    def __str__(self):
+        return f"Genealogy: article {self.parent} has {self.children.count()} kids"
