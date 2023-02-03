@@ -95,6 +95,18 @@
                                 <div class="divider"></div>
                             </div>
                         {% endif %}
+                        {% if article.ancestors.exists %}
+                            {% with parent=article.ancestors.first.parent %}
+                                <h2>{% trans "Main document" %}</h2>
+                                <p>
+                                    {# TODO: trans!!! #}
+                                    Please read <a href="{% url 'article_view' 'id' parent.pk %}">the main document here</a>
+                                </p>
+                            {% endwith %}
+                            <div class="spacer">
+                                <div class="divider"></div>
+                            </div>
+                        {% endif %}
                         {% if article.is_published and not journal_settings.article.suppress_how_to_cite %}
                             <h2>{% trans "How to Cite" %}</h2>
                             {{ article.how_to_cite | safe }}
@@ -162,7 +174,7 @@
                             <div class="col m12 l12 s12">
                                 <div class="card">
                                     <div class="card-content">
-                                        <h2>{% trans "Documents" %}</h2>
+                                        <h2>{% trans "Invited documents" %}</h2>
                                         <div>
                                             {% for kid in article.genealogy.children.all %}
                                                 <h3>
@@ -172,7 +184,9 @@
                                                 {% for au in kid.frozen_authors.all %}
                                                     <a href="{% url 'articles_by_author' au.pk %}">{{ au.full_name }}</a>{# djlint:off #}{% if forloop.revcounter0 >= 2 %},{% endif %}{% if forloop.revcounter0 == 1 %} and{% endif %}{# djlint:on #}
                                                 {% endfor %}
-                                                <div>{{ kid.abstract|safe }}</div>
+                                                <div>
+                                                    {{ kid.abstract|safe }}
+                                                </div>
                                                 <!-- <div><a href="{% url 'article_view' 'id' kid.pk %}">Read More</a></div> -->
                                             {% endfor %}
                                         </div>
@@ -180,31 +194,6 @@
                                 </div>
                             </div>
                         </div>
-                    {% endif %}
-                    {% if article.ancestors.exists %}
-                        {% with parent=article.ancestors.first.parent %}
-                            <div class="row ancestors-parent">
-                                <div class="col m12 l12 s12">
-                                    <div class="card">
-                                        <div class="card-content">
-                                            <h2>
-                                                {% trans "Introduction" %}
-                                            </h2>
-                                            <div>
-                                                <h3>
-                                                    <a href="{% url 'article_view' 'id' parent.pk %}">{{ parent.title }}</a>
-                                                </h3>
-                                                by
-                                                {% for au in parent.frozen_authors.all %}
-                                                    <a href="{% url 'articles_by_author' au.pk %}">{{ au.full_name }}</a>{# djlint:off #}{% if forloop.revcounter0 >= 2 %},{% endif %}{% if forloop.revcounter0 == 1 %} and{% endif %}{# djlint:on #}
-                                                {% endfor %}
-                                                {# <div>{{ kid.abstract|safe }}</div> #}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endwith %}
                     {% endif %}
                     <div class="row">
                         {% if article.metrics and article.is_published and not request.journal.disable_metrics_display %}
