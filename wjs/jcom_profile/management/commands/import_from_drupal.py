@@ -89,12 +89,16 @@ class Command(BaseCommand):
         self.seen_sections = {}
         self.seen_authors = {}
 
+        self.prepare()
+
         for raw_data in self.find_articles():
             try:
                 self.process(raw_data)
             except Exception as e:
                 logger.critical("Failed import for %s (%s)!\n%s", raw_data["field_id"], raw_data["nid"], e)
                 # raise e
+
+        self.tidy_up()
 
     def add_arguments(self, parser):
         """Add arguments to command."""
@@ -203,6 +207,8 @@ class Command(BaseCommand):
         self.set_issue(article, raw_data)
         self.set_authors(article, raw_data)
         self.publish_article(article, raw_data)
+        self.set_children(article, raw_data)
+        return article
 
     def create_article(self, raw_data):
         """Create a stub for an article with basic metadata.
@@ -945,3 +951,25 @@ class Command(BaseCommand):
             logger.error("""Unknown country "%s" for %s""", country_name, self.wjapp["userCod"])
         author.country = country
         author.save()
+
+    def prepare(self):
+        """Run una-tantum operations before starting any import."""
+        logger.error("CREATE LICENCES - WRITEME!")
+
+    def tidy_up(self):
+        """Run una-tantum operations at the end of the import process."""
+
+    def set_children(self, article, raw_data):
+        """Process children if present (mainly for commentaries)."""
+        # "field_document" is always present, but can be an empty list
+        if not raw_data["field_document"]:
+            return
+        assert raw_data["field_subdoc"] is False, "We don't expect to ever see nephews!!!"
+        genealogy, created = wjs_models.Genealogy.objects.get_or_create(parent=article)
+        if not created:
+            genealogy.children.clear()
+        for child in raw_data["field_document"]:
+            child_raw_data = self.fetch_data_dict(child["uri"])
+            logger.debug("  %s - retrieving child %s", raw_data["field_id"], child_raw_data["field_id"])
+            child_article = self.process(child_raw_data)
+            genealogy.children.add(child_article)
