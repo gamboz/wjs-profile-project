@@ -181,6 +181,31 @@
                             </div>
                         </div>
                     {% endif %}
+                    {% if article.ancestors.exists %}
+                        {% with parent=article.ancestors.first.parent %}
+                            <div class="row ancestors-parent">
+                                <div class="col m12 l12 s12">
+                                    <div class="card">
+                                        <div class="card-content">
+                                            <h2>
+                                                {% trans "Introduction" %}
+                                            </h2>
+                                            <div>
+                                                <h3>
+                                                    <a href="{% url 'article_view' 'id' parent.pk %}">{{ parent.title }}</a>
+                                                </h3>
+                                                by
+                                                {% for au in parent.frozen_authors.all %}
+                                                    <a href="{% url 'articles_by_author' au.pk %}">{{ au.full_name }}</a>{# djlint:off #}{% if forloop.revcounter0 >= 2 %},{% endif %}{% if forloop.revcounter0 == 1 %} and{% endif %}{# djlint:on #}
+                                                {% endfor %}
+                                                {# <div>{{ kid.abstract|safe }}</div> #}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endwith %}
+                    {% endif %}
                     <div class="row">
                         {% if article.metrics and article.is_published and not request.journal.disable_metrics_display %}
                             <div class="col m12 l12 s12">
