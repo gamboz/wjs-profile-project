@@ -32,13 +32,24 @@
 
 // To customize variables, copy the variables from `materialize-src/sass/variables` and write it here removing the !default
 
-$primary-color: color("jcom-blue", "lighten-2");
+// 1. Colors
+// ==========================================================================
+
+$primary-color: color("jcom-blue", "darken-2") !default;
+$primary-color-light: lighten("jcom-blue", 15%) !default;
+$primary-color-dark: darken("jcom-blue", 15%) !default;
+$primary-blue: color("jcom-blue", "base") !default;
+
+$secondary-color: color("teal", "lighten-1") !default;
+$success-color: color("green", "base") !default;
+$error-color: color("red", "base") !default;
+$link-color: color("light-blue", "darken-1") !default;
 
 
 // 14. Navigation Bar
 // ==========================================================================
 
-$navbar-height: 64px;
+$navbar-height: auto;
 $navbar-line-height: $navbar-height;
 $navbar-height-mobile: 56px;
 $navbar-line-height-mobile: $navbar-height-mobile;
@@ -48,11 +59,12 @@ $navbar-bg-color:  color("blue-grey", "lighten-5");
 $navbar-brand-font-size: 2.1rem;
 
 
+
 // 22. Footer
 // ==========================================================================
 
-$footer-font-color: color("blue-grey", "darken-4");
-$footer-bg-color: color("blue-grey", "lighten-4");
+$footer-font-color: color("grey", "darken-2");
+$footer-bg-color: color("grey", "lighten-5");
 $footer-copyright-font-color: color("blue-grey", "darken-2");
 $footer-copyright-bg-color: rgba(51,51,51,.08);
 

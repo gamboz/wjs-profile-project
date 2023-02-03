@@ -61,13 +61,15 @@
 <footer class="page-footer">
     <div class="footer-copyright">
         <div class="container">
-            {% if request.journal %}
-                {% include "elements/journal_footer.html" %}
-            {% elif request.repository %}
-                {{ request.repository.footer|safe }}
-            {% else %}
-                {% include "press/elements/press_footer.html" %}
-            {% endif %}
+            <div class="row expanded">
+                {% if request.journal %}
+                    {% include "elements/journal_footer.html" %}
+                {% elif request.repository %}
+                    {{ request.repository.footer|safe }}
+                {% else %}
+                    {% include "press/elements/press_footer.html" %}
+                {% endif %}
+            </div>
         </div>
     </div>
 </footer>
