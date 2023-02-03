@@ -74,20 +74,23 @@ SECTION_ORDER = {
 class Command(BaseCommand):
     help = "Import an article."  # NOQA
 
+    # There is no point in importing the same things for every
+    # article, so I'm keeping track of what I've already imported
+    # to be able to do it once only.
+    #
+    # Also, these must be class variables, since the process can
+    # recurse.
+    seen_issues = {}
+    seen_keywords = {}
+    seen_sections = {}
+    seen_authors = {}
+
     def handle(self, *args, **options):
         """Command entry point."""
         self.options = options
         # TODO: who whould this user be???
         admin = core_models.Account.objects.filter(is_admin=True).first()
         self.fake_request = FakeRequest(user=admin)
-
-        # There is no point in importing the same things for every
-        # article, so I'm keeping track of what I've already imported
-        # to be able to do it once only.
-        self.seen_issues = {}
-        self.seen_keywords = {}
-        self.seen_sections = {}
-        self.seen_authors = {}
 
         self.prepare()
 
@@ -515,12 +518,12 @@ class Command(BaseCommand):
         # Drop all article's kwds (and KeywordArticles, used for kwd ordering)
         article.keywords.clear()
         for order, kwd_node in enumerate(raw_data.get("field_keywords", [])):
-            if keyword_pk := self.seen_keywords.get(kwd_node["uri"], None):
+            if keyword_pk := Command.seen_keywords.get(kwd_node["uri"], None):
                 keyword = submission_models.Keyword.objects.get(pk=keyword_pk)
             else:
                 kwd_dict = self.fetch_data_dict(kwd_node["uri"])
                 keyword, created = submission_models.Keyword.objects.get_or_create(word=kwd_dict["name"])
-                self.seen_keywords[kwd_node["uri"]] = keyword.pk
+                Command.seen_keywords[kwd_node["uri"]] = keyword.pk
 
             submission_models.KeywordArticle.objects.get_or_create(
                 article=article,
@@ -535,7 +538,7 @@ class Command(BaseCommand):
         """Create and set issue / collection and volume."""
         # adapting imports.ojs.importers.get_or_create_issue
         issue_uri = raw_data["field_issue"]["uri"]
-        if issue_pk := self.seen_issues.get(issue_uri, None):
+        if issue_pk := Command.seen_issues.get(issue_uri, None):
             issue = journal_models.Issue.objects.get(pk=issue_pk)
         else:
             issue = self.create_new_issue(article, raw_data)
@@ -543,7 +546,7 @@ class Command(BaseCommand):
             journal_models.SectionOrdering.objects.filter(issue=issue).delete()
 
         section_uri = raw_data["field_type"]["uri"]
-        if session_pk := self.seen_sections.get(section_uri, None):
+        if session_pk := Command.seen_sections.get(section_uri, None):
             section = submission_models.Section.objects.get(pk=session_pk)
         else:
             section_data = self.fetch_data_dict(raw_data["field_type"]["uri"])
@@ -554,7 +557,7 @@ class Command(BaseCommand):
                 journal=article.journal,
                 name=section_name,
             )
-            self.seen_sections[section_uri] = section.pk
+            Command.seen_sections[section_uri] = section.pk
         article.section = section
 
         # Must ensure that a SectionOrdering exists for this issue,
@@ -637,7 +640,7 @@ class Command(BaseCommand):
                 "issue_title": issue_data["title"],
             },
         )
-        self.seen_issues[issue_uri] = issue.pk
+        Command.seen_issues[issue_uri] = issue.pk
 
         # Force this to correct previous imports
         issue.date = date_published
@@ -692,7 +695,7 @@ class Command(BaseCommand):
         first_author = None
         for order, author_node in enumerate(raw_data["field_authors"]):
             author_uri = author_node["uri"]
-            if author_pk := self.seen_authors.get(author_uri, None):
+            if author_pk := Command.seen_authors.get(author_uri, None):
                 author = core_models.Account.objects.get(pk=author_pk)
             else:
                 author_dict = self.fetch_data_dict(author_uri)
@@ -711,7 +714,7 @@ class Command(BaseCommand):
                     first_name=author_dict["field_name"],  # TODO: this contains first+middle; split!
                     last_name=author_dict["field_surname"],
                 )
-                self.seen_authors[author_uri] = author.pk
+                Command.seen_authors[author_uri] = author.pk
                 author.add_account_role("author", article.journal)
 
                 # Store away wjapp's userCod
