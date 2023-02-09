@@ -645,7 +645,7 @@ class Command(BaseCommand):
         )
         Command.seen_issues[issue_uri] = issue.pk
 
-        issue.title = issue_title
+        issue.issue_title = issue_title
 
         # Force this to correct previous imports
         issue.date = date_published
