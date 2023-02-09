@@ -4,7 +4,7 @@
 
     <div class="row">
         {% if error %}
-            <p>The account does not exist.</p>
+            <p>{% trans "The account does not exist." %}</p>
         {% else %}
             <h1 class="acceptation-title">Ciao {{ first_name }} {{ last_name }}!</h1>
             <form class="acceptation-form col s4" action="" method="post">
