@@ -6,7 +6,7 @@
         {% if error %}
             <p>{% trans "The account does not exist." %}</p>
         {% else %}
-            <h1 class="acceptation-title">Ciao {{ first_name }} {{ last_name }}!</h1>
+            <h1 class="acceptation-title">{% trans "Hello" %} {{ first_name }} {{ last_name }}!</h1>
             <form class="acceptation-form col s4" action="" method="post">
                 {% csrf_token %}
                 {{ form.gdpr_checkbox }}
