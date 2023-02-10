@@ -38,12 +38,19 @@ rome_timezone = pytz.timezone("Europe/Rome")
 # I'll consider the first issue of 2017 as a boundary date (first
 # document published 2017-01-11).
 BODY_EXPECTED_DATE = timezone.datetime(2017, 1, 1, tzinfo=rome_timezone)
+
 # Expect to have review dates (submitted/accepted) since this
 # date. The first paper managed by wjapp has: submitted 2015-03-04 /
 # published 2015-03-03 (published before submitted!?!).  All
 # publication dates up to 29 Sep 2015 have timestamp at "00:00" and
 # they are probably artificial.
 HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
+
+# Licences:
+# - up to last issue of 2008: Copyright Sissa, all right reserved
+# - from last issue 2008 to today: CC BY NC ND, but no explicit copyright
+# (and all articles in the next-to-last issue have been published 2009-09-19)
+LICENCE_CCBY_FROM_DATE = timezone.datetime(2008, 9, 20, tzinfo=rome_timezone)
 
 # Janeway and wjapp country names do not completely overlap (sigh...)
 COUNTRIES_MAPPING = {
@@ -225,6 +232,7 @@ class Command(BaseCommand):
         self.set_keywords(article, raw_data)
         self.set_issue(article, raw_data)
         self.set_authors(article, raw_data)
+        self.set_license(article, raw_data)
         self.publish_article(article, raw_data)
         self.set_children(article, raw_data)
         return article
@@ -804,6 +812,14 @@ class Command(BaseCommand):
         article.save()
         logger.debug("  %s - authors (%s)", raw_data["field_id"], article.authors.count())
 
+    def set_license(self, article, raw_data):
+        """Set the license (based on the publication date)."""
+        if article.date_published < LICENCE_CCBY_FROM_DATE:
+            article.license = self.license_copyright
+        else:
+            article.license = self.license_ccbyncnd
+        article.save()
+
     def publish_article(self, article, raw_data):
         """Publish an article."""
         # see src/journal/views.py:1078
@@ -984,7 +1000,21 @@ class Command(BaseCommand):
 
     def prepare(self):
         """Run una-tantum operations before starting any import."""
-        logger.error("CREATE LICENCES - WRITEME!")
+        logger.debug("Setup licences.")
+        # This one is the standard one created by Janeway for every
+        # journal. We just know it's there.
+        self.license_ccbyncnd = submission_models.Licence.objects.get(
+            short_name="CC BY-NC-ND 4.0",
+        )
+        # This one is Sissa-special, we must create it
+        self.license_copyright, created = submission_models.Licence.objects.get_or_create(
+            name="© Sissa",
+            short_name="Sissa",
+            text="""Copyright Sissa, all right reserved""",
+            url="https://www.sissa.it/",
+            available_for_submission=False,
+            journal=self.license_ccbyncnd.journal,
+        )
 
     def tidy_up(self):
         """Run una-tantum operations at the end of the import process."""
