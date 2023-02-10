@@ -512,7 +512,7 @@ class Command(BaseCommand):
         body_dict = raw_data["body"]
         if not body_dict:
             if article.date_published > BODY_EXPECTED_DATE:
-                logger.warning("Missing body in (%s)", raw_data["field_id"], raw_data["nid"])
+                logger.warning("Missing body in (%s)", raw_data["field_id"])
             article.save()
             return
         body = body_dict.get("value", None)
