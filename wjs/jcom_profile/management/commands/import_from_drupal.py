@@ -84,6 +84,9 @@ class Command(BaseCommand):
     seen_keywords = {}
     seen_sections = {}
     seen_authors = {}
+    # and when I import children before parents, I can fall into
+    # importing the same child twice, so I keep track of articles also
+    seen_articles = {}
 
     def handle(self, *args, **options):
         """Command entry point."""
@@ -205,6 +208,11 @@ class Command(BaseCommand):
     def process(self, raw_data):
         """Process an article's raw json data."""
         logger.debug("Processing %s (nid=%s)", raw_data["field_id"], raw_data["nid"])
+        if article_pk := Command.seen_articles.get(raw_data["field_id"], None):
+            logger.debug("  %s - already imported. Just retrieving from DB (%s).", raw_data["field_id"], article_pk)
+            article = submission_models.Article.objects.get(pk=article_pk)
+            return article
+
         self.wjapp = self.data_from_wjapp(raw_data)
         article = self.create_article(raw_data)
         self.set_identifiers(article, raw_data)
@@ -248,6 +256,7 @@ class Command(BaseCommand):
             article.articlewrapper.nid = int(raw_data["nid"])
             article.articlewrapper.save()
         assert article.articlewrapper.nid == int(raw_data["nid"])
+        Command.seen_articles.setdefault(raw_data["field_id"], article.pk)
         return article
 
     def set_identifiers(self, article, raw_data):
