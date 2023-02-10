@@ -95,6 +95,15 @@ class Command(BaseCommand):
         self.prepare()
 
         for raw_data in self.find_articles():
+            if interesting_year := self.options["year"]:
+                article_year = rome_timezone.localize(datetime.fromtimestamp(int(raw_data["field_year"]))).year
+                if article_year < int(interesting_year):
+                    continue
+            elif interesting_pubids := self.options["ids"]:
+                interesting_pubids = interesting_pubids.split(",")
+                if raw_data["field_id"] not in interesting_pubids:
+                    continue
+
             try:
                 self.process(raw_data)
             except Exception as e:
@@ -114,6 +123,10 @@ class Command(BaseCommand):
         filters.add_argument(
             "--year",
             help="Process all articles of this year.",
+        )
+        filters.add_argument(
+            "--ids",
+            help="Comma-separated lists of pubids to import. E.g. --ids=JCOM_2107_2022_C01,JCOM_2107_2022_C02",
         )
         parser.add_argument(
             "--base-url",
@@ -191,11 +204,6 @@ class Command(BaseCommand):
 
     def process(self, raw_data):
         """Process an article's raw json data."""
-        if interesting_year := self.options["year"]:
-            article_year = rome_timezone.localize(datetime.fromtimestamp(int(raw_data["field_year"]))).year
-            if article_year < int(interesting_year):
-                return
-
         logger.debug("Processing %s (nid=%s)", raw_data["field_id"], raw_data["nid"])
         self.wjapp = self.data_from_wjapp(raw_data)
         article = self.create_article(raw_data)
@@ -274,7 +282,11 @@ class Command(BaseCommand):
             id_type="id",
             enabled=True,
         )
+        # If we don't refresh the article object, we get an error when saving:
+        # Key (render_galley_id)=(29294) is not present in table "core_galley".
+        article.refresh_from_db()
         article.save()
+        logger.debug("  %s - identifiers set", raw_data["field_id"])
 
     def set_history(self, article, raw_data):
         """Set the review history date: received, accepted, published dates.
@@ -338,6 +350,7 @@ class Command(BaseCommand):
             galley.delete()
         article.galley_set.clear()
         article.render_galley = None
+        article.save()
 
         attachments = raw_data["field_attachments"]
         # Drupal "attachments" are only references to "file" nodes
