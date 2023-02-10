@@ -77,6 +77,9 @@ SECTION_ORDER = {
     "Conference Review": 10,
 }
 
+# Non-peer reviewd sections (#200)
+NON_PEER_REVIEWED = ("Editorial", "Comment")
+
 
 class Command(BaseCommand):
     help = "Import an article."  # NOQA
@@ -589,6 +592,9 @@ class Command(BaseCommand):
             )
             Command.seen_sections[section_uri] = section.pk
         article.section = section
+
+        if article.section.name in NON_PEER_REVIEWED:
+            article.peer_reviewed = False
 
         # Must ensure that a SectionOrdering exists for this issue,
         # otherwise issue.articles.add() will fail.
