@@ -60,7 +60,7 @@
                             {% with parent=article.ancestors.first.parent %}
                                 <p>
                                     <span>{% trans "part of" %}</span>
-                                    <a href="{% url 'article_view' 'pubid' parent|pubid %}">{{ parent.title }}</a>
+                                    <a href="{{ parent.url }}">{{ parent.title }}</a>
                                 </p>
                             {% endwith %}
                         {% endif %}
@@ -183,7 +183,7 @@
                                             <!-- <div class="collapsible-body"> -->
                                             {% for kid in article.genealogy.children.all %}
                                                 <h6>
-                                                    <a href="{% url 'article_view' 'pubid' kid|pubid %}">{{ kid.title }}</a>
+                                                    <a href="{{ kid.url }}">{{ kid.title }}</a>
                                                 </h6>
                                                 <div>
                                                     <div style="float:left;">
