@@ -267,6 +267,11 @@ class Command(BaseCommand):
             article.articlewrapper.nid = int(raw_data["nid"])
             article.articlewrapper.save()
         assert article.articlewrapper.nid == int(raw_data["nid"])
+        # Set the language to English for all articles, even if they
+        # have been submitted in some other language, because we have
+        # only and ever English metadata (see #194).
+        article.language = "eng"
+        article.save()
         Command.seen_articles.setdefault(raw_data["field_id"], article.pk)
         return article
 
