@@ -259,3 +259,10 @@ class Genealogy(models.Model):
 
     def __str__(self):
         return f"Genealogy: article {self.parent} has {self.children.count()} kids"
+
+
+class Newsletter(models.Model):
+    last_sent = models.DateTimeField(
+        verbose_name=_("Last time newsletter emails have been sent to users"),
+        auto_now=True,
+    )
