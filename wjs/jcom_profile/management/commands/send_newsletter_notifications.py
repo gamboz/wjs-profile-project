@@ -11,6 +11,7 @@ from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
 from journal.models import Journal
 from submission.models import Article
+from utils.management.commands.test_fire_event import create_fake_request
 
 from wjs.jcom_profile.models import Newsletter, Recipient
 
@@ -67,18 +68,14 @@ class Command(BaseCommand):
         articles_list = list(filtered_articles)
 
         # Templates from themes are found only when there is a request with a journal attached to it.
-        # See also
-        # - utils/management/commands/test_fire_event.py
+        # As alternative, J. uses a template from the journal settings. See
         # - cron/management/commands/send_publication_notifications.py
         jcom_code = "JCOM"
         jcom = Journal.objects.get(code=jcom_code)
-        # not sufficient: GlobalRequestMiddleware.process_request(FakeRequest(journal=jcom, GET=lambda: True))
-        from utils.management.commands.test_fire_event import create_fake_request
-
         fake_request = create_fake_request(user=None, journal=jcom)
-        # workaround possible override in DEBUG mode
+        # Workaround for possible override in DEBUG mode
         # (please read utils.template_override_middleware:60)
-        fake_request.GET.get = Mock(return_value="JCOM-theme")
+        fake_request.GET.get = Mock(return_value=False)
         GlobalRequestMiddleware.process_request(fake_request)
 
         for subscriber in filtered_subscribers:
