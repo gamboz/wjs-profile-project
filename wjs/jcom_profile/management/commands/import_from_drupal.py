@@ -7,6 +7,7 @@ from io import BytesIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 import lxml.html
+import pycountry
 import pytz
 import requests
 from core import models as core_models
@@ -267,10 +268,6 @@ class Command(BaseCommand):
             article.articlewrapper.nid = int(raw_data["nid"])
             article.articlewrapper.save()
         assert article.articlewrapper.nid == int(raw_data["nid"])
-        # Set the language to English for all articles, even if they
-        # have been submitted in some other language, because we have
-        # only and ever English metadata (see #194).
-        article.language = "eng"
         article.save()
         Command.seen_articles.setdefault(raw_data["field_id"], article.pk)
         return article
@@ -383,7 +380,9 @@ class Command(BaseCommand):
             file_dict = self.fetch_data_dict(file_node["file"]["uri"])
             file_download_url = file_dict["url"]
             uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
-            label = self.decide_galley_label(raw_data, file_node, file_dict)
+            label, language = self.decide_galley_label(raw_data, file_node, file_dict)
+            # NO! FIMEME! this way we get the language of the last galley!
+            self.set_language(article, language)
             save_galley(
                 article,
                 request=self.fake_request,
@@ -399,7 +398,7 @@ class Command(BaseCommand):
         """Decide the galley's label."""
         # Remember that we can have ( PDF + EPUB galley ) x languages (usually two),
         # so a label of just "PDF" might not be sufficient.
-        lang = re.search(r"_([a-z]{2,3})\.", file_dict["name"])
+        lang_match = re.search(r"_([a-z]{2,3})\.", file_dict["name"])
         mime_to_extension = {
             "application/pdf": "PDF",
             "application/epub+zip": "EPUB",
@@ -408,9 +407,11 @@ class Command(BaseCommand):
         if label is None:
             logger.error("""Unknown mime type "%s" for %s""", file_dict["mime"], raw_data["field_id"])
             label = "Other"
-        if lang is not None:
-            label = f"{label} ({lang.group(1)})"
-        return label
+        language = None
+        if lang_match is not None:
+            language = lang_match.group(1)
+            label = f"{label} ({language})"
+        return (label, language)
 
     def set_supplementary_material(self, article, raw_data):
         """Import JCOM's supllementary material as another galley."""
@@ -1054,3 +1055,18 @@ class Command(BaseCommand):
             logger.debug("  %s - retrieving child %s", raw_data["field_id"], child_raw_data["field_id"])
             child_article = self.process(child_raw_data)
             genealogy.children.add(child_article)
+
+    def set_language(self, article, language):
+        """Set the article's language based on the galley's label."""
+        # Not sure that it is correct to set a language different from
+        # English when the doi points to English-only metadata (even
+        # if there are two PDF files). Bur see #194.
+
+        # Most papers will be English
+        if language == "en":
+            article.language = "eng"
+        else:
+            # NB: language from Drupal is iso639-2 (two chars), while
+            # Janeway has iso639-3 (three chars) (credo).
+            article.language = pycountry.languages.get(alpha_2=language)
+        article.save()
