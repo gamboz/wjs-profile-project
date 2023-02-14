@@ -546,13 +546,16 @@ class Command(BaseCommand):
             save_to_disk=True,
             public=True,
         )
-        if new_galley.file.mime_type != "text/html":
+        expected_mimetype = "text/html"
+        if new_galley.file.mime_type != expected_mimetype:
             logger.warning(
                 "Wrong mime type %s for %s (%s)",
                 new_galley.file.mime_type,
                 new_galley.file.uuid_filename,
                 raw_data["field_id"],
             )
+            new_galley.file.mime_type = "text/html"
+            new_galley.file.save()
         article.render_galley = new_galley
         self.mangle_images(article)
         article.save()
