@@ -1,5 +1,5 @@
 {% load i18n %}
-{% if article.genealogy.children.exists %}
+{% if article|has_attr:"genealogy" and article.genealogy.children.exists %}
     <div class="genealogy-children">
         <div class="card">
             <ul class="card-content collapsible" data-collapsible="accordion">
