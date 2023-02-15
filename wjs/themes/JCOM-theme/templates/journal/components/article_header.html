@@ -7,7 +7,7 @@
             {% with parent=article.ancestors.first.parent %}
                 <p>
                     <span>{% trans "part of" %}</span>
-                    <a href="{% url 'article_view' 'id' parent.pk %}">{{ parent.title }}</a>
+                    <a href="{{ parent.url }}">{{ parent.title }}</a>
                 </p>
             {% endwith %}
         {% endif %}
