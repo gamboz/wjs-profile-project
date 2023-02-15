@@ -63,6 +63,9 @@ COUNTRIES_MAPPING = {
     "Taiwan": "Taiwan, Province of China",
 }
 
+JANEWAY_LANGUAGES_BY_CODE = {t[0]: t[1] for t in submission_models.LANGUAGE_CHOICES}
+assert len(JANEWAY_LANGUAGES_BY_CODE) == len(submission_models.LANGUAGE_CHOICES)
+
 # Default order of sections in any issue.
 # It is not possible to mix different types (e.g. A1 E1 A2...)
 SECTION_ORDER = {
@@ -359,7 +362,10 @@ class Command(BaseCommand):
         logger.debug("  %s - history", raw_data["field_id"])
 
     def set_files(self, article, raw_data):
-        """Find info about the article "attachments", download them and import them as galleys."""
+        """Find info about the article "attachments", download them and import them as galleys.
+
+        Here we also set the article's language, as it depends on which galleys we find.
+        """
         # See also plugin imports.ojs.importers.import_galleys.
 
         # First, let's drop all existing galleys
@@ -374,6 +380,14 @@ class Command(BaseCommand):
         article.render_galley = None
         article.save()
 
+        # Set default language to English. This will be overridden
+        # later if we find a non-English galley.
+        #
+        # I'm not sure that it is correct to set a language different
+        # from English when the doi points to English-only metadata
+        # (even if there are two PDF files). But see #194.
+        article.language = "eng"
+
         attachments = raw_data["field_attachments"]
         # Drupal "attachments" are only references to "file" nodes
         for file_node in attachments:
@@ -381,8 +395,18 @@ class Command(BaseCommand):
             file_download_url = file_dict["url"]
             uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
             label, language = self.decide_galley_label(raw_data, file_node, file_dict)
-            # NO! FIMEME! this way we get the language of the last galley!
-            self.set_language(article, language)
+            if language and language != "en":
+                if article.language != "eng":
+                    # We can have 2 non-English galleys (PDF and EPUB),
+                    # they are supposed to be of the same language. Not checking.
+                    #
+                    # If the article language is different from
+                    # english, this means that a non-English gally has
+                    # already been processed and there is no need to
+                    # set the language again.
+                    pass
+                else:
+                    self.set_language(article, language)
             save_galley(
                 article,
                 request=self.fake_request,
@@ -1057,16 +1081,27 @@ class Command(BaseCommand):
             genealogy.children.add(child_article)
 
     def set_language(self, article, language):
-        """Set the article's language based on the galley's label."""
-        # Not sure that it is correct to set a language different from
-        # English when the doi points to English-only metadata (even
-        # if there are two PDF files). Bur see #194.
+        """Set the article's language.
 
-        # Most papers will be English
-        if language == "en":
-            article.language = "eng"
-        else:
-            # NB: language from Drupal is iso639-2 (two chars), while
-            # Janeway has iso639-3 (three chars) (credo).
-            article.language = pycountry.languages.get(alpha_2=language)
+        Must map from Drupal's iso639-2 (two chars) to Janeway iso639-3 (three chars).
+        """
+        lang = pycountry.languages.get(alpha_2=language)
+        if lang.alpha_3 not in JANEWAY_LANGUAGES_BY_CODE:
+            logger.error(
+                'Unknown language "%s" (from "%s") for %s. Keeping default "English"',
+                lang.alpha_3,
+                language,
+                article.get_identifier("pubid"),
+            )
+            return
+        article.language = lang.name
+        if lang.name not in JANEWAY_LANGUAGES_BY_CODE.values():
+            logger.warning(
+                """ISO639 language for "%s" is "%s" and is different from Janeway's "%s". Using "%s" anyway for %s""",
+                language,
+                lang.name,
+                JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3],
+                lang.name,
+                article.get_identifier("pubid"),
+            )
         article.save()
