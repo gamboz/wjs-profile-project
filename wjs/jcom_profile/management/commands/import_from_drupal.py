@@ -271,6 +271,8 @@ class Command(BaseCommand):
             article.articlewrapper.nid = int(raw_data["nid"])
             article.articlewrapper.save()
         assert article.articlewrapper.nid == int(raw_data["nid"])
+        eid = self.from_pubid_to_eid(raw_data["field_id"])
+        article.page_numbers = eid
         article.save()
         Command.seen_articles.setdefault(raw_data["field_id"], article.pk)
         return article
@@ -1109,3 +1111,29 @@ class Command(BaseCommand):
                 article.get_identifier("pubid"),
             )
         article.save()
+
+    def from_pubid_to_eid(self, pubid):
+        """Extract the electronic ID from the publication ID.
+
+        Used in the how-to-cite.
+
+        Adapted from token_jcom/token_jcom.module:token_jcom_contribution_number
+        """
+        eid = ""
+        # Abbiamo tre possibili formati, a seconda dell'età del paper:
+        if pubid.find("_") > -1:
+            # JCOM_1401_2015_C02 o JCOM_1401_2015_E => dividi sugli "_" e prendi l'ultimo segmento:
+            eid = pubid.split("_")[-1]
+
+        elif pubid.find(")") > -1:
+            # Jcom1102(2012)A01 o Jcom1102(2012)E => la parte dopo la parentesi:
+            # was: pubid[pubid.find(")") + 1:] (but flake8 E203 and black didn't agree on the space before ":")
+            eid = pubid.split(")")[-1]
+
+        elif len(pubid) > 4:
+            # R020401 (o E0204) in formato tvviicc => 1° e 5-6°:
+            eid = pubid[0:1] + pubid[5:]
+
+        else:
+            logger.error("Cannot extract EID from %s", pubid)
+        return eid

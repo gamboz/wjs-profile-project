@@ -38,3 +38,16 @@ def has_attr(obj, attr):
     Example usage: {% if article|has_attr:"genealogy" %}
     """
     return hasattr(obj, attr)
+
+
+@register.filter
+def how_to_cite(article):
+    """Return APA-style how-to-cite for JCOM."""
+    authors = article.frozenauthor_set.all()
+    author_str = " & ".join(a.citation_name() for a in authors)
+    htc = f"""{author_str}, ({article.date_published.year}).
+    {article.title} <i>{article.journal.code}</i>
+    {article.issue.volume}({article.issue.issue}), {article.page_numbers}.
+    https://doi.org/{article.get_doi()}
+    """
+    return htc
