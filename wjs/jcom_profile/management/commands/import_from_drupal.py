@@ -1094,10 +1094,11 @@ class Command(BaseCommand):
                 article.get_identifier("pubid"),
             )
             return
-        article.language = lang.name
+
+        article.language = JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3]
         if lang.name not in JANEWAY_LANGUAGES_BY_CODE.values():
             logger.warning(
-                """ISO639 language for "%s" is "%s" and is different from Janeway's "%s". Using "%s" anyway for %s""",
+                """ISO639 language for "%s" is "%s" and is different from Janeway's "%s" (using the latter) for %s""",
                 language,
                 lang.name,
                 JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3],
