@@ -14,7 +14,7 @@
                         <div class="article-documents-list-item">
                             <div class="article-documents-list-item-header">
                               <h6 class="article-documents-list-item-title">
-                                <a href="{% url 'article_view' 'id' kid.pk %}">{{ kid.title }}</a>
+                                <a href="{{ kid.url }}">{{ kid.title }}</a>
                             </h6>
 
                               <div class="date">
