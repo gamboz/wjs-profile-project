@@ -1,13 +1,17 @@
 """Management command to add a role."""
 import datetime
 from typing import List
+from unittest.mock import Mock
 
 from comms.models import NewsItem
+from core.middleware import GlobalRequestMiddleware
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
+from journal.models import Journal
 from submission.models import Article
+from utils.management.commands.test_fire_event import create_fake_request
 
 from wjs.jcom_profile.models import Newsletter, Recipient
 
@@ -31,7 +35,7 @@ class Command(BaseCommand):
         from premailer import transform
 
         newsletter_content = render_to_string(
-            "newsletter_template.html",
+            "newsletters/newsletter_template.html",
             {"subscriber": subscriber.user, "articles": "".join(rendered_articles), "news": "".join(rendered_news)},
         )
         processed = transform(newsletter_content)
@@ -62,18 +66,32 @@ class Command(BaseCommand):
         filtered_news = NewsItem.objects.filter(posted__date__gt=last_sent)
         filtered_subscribers = Recipient.objects.filter(topics__in=filtered_articles.values_list("keywords"))
         articles_list = list(filtered_articles)
+
+        # Templates from themes are found only when there is a request with a journal attached to it.
+        # As alternative, J. uses a template from the journal settings. See
+        # - cron/management/commands/send_publication_notifications.py
+        jcom_code = "JCOM"
+        jcom = Journal.objects.get(code=jcom_code)
+        fake_request = create_fake_request(user=None, journal=jcom)
+        # Workaround for possible override in DEBUG mode
+        # (please read utils.template_override_middleware:60)
+        fake_request.GET.get = Mock(return_value=False)
+        GlobalRequestMiddleware.process_request(fake_request)
+
         for subscriber in filtered_subscribers:
             rendered_articles = []
             rendered_news = []
             for article in articles_list:
                 if article.keywords.intersection(subscriber.topics.all()):
-                    rendered_articles.append(render_to_string("newsletter_article.html", {"article": article}))
+                    rendered_articles.append(
+                        render_to_string("newsletters/newsletter_article.html", {"article": article}),
+                    )
             if subscriber.news:
                 for news in filtered_news:
-                    rendered_news.append(render_to_string("newsletter_news.html", {"news": news}))
+                    rendered_news.append(render_to_string("newsletters/newsletter_news.html", {"news": news}))
 
             self.render_and_send_newsletter(subscriber, rendered_articles, rendered_news)
         newsletter.save()
 
         for article in articles_list:
-            article.rendered = render_to_string("newsletter_article.html", {"article": article})
+            article.rendered = render_to_string("newsletters/newsletter_article.html", {"article": article})
