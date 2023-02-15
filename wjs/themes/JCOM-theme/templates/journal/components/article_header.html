@@ -3,7 +3,7 @@
     <div class="card-content">
       <span class="new badge color-section-{{ article.section.id }}">{{ article.section.name }}</span>
         {% if journal_settings.article.disable_article_large_image %}<h1 class="article-title">{{ article.title|safe }}</h1>{% endif %}
-        {% if article.ancestors.exists %}
+        {% if article|has_attr:"ancestors" and article.ancestors.exists %}
             {% with parent=article.ancestors.first.parent %}
                 <p>
                     <span>{% trans "part of" %}</span>
