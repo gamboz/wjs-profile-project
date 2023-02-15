@@ -35,6 +35,16 @@ def article(article_wrapper):
 def has_attr(obj, attr):
     """Return True is the given object has the given attribute.
 
-    Example usage: {% if article|hasattr:"genealogy" %}
+    Example usage: {% if article|has_attr:"genealogy" %}
     """
     return hasattr(obj, attr)
+
+
+@register.filter
+def pubid(obj):
+    """Return the "pubid" identifier of the given article.
+
+    Example usage:
+    <a href="{% url 'article_view' 'pubid' kid|pubid %}">...
+    """
+    return obj.get_identifier("pubid")
