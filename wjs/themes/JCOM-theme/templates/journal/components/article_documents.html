@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load wjs_tags %}
 {% if article|has_attr:"genealogy" and article.genealogy.children.exists %}
     <div class="genealogy-children">
         <div class="card">
@@ -8,7 +9,7 @@
                         <h2 class="article-documents-title">{% trans "Invited documents" %}</h2>
                         <i class="fa fa-caret-down"></i>
                       </div>
-                    
+
                       <div class="article-documents-list collapsible-body">
                         {% for kid in article.genealogy.children.all %}
                         <div class="article-documents-list-item">
@@ -28,7 +29,7 @@
                                     <a href="{% url 'articles_by_author' au.pk %}">{{ au.full_name }}</a>{# djlint:off #}{% if forloop.revcounter0 >= 2 %},{% endif %}{% if forloop.revcounter0 == 1 %} and{% endif %}{# djlint:on #}
                                 {% endfor %}
                             </div>
-                            
+
                             <div style="margin-bottom:1em;">{{ kid.abstract|safe|truncatewords_html:23 }}</div>
                           </div>
                         {% endfor %}
