@@ -3,6 +3,7 @@ from journal import models as journal_models
 from utils.logger import get_logger
 from django.core.management.base import BaseCommand
 from submission.models import Article
+from core.models import Account
 from identifiers import models as identifier_models
 import csv
 
@@ -19,14 +20,27 @@ class Command(BaseCommand):
         article_id = options["id"]
         #logger.warning(options)
         writer = csv.writer(self.stdout, delimiter=';', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(['id', 'pubid', 'title'])
-        query_set = Article.objects.all().filter(identifier__id_type='pubid').values("id", "title", "identifier__identifier")
+        
+        #csv header
+        writer.writerow(['article_id', 'pubid', 'correspondence_author_id', 'auth_last_name', 'auth_first_name', 'auth_email', 'title'])
+        query_set = Article.objects.all().filter(identifier__id_type='pubid').values("id", "title", "identifier__identifier", "correspondence_author_id")
         if article_id:
-            query_set = Article.objects.all().filter(identifier__id_type='pubid',
-                                                     identifier__identifier=article_id).values("id", "title", "identifier__identifier")
+           query_set = Article.objects.all().filter(identifier__id_type='pubid',
+                                                    identifier__identifier=article_id).values("id", "title", "identifier__identifier", "correspondence_author_id")
+        author_data = Account.objects.all().values("id", "last_name", "first_name", "email")  
         for item in query_set:
-          writer.writerow([str(item['id']), str(item['identifier__identifier']), str(item['title'])])
-
+            auth_first_name=''
+            auth_last_name=''
+            auth_email=''
+            for auth in author_data:
+                if auth['id']==item['correspondence_author_id']:
+                   auth_first_name=str(auth['first_name'])
+                   auth_last_name=str(auth['last_name'])
+                   auth_email=str(auth['email'])
+            #csv row       
+            writer.writerow([str(item['id']), str(item['identifier__identifier']), str(item['correspondence_author_id']), auth_last_name, auth_first_name, auth_email, str(item['title'])])
+                   
+                   
             
     def add_arguments(self, parser):
         """Add arguments to command."""
