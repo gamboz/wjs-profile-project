@@ -1,7 +1,9 @@
+import datetime
 import random
 
 import pytest
 from conftest import yesterday
+from django.core import management
 
 
 def select_random_keywords(keywords):
@@ -9,7 +11,7 @@ def select_random_keywords(keywords):
 
 
 @pytest.mark.django_db
-def test_newsletters_are_correctry_sent(
+def test_newsletters_are_correctly_sent(
     account_factory,
     article_factory,
     news_item_factory,
@@ -34,8 +36,6 @@ def test_newsletters_are_correctry_sent(
         recipients.append(recipient)
     for _ in range(50):
         article = article_factory(
-            title="Parent",
-            abstract="Parentabstract",
             journal=journal,
             date_published=yesterday,
             stage="Published",
@@ -47,3 +47,8 @@ def test_newsletters_are_correctry_sent(
             article.keywords.add(keyword)
         article.save()
         articles.append(article)
+
+    management.call_command("send_newsletter_notifications")
+
+    newsletter.refresh_from_db()
+    assert newsletter.last_sent.date() == datetime.datetime.now().date()

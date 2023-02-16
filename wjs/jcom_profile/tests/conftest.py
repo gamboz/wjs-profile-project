@@ -43,7 +43,7 @@ from wjs.jcom_profile.models import (
 from wjs.jcom_profile.utils import generate_token
 
 USERNAME = "user"
-JOURNAL_CODE = "TST"
+JOURNAL_CODE = "JCOM"
 yesterday = timezone.now() - timezone.timedelta(1)
 
 EXTRAFIELDS_FRAGMENTS = [
