@@ -43,8 +43,9 @@ def has_attr(obj, attr):
 @register.filter
 def how_to_cite(article):
     """Return APA-style how-to-cite for JCOM."""
-    authors = article.frozenauthor_set.all()
-    author_str = " & ".join(a.citation_name() for a in authors)
+    author_names = [a.citation_name() for a in article.frozenauthor_set.all()]
+    author_str = ", ".join(author_names[:-1])
+    author_str += f" and {author_names[-1]}"
     htc = f"""{author_str}, ({article.date_published.year}).
     {article.title} <i>{article.journal.code}</i>
     {article.issue.volume}({article.issue.issue}), {article.page_numbers}.

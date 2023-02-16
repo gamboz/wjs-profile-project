@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import os
+import re
 import shutil
 from uuid import uuid4
 
@@ -113,3 +114,36 @@ def from_pubid_to_eid(pubid):
     else:
         logger.error("Cannot extract EID from %s", pubid)
     return eid
+
+
+def citation_name_apa(author):
+    """Format an author's name in way suitable to be used in APA-like citations.
+
+    :param author: can be an Account or a FrozenAuthor.
+    """
+    return ""
+
+
+def abbreviate_first_middle(author):
+    """Abbreviate an author's first- and middle-name.
+
+    :param author: can be an Account or a FrozenAuthor.
+
+    Adapted from PoS's
+    [compress_names](https://gitlab.sissamedialab.it/gamboz/pos/-/blob/master/lib/io_lib.pm#L3181)
+    but see also
+    https://gitlab.sissamedialab.it/gamboz/pos/-/issues/29
+
+    """
+    given_names = " ".join((author.first_name, author.middle_name)).strip()
+    # Remove existing "." (usually in middlename)
+    given_names, _ = re.subn(r"[. ]+", " ", given_names)
+    # Split on space or "-" (for composite names)
+    pieces = re.split(r"([ -])", given_names)
+    # Keep only the initial letter and the "-"
+    initials = [p[0] for p in pieces if p != " "]
+    # Append a "." after the initial (do nothing for the "-")
+    abbreviations = [i != "-" and f"{i}." or i for i in initials]
+
+    abbreviated_given_name = "".join(abbreviations)
+    return abbreviated_given_name
