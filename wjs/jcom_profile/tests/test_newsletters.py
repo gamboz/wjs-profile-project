@@ -10,10 +10,19 @@ from wjs.jcom_profile.models import Recipient
 
 
 def select_random_keywords(keywords):
+    """
+    Return a sampled set of keywords from the given ones.
+    :param keywords: Keyword list fixture
+    :return: A sampled list of Keyword
+    """
     return random.sample(list(keywords), random.randint(1, len(keywords)))
 
 
 def check_email_body(outbox):
+    """
+    Check that expected news and articles are correctly rendered in newsletter for each user.
+    :param outbox: Django mail.outbox containing email that are sent after send_newsletter_notifications call.
+    """
     for email in outbox:
         user_email = email.to[0]
         user_keywords = Recipient.objects.get(user__email=user_email).topics.all()
