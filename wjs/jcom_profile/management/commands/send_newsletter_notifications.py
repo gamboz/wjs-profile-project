@@ -8,6 +8,7 @@ from core.middleware import GlobalRequestMiddleware
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.template.loader import render_to_string
 from journal.models import Journal
 from submission.models import Article
@@ -64,7 +65,9 @@ class Command(BaseCommand):
             )
         filtered_articles = Article.objects.filter(date_published__date__gt=last_sent)
         filtered_news = NewsItem.objects.filter(posted__date__gt=last_sent)
-        filtered_subscribers = Recipient.objects.filter(topics__in=filtered_articles.values_list("keywords"))
+        filtered_subscribers = Recipient.objects.filter(
+            Q(topics__in=filtered_articles.values_list("keywords")) | Q(news=True),
+        )
         articles_list = list(filtered_articles)
 
         # Templates from themes are found only when there is a request with a journal attached to it.
