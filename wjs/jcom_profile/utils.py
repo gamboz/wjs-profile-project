@@ -124,10 +124,13 @@ def citation_name_apa(author):
     return ""
 
 
-def abbreviate_first_middle(author):
+def abbreviate_first_middle(author, sep=" "):
     """Abbreviate an author's first- and middle-name.
 
     :param author: can be an Account or a FrozenAuthor.
+    :param sep: separator between "parts". E.g.
+    - sep=" " ⇨ A. B.-C.
+    - sep=""  ⇨ A.B.-C.
 
     Adapted from PoS's
     [compress_names](https://gitlab.sissamedialab.it/gamboz/pos/-/blob/master/lib/io_lib.pm#L3181)
@@ -135,15 +138,28 @@ def abbreviate_first_middle(author):
     https://gitlab.sissamedialab.it/gamboz/pos/-/issues/29
 
     """
+    # Author don't have `is_corporate` attribute, only FrozenAuthors do!
+    if hasattr(author, "is_corporate") and author.is_corporate:
+        return author.corporate_name
+
     given_names = " ".join((author.first_name, author.middle_name)).strip()
     # Remove existing "." (usually in middlename)
     given_names, _ = re.subn(r"[. ]+", " ", given_names)
     # Split on space or "-" (for composite names)
     pieces = re.split(r"([ -])", given_names)
     # Keep only the initial letter and the "-"
-    initials = [p[0] for p in pieces if p != " "]
-    # Append a "." after the initial (do nothing for the "-")
-    abbreviations = [i != "-" and f"{i}." or i for i in initials]
+    initials = [p[0] for p in pieces if p and p != " "]
 
-    abbreviated_given_name = "".join(abbreviations)
-    return abbreviated_given_name
+    abbreviation = ""
+    for i in range(len(initials) - 1):
+        initial = initials[i]
+        next_initial = initials[i + 1]
+
+        abbreviation += initial
+        if initial != "-":
+            abbreviation += "."
+            if next_initial != "-":
+                abbreviation += sep
+    # Assume that the last initial is a letter, not "-"
+    abbreviation += f"{initials[-1]}."
+    return abbreviation

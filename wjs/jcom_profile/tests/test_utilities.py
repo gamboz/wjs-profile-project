@@ -7,7 +7,16 @@ import pytest
 from wjs.jcom_profile.templatetags.wjs_tags import how_to_cite
 from wjs.jcom_profile.utils import abbreviate_first_middle, from_pubid_to_eid
 
-MockAuthor = namedtuple("MockAuthor", ["first_name", "middle_name", "last_name", "is_corporate"])
+MockAuthor = namedtuple(
+    "MockAuthor",
+    [
+        "first_name",
+        "middle_name",
+        "last_name",
+        "is_corporate",
+        "corporate_name",
+    ],
+)
 
 
 class TestUtils:
@@ -29,74 +38,59 @@ class TestUtils:
         assert from_pubid_to_eid(pubid) == eid
 
     @pytest.mark.parametrize(
-        "author,abbreviation",
+        "first,middle,last,is_corporate,corporate_name,sep,abbreviation",
         (
-            (
-                MockAuthor(
-                    first_name="Mario",
-                    middle_name="",
-                    last_name="Rossi",
-                    is_corporate=False,
-                ),
-                "M.",
-            ),
+            ("Mario", "", "Rossi", False, None, "", "M."),
             # JCOM_2201_2023_A05
-            (
-                MockAuthor(
-                    first_name="Anne-Caroline",
-                    middle_name="",
-                    last_name="Prévot",
-                    is_corporate=False,
-                ),
-                "A.-C.",
-            ),
-            (
-                MockAuthor(
-                    first_name="D'ann",
-                    middle_name="",
-                    last_name="Barker",
-                    is_corporate=False,
-                ),
-                "D.",
-            ),
-            (
-                MockAuthor(
-                    first_name="Haidar Mas'ud",
-                    middle_name="",
-                    last_name="Alfanda      ",
-                    is_corporate=False,
-                ),
-                "H.M.",
-            ),
-            (
-                MockAuthor(
-                    first_name="Natal'ya",
-                    middle_name="",
-                    last_name="Peresadko",
-                    is_corporate=False,
-                ),
-                "N.",
-            ),
-            (
-                MockAuthor(
-                    first_name="Re'em",
-                    middle_name="",
-                    last_name="Sari",
-                    is_corporate=False,
-                ),
-                "R.",
-            ),
-            (
-                MockAuthor(
-                    first_name="Shadi Adel Moh'd",
-                    middle_name="",
-                    last_name="Bedoor",
-                    is_corporate=False,
-                ),
-                "S.A.M.",
-            ),
+            ("Anne-Caroline", "", "Prévot", False, None, "", "A.-C."),
+            # From PoS
+            ("D'ann", "", "Barker", False, None, "", "D."),
+            ("Haidar Mas'ud", "", "Alfanda", False, None, "", "H.M."),
+            ("Natal'ya", "", "Peresadko", False, None, "", "N."),
+            ("Re'em", "", "Sari", False, None, "", "R."),
+            ("Shadi Adel Moh'd", "", "Bedoor", False, None, "", "S.A.M."),
+            # With space as separator
+            ("Anne-Caroline", "", "Prévot", False, None, " ", "A.-C."),
+            ("D'ann", "", "Barker", False, None, " ", "D."),
+            ("Shadi Adel Moh'd", "", "Bedoor", False, None, " ", "S. A. M."),
+            # Corporate - expect no abbreviation
+            ("First", "Middle", "Last", True, "Corporate name", "", "Corporate name"),
+            # With middlename (from PoS) - no space
+            ("C.-J.", "David", "Lin", False, None, "", "C.-J.D."),
+            ("Kim-Vy", "H.", "Tran", False, None, "", "K.-V.H."),
+            ("M.-H.", "A.", "Huang", False, None, "", "M.-H.A."),
+            ("Niels-Uwe", "Friedrich", "Bastian", False, None, "", "N.-U.F."),
+            ("Zh.-A.", "M.", "Dzhilkibaev", False, None, "", "Z.-A.M."),
+            ("Zhan-Arys", "Magysovich", "Dzhilkibaev", False, None, "", "Z.-A.M."),
+            ("Zhan-Arys", "M.", "Dzhlkibaev", False, None, "", "Z.-A.M."),
+            # With middlename (from PoS) - with space
+            ("C.-J.", "David", "Lin", False, None, " ", "C.-J. D."),
+            ("Kim-Vy", "H.", "Tran", False, None, " ", "K.-V. H."),
+            ("M.-H.", "A.", "Huang", False, None, " ", "M.-H. A."),
+            ("Niels-Uwe", "Friedrich", "Bastian", False, None, " ", "N.-U. F."),
+            ("Zh.-A.", "M.", "Dzhilkibaev", False, None, " ", "Z.-A. M."),
+            ("Zhan-Arys", "Magysovich", "Dzhilkibaev", False, None, " ", "Z.-A. M."),
+            ("Zhan-Arys", "M.", "Dzhlkibaev", False, None, " ", "Z.-A. M."),
         ),
     )
-    def test_abbreviate_first_middle(self, author, abbreviation):
+    def test_abbreviate_first_middle(
+        self,
+        first,
+        middle,
+        last,
+        is_corporate,
+        corporate_name,
+        sep,
+        abbreviation,
+    ):
         """Test the abbreviation of given names."""
-        assert abbreviate_first_middle(author) == abbreviation
+        author = MockAuthor(first, middle, last, is_corporate, corporate_name)
+        assert abbreviate_first_middle(author, sep=sep) == abbreviation
+
+
+class TestHTC:
+    """Test How To Cite."""
+
+    def test_htc(self):
+        """Test that the how-to-cite template filter produces the expected string."""
+        assert not how_to_cite(None)
