@@ -7,6 +7,10 @@ span.badge {
     font-size: 1rem;
     font-weight: 500;
 
+    &:after {
+      display: none;
+    }
+
     &.color-section {
       &-1 {
         background-color: #0475ad; // article
