@@ -138,7 +138,7 @@ def abbreviate_first_middle(author, sep=" "):
     https://gitlab.sissamedialab.it/gamboz/pos/-/issues/29
 
     """
-    given_names = " ".join((author.first_name, author.middle_name)).strip()
+    given_names = " ".join((author.first_name or "", author.middle_name or "")).strip()
     # Remove existing "." (usually in middlename)
     given_names, _ = re.subn(r"[. ]+", " ", given_names)
     # Split on space or "-" (for composite names)

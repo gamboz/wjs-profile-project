@@ -28,6 +28,8 @@ MockAuthor = namedtuple(
 # first,middle,last,is_corporate,corporate_name,sep,abbreviation,expected_citation_name
 AUTHORS_WITH_INTERESTING_NAMES = (
     ("Mario", "", "Rossi", False, None, "", "M.", "Rossi, M."),
+    # Missing (None) middle name (imported authors have it set to None)
+    ("Mario", None, "Rossi", False, None, "", "M.", "Rossi, M."),
     # JCOM_2201_2023_A05
     ("Anne-Caroline", "", "Prévot", False, None, "", "A.-C.", "Prévot, A.-C."),
     # From PoS
