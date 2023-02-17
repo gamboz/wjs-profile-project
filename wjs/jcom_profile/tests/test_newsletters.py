@@ -58,3 +58,24 @@ def test_newsletters_are_correctly_sent(
     filtered_articles = Article.objects.filter(date_published__date__gt=datetime.datetime.now())
     emailed_subscribers = Recipient.objects.filter(topics__in=filtered_articles.values_list("keywords"))
     assert len(mail.outbox) == emailed_subscribers.count()
+
+
+@pytest.mark.django_db
+def test_newsletters_with_news_items(
+    account_factory,
+    recipient_factory,
+    newsletter_factory,
+    keywords,
+    journal,
+):
+    newsletter = newsletter_factory()
+    news_user, no_news_user = account_factory(email="news@news.it"), account_factory(email="nonews@nonews.it")
+
+    news_recipient = recipient_factory(user=news_user, news=True)
+    recipient_factory(user=no_news_user, news=False)
+
+    management.call_command("send_newsletter_notifications")
+
+    assert newsletter.last_sent.date() == datetime.datetime.now().date()
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == [news_recipient.user.email]
