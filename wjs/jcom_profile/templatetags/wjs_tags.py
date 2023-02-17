@@ -3,6 +3,7 @@ from django import template
 from submission.models import Article
 
 from wjs.jcom_profile.models import SpecialIssue
+from wjs.jcom_profile.utils import citation_name
 
 register = template.Library()
 
@@ -43,12 +44,20 @@ def has_attr(obj, attr):
 @register.filter
 def how_to_cite(article):
     """Return APA-style how-to-cite for JCOM."""
-    author_names = [a.citation_name() for a in article.frozenauthor_set.all()]
-    author_str = ", ".join(author_names[:-1])
-    author_str += f" and {author_names[-1]}"
-    htc = f"""{author_str}, ({article.date_published.year}).
-    {article.title} <i>{article.journal.code}</i>
-    {article.issue.volume}({article.issue.issue}), {article.page_numbers}.
-    https://doi.org/{article.get_doi()}
-    """
+    # Warning: there exist two `citation_name()`: the original from FrozenAuthor and ours from utils
+    author_names = [citation_name(a) for a in article.frozenauthor_set.all()]
+    # inelegant...
+    if len(author_names) == 1:
+        author_str = author_names[0]
+    elif len(author_names) == 2:
+        author_str = " and ".join(author_names)
+    else:
+        author_str = ", ".join(author_names[:-1])
+        author_str += f" and {author_names[-1]}"
+    htc = (
+        f"{author_str} ({article.date_published.year})."
+        f" {article.title} <i>{article.journal.code}</i>"
+        f" {article.issue.volume}({article.issue.issue}), {article.page_numbers}."
+        f" https://doi.org/{article.get_doi()}"
+    )
     return htc

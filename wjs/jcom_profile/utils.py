@@ -138,10 +138,6 @@ def abbreviate_first_middle(author, sep=" "):
     https://gitlab.sissamedialab.it/gamboz/pos/-/issues/29
 
     """
-    # Author don't have `is_corporate` attribute, only FrozenAuthors do!
-    if hasattr(author, "is_corporate") and author.is_corporate:
-        return author.corporate_name
-
     given_names = " ".join((author.first_name, author.middle_name)).strip()
     # Remove existing "." (usually in middlename)
     given_names, _ = re.subn(r"[. ]+", " ", given_names)
@@ -163,3 +159,19 @@ def abbreviate_first_middle(author, sep=" "):
     # Assume that the last initial is a letter, not "-"
     abbreviation += f"{initials[-1]}."
     return abbreviation
+
+
+def citation_name(author, sep=" "):
+    """Generate the "citation name" on an author.
+
+    E.g. Mario Rossi ⇨ Rossi, M.
+
+    :param author: can be an Account or a FrozenAuthor.
+    :param sep: passed to abbreviate_first_middle()
+    """
+    # Author don't have `is_corporate` attribute, only FrozenAuthors do!
+    if hasattr(author, "is_corporate") and author.is_corporate:
+        return author.corporate_name
+
+    abbreviated_given_names = abbreviate_first_middle(author, sep)
+    return f"{author.last_name}, {abbreviated_given_names}"
