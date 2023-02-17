@@ -2,6 +2,7 @@ import datetime
 import random
 
 import pytest
+from comms.models import NewsItem
 from django.core import mail, management
 from submission.models import Article
 
@@ -10,6 +11,19 @@ from wjs.jcom_profile.models import Recipient
 
 def select_random_keywords(keywords):
     return random.sample(list(keywords), random.randint(1, len(keywords)))
+
+
+def check_email_body(outbox):
+    for email in outbox:
+        user_email = email.to[0]
+        user_keywords = Recipient.objects.get(user__email=user_email).topics.all()
+        for topic in user_keywords:
+            articles = Article.objects.filter(keywords__in=[topic], date_published__date__gt=datetime.datetime.now())
+            for article in articles:
+                assert article.title in email.body
+        news_items = NewsItem.objects.filter(posted__date__gt=datetime.datetime.now())
+        for item in news_items:
+            assert item.title in email.body
 
 
 @pytest.mark.django_db
@@ -59,6 +73,8 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     assert newsletter.last_sent.date() == datetime.datetime.now().date()
     assert len(mail.outbox) == 0
 
+    check_email_body(mail.outbox)
+
 
 @pytest.mark.django_db
 def test_newsletters_with_news_items_only_must_be_sent(
@@ -83,6 +99,8 @@ def test_newsletters_with_news_items_only_must_be_sent(
     assert newsletter.last_sent.date() == datetime.datetime.now().date()
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [news_recipient.user.email]
+
+    check_email_body(mail.outbox)
 
 
 @pytest.mark.django_db
@@ -136,6 +154,8 @@ def test_newsletters_with_articles_only_must_be_sent(
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [newsletter_article_recipient.user.email]
 
+    check_email_body(mail.outbox)
+
 
 @pytest.mark.django_db
 def test_newsletters_are_correctly_sent_with_both_news_and_articles(
@@ -183,3 +203,5 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles(
     filtered_articles = Article.objects.filter(date_published__date__gt=datetime.datetime.now())
     emailed_subscribers = Recipient.objects.filter(topics__in=filtered_articles.values_list("keywords"))
     assert len(mail.outbox) == emailed_subscribers.count()
+
+    check_email_body(mail.outbox)
