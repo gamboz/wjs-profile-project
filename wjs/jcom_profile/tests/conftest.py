@@ -28,6 +28,7 @@ from wjs.jcom_profile.factories import (
     JCOMProfileFactory,
     KeywordFactory,
     NewsItemFactory,
+    NewsletterFactory,
     RecipientFactory,
     SectionFactory,
     SpecialIssueFactory,
@@ -37,7 +38,6 @@ from wjs.jcom_profile.models import (
     ArticleWrapper,
     EditorAssignmentParameters,
     JCOMProfile,
-    Newsletter,
     SpecialIssue,
 )
 from wjs.jcom_profile.utils import generate_token
@@ -433,11 +433,6 @@ def issue(issue_type, published_articles):
     return issue
 
 
-@pytest.fixture
-def newsletter():
-    return Newsletter.objects.create(last_sent=yesterday)
-
-
 # Name the fixture a bit differently. This code, without the second
 # option, would produce a "article_factory" fixture (i.e. a factory of
 # article objects) and a fixture named "article" (i.e. one article
@@ -466,3 +461,4 @@ pytest_factoryboy.register(SectionFactory)
 pytest_factoryboy.register(KeywordFactory)
 pytest_factoryboy.register(RecipientFactory)
 pytest_factoryboy.register(NewsItemFactory)
+pytest_factoryboy.register(NewsletterFactory)

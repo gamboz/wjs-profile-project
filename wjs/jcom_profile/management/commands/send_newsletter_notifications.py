@@ -62,7 +62,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.WARNING("A Newsletter object has been created."),
             )
-        filtered_articles = Article.objects.filter(date_published__date__lt=last_sent)
+        filtered_articles = Article.objects.filter(date_published__date__gt=last_sent)
         filtered_news = NewsItem.objects.filter(posted__date__gt=last_sent)
         filtered_subscribers = Recipient.objects.filter(topics__in=filtered_articles.values_list("keywords"))
         articles_list = list(filtered_articles)
@@ -87,7 +87,8 @@ class Command(BaseCommand):
                     rendered_articles.append(article.rendered)
             if subscriber.news:
                 for news in filtered_news:
-                    rendered_news.append(render_to_string("newsletters/newsletter_news.html", {"news": news}))
+                    news.rendered = render_to_string("newsletters/newsletter_news.html", {"news": news})
+                    rendered_news.append(news.rendered)
 
             self.render_and_send_newsletter(subscriber, rendered_articles, rendered_news)
         newsletter.save()

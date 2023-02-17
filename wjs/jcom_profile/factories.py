@@ -10,7 +10,7 @@ from faker.providers import lorem
 from journal.models import Issue, IssueType, Journal
 from submission.models import Article, Keyword, Section
 
-from wjs.jcom_profile.models import JCOMProfile, Recipient, SpecialIssue
+from wjs.jcom_profile.models import JCOMProfile, Newsletter, Recipient, SpecialIssue
 
 factory.Faker.add_provider(lorem)
 
@@ -179,3 +179,12 @@ class NewsItemFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = NewsItem
+
+
+class NewsletterFactory(factory.django.DjangoModelFactory):
+    """Newsletter factory."""
+
+    class Meta:
+        model = Newsletter
+
+    last_sent = factory.LazyFunction(yesterday)
