@@ -31,10 +31,12 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
         users.append(account_factory())
     for _ in range(10):
         news_item_factory(
-            posted=datetime.datetime.now() + datetime.timedelta(days=-1),
+            posted=datetime.datetime.now() + datetime.timedelta(days=-2),
         )
     for user in users:
-        recipient = recipient_factory(user=user)
+        recipient = recipient_factory(
+            user=user,
+        )
         selected_keywords = select_random_keywords(keywords)
         for keyword in selected_keywords:
             recipient.topics.add(keyword)

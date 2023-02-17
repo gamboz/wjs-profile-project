@@ -92,6 +92,6 @@ class Command(BaseCommand):
                 for news in filtered_news:
                     news.rendered = render_to_string("newsletters/newsletter_news.html", {"news": news})
                     rendered_news.append(news.rendered)
-
-            self.render_and_send_newsletter(subscriber, rendered_articles, rendered_news)
+            if rendered_news or rendered_articles:
+                self.render_and_send_newsletter(subscriber, rendered_articles, rendered_news)
         newsletter.save()
