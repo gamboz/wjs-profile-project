@@ -26,17 +26,16 @@ MockAuthor = namedtuple(
 
 # These have the form:
 # first,middle,last,is_corporate,corporate_name,sep,abbreviation,expected_citation_name
+# Add new ones to the bottom: items 3, 4 and 5 are used in test_htc and hardcoded (sorry;)
 AUTHORS_WITH_INTERESTING_NAMES = (
     ("Mario", "", "Rossi", False, None, "", "M.", "Rossi, M."),
-    # Missing (None) middle name (imported authors have it set to None)
-    ("Mario", None, "Rossi", False, None, "", "M.", "Rossi, M."),
     # JCOM_2201_2023_A05
     ("Anne-Caroline", "", "Prévot", False, None, "", "A.-C.", "Prévot, A.-C."),
     # From PoS
     ("D'ann", "", "Barker", False, None, "", "D.", "Barker, D."),
-    ("Haidar Mas'ud", "", "Alfanda", False, None, "", "H.M.", "Alfanda, H.M."),
-    ("Natal'ya", "", "Peresadko", False, None, "", "N.", "Peresadko, N."),
-    ("Re'em", "", "Sari", False, None, "", "R.", "Sari, R."),
+    ("Haidar Mas'ud", "", "Alfanda", False, None, "", "H.M.", "Alfanda, H.M."),  # used in test_htc
+    ("Natal'ya", "", "Peresadko", False, None, "", "N.", "Peresadko, N."),  # used in test_htc
+    ("Re'em", "", "Sari", False, None, "", "R.", "Sari, R."),  # used in test_htc
     ("Shadi Adel Moh'd", "", "Bedoor", False, None, "", "S.A.M.", "Bedoor, S.A.M."),
     # With space as separator
     ("Anne-Caroline", "", "Prévot", False, None, " ", "A.-C.", "Prévot, A.-C."),
@@ -60,6 +59,8 @@ AUTHORS_WITH_INTERESTING_NAMES = (
     ("Zh.-A.", "M.", "Dzhilkibaev", False, None, " ", "Z.-A. M.", "Dzhilkibaev, Z.-A. M."),
     ("Zhan-Arys", "Magysovich", "Dzhilkibaev", False, None, " ", "Z.-A. M.", "Dzhilkibaev, Z.-A. M."),
     ("Zhan-Arys", "M.", "Dzhlkibaev", False, None, " ", "Z.-A. M.", "Dzhlkibaev, Z.-A. M."),
+    # Missing (None) middle name (imported authors have it set to None)
+    ("Mario", None, "Rossi", False, None, "", "M.", "Rossi, M."),
 )
 
 
@@ -123,7 +124,7 @@ class TestUtils:
 class TestHTC:
     """Test How To Cite."""
 
-    def test_htc_one(self):
+    def test_htc(self):
         """Document (not really a test) what we expect in the how to cite string."""
         # Mock an article-like data strcuture that can have an "how to cite"
         au1 = MockAuthor(*AUTHORS_WITH_INTERESTING_NAMES[3][0:5])
