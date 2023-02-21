@@ -4,6 +4,8 @@ import random
 import pytest
 from comms.models import NewsItem
 from django.core import mail, management
+from django.db.models import Q
+from django.utils import timezone
 from submission.models import Article
 
 from wjs.jcom_profile.models import Recipient
@@ -30,10 +32,10 @@ def check_email_body(outbox):
         except Recipient.DoesNotExist:
             user_keywords = Recipient.objects.get(email=user_email).topics.all()
         for topic in user_keywords:
-            articles = Article.objects.filter(keywords__in=[topic], date_published__date__gt=datetime.datetime.now())
+            articles = Article.objects.filter(keywords__in=[topic], date_published__date__gt=timezone.now())
             for article in articles:
                 assert article.title in email.body
-        news_items = NewsItem.objects.filter(posted__date__gt=datetime.datetime.now())
+        news_items = NewsItem.objects.filter(posted__date__gt=timezone.now())
         for item in news_items:
             assert item.title in email.body
 
@@ -57,7 +59,7 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
         users.append(account_factory())
     for _ in range(10):
         news_item_factory(
-            posted=datetime.datetime.now() + datetime.timedelta(days=-2),
+            posted=timezone.now() + datetime.timedelta(days=-2),
         )
     for user in users:
         recipient = recipient_factory(
@@ -70,7 +72,7 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     for i in range(5):
         article = article_factory(
             journal=journal,
-            date_published=datetime.datetime.now() + datetime.timedelta(days=1),
+            date_published=timezone.now() + datetime.timedelta(days=1),
             stage="Published",
             correspondence_author=correspondence_author,
             section=section_factory(),
@@ -82,7 +84,7 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     management.call_command("send_newsletter_notifications")
 
     newsletter.refresh_from_db()
-    assert newsletter.last_sent.date() == datetime.datetime.now().date()
+    assert newsletter.last_sent.date() == timezone.now().date()
     assert len(mail.outbox) == 0
 
 
@@ -100,13 +102,13 @@ def test_newsletters_with_news_items_only_must_be_sent(
 
     news_recipient = recipient_factory(user=news_user, news=True)
     news_item_factory(
-        posted=datetime.datetime.now() + datetime.timedelta(days=1),
+        posted=timezone.now() + datetime.timedelta(days=1),
     )
     recipient_factory(user=no_news_user, news=False)
 
     management.call_command("send_newsletter_notifications")
 
-    assert newsletter.last_sent.date() == datetime.datetime.now().date()
+    assert newsletter.last_sent.date() == timezone.now().date()
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [news_recipient.newsletter_destination_email]
 
@@ -131,7 +133,7 @@ def test_newsletters_with_articles_only_must_be_sent(
     )
     newsletter_article = article_factory(
         journal=journal,
-        date_published=datetime.datetime.now() + datetime.timedelta(days=1),
+        date_published=timezone.now() + datetime.timedelta(days=1),
         stage="Published",
         correspondence_author=correspondence_author,
         section=section_factory(),
@@ -141,7 +143,7 @@ def test_newsletters_with_articles_only_must_be_sent(
 
     no_newsletter_article = article_factory(
         journal=journal,
-        date_published=datetime.datetime.now() + datetime.timedelta(days=1),
+        date_published=timezone.now() + datetime.timedelta(days=1),
         stage="Published",
         correspondence_author=correspondence_author,
         section=section_factory(),
@@ -160,7 +162,7 @@ def test_newsletters_with_articles_only_must_be_sent(
 
     management.call_command("send_newsletter_notifications")
 
-    assert newsletter.last_sent.date() == datetime.datetime.now().date()
+    assert newsletter.last_sent.date() == timezone.now().date()
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [newsletter_article_recipient.newsletter_destination_email]
 
@@ -182,7 +184,7 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscrib
     correspondence_author = account_factory()
     for _ in range(10):
         news_item_factory(
-            posted=datetime.datetime.now() + datetime.timedelta(days=1),
+            posted=timezone.now() + datetime.timedelta(days=1),
         )
     for i in range(30):
         is_anonymous = random.choice([True, False])
@@ -197,7 +199,7 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscrib
     for _ in range(50):
         article = article_factory(
             journal=journal,
-            date_published=datetime.datetime.now() + datetime.timedelta(days=1),
+            date_published=timezone.now() + datetime.timedelta(days=1),
             stage="Published",
             correspondence_author=correspondence_author,
             section=section_factory(),
@@ -210,9 +212,123 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscrib
     management.call_command("send_newsletter_notifications")
 
     newsletter.refresh_from_db()
-    assert newsletter.last_sent.date() == datetime.datetime.now().date()
-    filtered_articles = Article.objects.filter(date_published__date__gt=datetime.datetime.now())
-    emailed_subscribers = Recipient.objects.filter(topics__in=filtered_articles.values_list("keywords"))
+    assert newsletter.last_sent.date() == timezone.now().date()
+    filtered_articles = Article.objects.filter(date_published__date__gt=timezone.now())
+    emailed_subscribers = Recipient.objects.filter(
+        Q(topics__in=filtered_articles.values_list("keywords")) | Q(news=True),
+    ).distinct()
     assert len(mail.outbox) == emailed_subscribers.count()
 
+    check_email_body(mail.outbox)
+
+
+@pytest.mark.django_db
+def test_two_recipients_one_news(
+    account_factory,
+    recipient_factory,
+    newsletter_factory,
+    news_item_factory,
+    journal,
+):
+    """Service test.
+
+    This test is useful only to study
+    `send_newsletter_notifications.handle` from a known and simple
+    state. For instance, add a breakpoint before `for subscriber` and
+    run this test (with pytest -s).
+
+    """
+    newsletter = newsletter_factory()
+    # Two news recipients
+    nr1 = recipient_factory(user=account_factory(), news=True)
+    nr2 = recipient_factory(user=account_factory(), news=True)
+    news_item_factory(
+        posted=timezone.now() + datetime.timedelta(days=1),
+    )
+
+    management.call_command("send_newsletter_notifications")
+
+    assert newsletter.last_sent.date() == timezone.now().date()
+    assert len(mail.outbox) == 2
+    # msg.to is a list (i.e. a message can have multiple "To:")
+    # here I just assume that there is only one To per message
+    mail_recipients = [msg.to[0] for msg in mail.outbox]
+    assert nr1.user.email in mail_recipients
+    assert nr2.user.email in mail_recipients
+
+    check_email_body(mail.outbox)
+
+
+@pytest.mark.django_db
+def test_two_recipients_one_article(
+    account_factory,
+    recipient_factory,
+    newsletter_factory,
+    article_factory,
+    keyword_factory,
+    journal,
+):
+    """Service test.
+
+    This test is useful only to study
+    `send_newsletter_notifications.handle` from a known and simple
+    state. For instance, add a breakpoint before `for subscriber` and
+    run this test (with pytest -s).
+
+    """
+    newsletter = newsletter_factory()
+
+    # One published article, with a known kwd
+    kwd1 = keyword_factory()
+    tomorrow = timezone.now() + datetime.timedelta(days=1)
+    a1 = article_factory(journal=journal, date_published=tomorrow)
+    a1.keywords.add(kwd1)
+
+    # Two newsletter recipients with the same topic (kwd)
+    nr1 = recipient_factory(user=account_factory(), news=False)
+    nr1.topics.add(kwd1)
+    nr2 = recipient_factory(user=account_factory(), news=False)
+    nr2.topics.add(kwd1)
+
+    management.call_command("send_newsletter_notifications")
+
+    assert newsletter.last_sent.date() == timezone.now().date()
+    assert len(mail.outbox) == 2
+    check_email_body(mail.outbox)
+
+
+@pytest.mark.django_db
+def test_one_recipient_one_article_two_topics(
+    recipient_factory,
+    newsletter_factory,
+    article_factory,
+    keyword_factory,
+    journal,
+):
+    """Test recipients not related to any account.
+
+    Bozza! :)
+    """
+    newsletter = newsletter_factory()
+
+    # One published article, with a known kwd
+    kwd1 = keyword_factory()
+    kwd2 = keyword_factory()
+    tomorrow = timezone.now() + datetime.timedelta(days=1)
+    a1 = article_factory(journal=journal, date_published=tomorrow)
+    a1.keywords.add(kwd1)
+    a1.keywords.add(kwd2)
+
+    # Two newsletter recipients with the same topic (kwd)
+    nr1 = recipient_factory(journal=journal, news=False, email="nr1@email.com")
+    nr1.topics.add(kwd1)
+    nr1.topics.add(kwd2)
+    nr2 = recipient_factory(journal=journal, news=False, email="nr2@email.com")
+    nr2.topics.add(kwd1)
+    nr2.topics.add(kwd2)
+
+    management.call_command("send_newsletter_notifications")
+
+    assert newsletter.last_sent.date() == timezone.now().date()
+    assert len(mail.outbox) == 2
     check_email_body(mail.outbox)

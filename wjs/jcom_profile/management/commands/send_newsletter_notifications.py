@@ -67,7 +67,7 @@ class Command(BaseCommand):
         filtered_news = NewsItem.objects.filter(posted__date__gt=last_sent)
         filtered_subscribers = Recipient.objects.filter(
             Q(topics__in=filtered_articles.values_list("keywords")) | Q(news=True),
-        )
+        ).distinct()
         articles_list = list(filtered_articles)
 
         # Templates from themes are found only when there is a request with a journal attached to it.
@@ -88,7 +88,8 @@ class Command(BaseCommand):
                 if article.keywords.intersection(subscriber.topics.all()):
                     if not hasattr(article, "rendered"):
                         article.rendered = render_to_string(
-                            "newsletters/newsletter_article.html", {"article": article},
+                            "newsletters/newsletter_article.html",
+                            {"article": article},
                         )
                     rendered_articles.append(article.rendered)
             if subscriber.news:
