@@ -25,7 +25,10 @@ def check_email_body(outbox):
     """
     for email in outbox:
         user_email = email.to[0]
-        user_keywords = Recipient.objects.get(user__email=user_email).topics.all()
+        try:
+            user_keywords = Recipient.objects.get(user__email=user_email).topics.all()
+        except Recipient.DoesNotExist:
+            user_keywords = Recipient.objects.get(email=user_email).topics.all()
         for topic in user_keywords:
             articles = Article.objects.filter(keywords__in=[topic], date_published__date__gt=datetime.datetime.now())
             for article in articles:
@@ -165,7 +168,7 @@ def test_newsletters_with_articles_only_must_be_sent(
 
 
 @pytest.mark.django_db
-def test_newsletters_are_correctly_sent_with_both_news_and_articles(
+def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscribed_users_and_anonymous_users(
     account_factory,
     article_factory,
     news_item_factory,
@@ -176,16 +179,17 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles(
     journal,
 ):
     newsletter = newsletter_factory()
-    users = []
     correspondence_author = account_factory()
-    for _ in range(10):
-        users.append(account_factory())
     for _ in range(10):
         news_item_factory(
             posted=datetime.datetime.now() + datetime.timedelta(days=1),
         )
-    for user in users:
-        recipient = recipient_factory(user=user)
+    for i in range(30):
+        is_anonymous = random.choice([True, False])
+        if is_anonymous:
+            recipient = recipient_factory(email=f"randomuser{i}@random.com")
+        else:
+            recipient = recipient_factory(user=account_factory())
         selected_keywords = select_random_keywords(keywords)
         for keyword in selected_keywords:
             recipient.topics.add(keyword)
