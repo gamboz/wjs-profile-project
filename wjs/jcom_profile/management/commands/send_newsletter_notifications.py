@@ -90,7 +90,10 @@ class Command(BaseCommand):
                     rendered_articles.append(article.rendered)
             if subscriber.news:
                 for news in filtered_news:
-                    news.rendered = render_to_string("newsletters/newsletter_news.html", {"news": news})
+                    if not hasattr(news, "rendered"):
+                        news.rendered = render_to_string(
+                            "newsletters/newsletter_news.html", {"news": news},
+                        )
                     rendered_news.append(news.rendered)
             if rendered_news or rendered_articles:
                 self.render_and_send_newsletter(subscriber, rendered_articles, rendered_news)
