@@ -180,8 +180,6 @@ class NewsItemFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = NewsItem
 
-    title = factory.Faker("sentence", nb_words=3)
-    body = factory.Faker("paragraph", nb_sentences=5)
 
 class NewsletterFactory(factory.django.DjangoModelFactory):
     """Newsletter factory."""

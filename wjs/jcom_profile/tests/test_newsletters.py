@@ -82,8 +82,6 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     assert newsletter.last_sent.date() == datetime.datetime.now().date()
     assert len(mail.outbox) == 0
 
-    check_email_body(mail.outbox)
-
 
 @pytest.mark.django_db
 def test_newsletters_with_news_items_only_must_be_sent(
@@ -107,7 +105,7 @@ def test_newsletters_with_news_items_only_must_be_sent(
 
     assert newsletter.last_sent.date() == datetime.datetime.now().date()
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [news_recipient.user.email]
+    assert mail.outbox[0].to == [news_recipient.newsletter_destination_email]
 
     check_email_body(mail.outbox)
 
@@ -161,7 +159,7 @@ def test_newsletters_with_articles_only_must_be_sent(
 
     assert newsletter.last_sent.date() == datetime.datetime.now().date()
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [newsletter_article_recipient.user.email]
+    assert mail.outbox[0].to == [newsletter_article_recipient.newsletter_destination_email]
 
     check_email_body(mail.outbox)
 

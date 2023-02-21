@@ -45,7 +45,7 @@ class Command(BaseCommand):
             f"{subscriber.journal} journal newsletter - {datetime.date.today()}",
             processed,
             settings.DEFAULT_FROM_EMAIL,
-            [subscriber.user.email],
+            [subscriber.newsletter_destination_email],
             fail_silently=False,
         )
 
@@ -92,7 +92,8 @@ class Command(BaseCommand):
                 for news in filtered_news:
                     if not hasattr(news, "rendered"):
                         news.rendered = render_to_string(
-                            "newsletters/newsletter_news.html", {"news": news},
+                            "newsletters/newsletter_news.html",
+                            {"news": news},
                         )
                     rendered_news.append(news.rendered)
             if rendered_news or rendered_articles:

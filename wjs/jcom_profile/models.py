@@ -242,6 +242,18 @@ class Recipient(models.Model):
     def __str__(self):
         return _(f"Recipient user: {self.user if self.user else self.email} - journal: {self.journal} ")
 
+    @property
+    def newsletter_destination_email(self):
+        """
+        Select the email address to which send the newsletter.
+
+        :return: A string representing an email
+        """
+        if self.user:
+            return self.user.email
+        else:
+            return self.email
+
 
 class Genealogy(models.Model):
     """Maintain relations of type parent/children between articles."""
