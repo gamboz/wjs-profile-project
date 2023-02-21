@@ -86,7 +86,10 @@ class Command(BaseCommand):
             rendered_news = []
             for article in articles_list:
                 if article.keywords.intersection(subscriber.topics.all()):
-                    article.rendered = render_to_string("newsletters/newsletter_article.html", {"article": article})
+                    if not hasattr(article, "rendered"):
+                        article.rendered = render_to_string(
+                            "newsletters/newsletter_article.html", {"article": article},
+                        )
                     rendered_articles.append(article.rendered)
             if subscriber.news:
                 for news in filtered_news:
