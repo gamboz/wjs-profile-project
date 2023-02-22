@@ -16,7 +16,6 @@ from core.logic import (
     handle_article_thumb_image_file,
     resize_and_crop,
 )
-from django.conf import settings
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -29,6 +28,7 @@ from submission import models as submission_models
 from utils.logger import get_logger
 
 from wjs.jcom_profile import models as wjs_models
+from wjs.jcom_profile.import_utils import query_wjapp_by_pubid, set_author_country
 from wjs.jcom_profile.utils import from_pubid_to_eid
 
 logger = get_logger(__name__)
@@ -53,16 +53,6 @@ HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
 # - from last issue 2008 to today: CC BY NC ND, but no explicit copyright
 # (and all articles in the next-to-last issue have been published 2009-09-19)
 LICENCE_CCBY_FROM_DATE = timezone.datetime(2008, 9, 20, tzinfo=rome_timezone)
-
-# Janeway and wjapp country names do not completely overlap (sigh...)
-COUNTRIES_MAPPING = {
-    "Netherlands (the)": "Netherlands",
-    "Philippines (the)": "Philippines",
-    "Russian Federation (the)": "Russian Federation",
-    "United Kingdom of Great Britain and Northern Ireland (the)": "United Kingdom",
-    "United States of America (the)": "United States",
-    "Taiwan": "Taiwan, Province of China",
-}
 
 JANEWAY_LANGUAGES_BY_CODE = {t[0]: t[1] for t in submission_models.LANGUAGE_CHOICES}
 assert len(JANEWAY_LANGUAGES_BY_CODE) == len(submission_models.LANGUAGE_CHOICES)
@@ -859,7 +849,7 @@ class Command(BaseCommand):
                 source = "jcom"
                 mapping = wjs_models.Correspondence.objects.get(user_cod=corresponding_author_usercod, source=source)
                 main_author = mapping.account
-                self.set_author_country(main_author)
+                set_author_country(main_author, self.wjapp)
 
         article.owner = main_author
         article.correspondence_author = main_author
@@ -1020,37 +1010,7 @@ class Command(BaseCommand):
         else:
             if rome_timezone.localize(datetime.fromtimestamp(int(timestamp))) < HISTORY_EXPECTED_DATE:
                 return {}
-
-        # Should parametrize url
-        url = "https://jcom.sissa.it/jcom/services/jsonpublished"
-        apikey = settings.WJAPP_JCOM_APIKEY
-        params = {
-            "pubId": raw_data["field_id"],
-            "apiKey": apikey,
-        }
-        response = requests.get(url=url, params=params)
-        if response.status_code != 200:
-            logger.warning(
-                "Got HTTP code %s from wjapp for %s",
-                response.status_code,
-                raw_data["field_id"],
-            )
-            return {}
-        return response.json()
-
-    def set_author_country(self, author: core_models.Account):
-        """Set the author's country according to wjapp info."""
-        country_name = self.wjapp["countryName"]
-        if country_name is None:
-            logger.warning("No country for %s", self.wjapp["userCod"])
-            return
-        country_name = COUNTRIES_MAPPING.get(country_name, country_name)
-        try:
-            country = core_models.Country.objects.get(name=country_name)
-        except core_models.Country.DoesNotExist:
-            logger.error("""Unknown country "%s" for %s""", country_name, self.wjapp["userCod"])
-        author.country = country
-        author.save()
+        return query_wjapp_by_pubid(raw_data["field_id"])
 
     def prepare(self):
         """Run una-tantum operations before starting any import."""
