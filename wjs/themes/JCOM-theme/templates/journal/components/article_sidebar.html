@@ -52,26 +52,13 @@
                             <a href="{% url 'article_download_galley' article.id galley.id %}">{% trans "Download" %} {{ galley.label }}</a>
                             <br/>
                             {% if galley.file.mime_type == 'application/pdf' and journal.view_pdf_button %}
-                                <a target="_blank"
+                                <a class="download-test"target="_blank"
                                    href="{% url 'article_view_galley' article.id galley.id %}">View
                                 PDF</a>
                                 <br/>
                             {% endif %}
                         {% endfor %}
                     </p>
-
-                    {% if article.supplementary_files.all %}
-                        <ul>
-                            {% for file in article.supplementary_files.all %}
-                                <li>
-                                    <a href="{{ file.url }}">{{ file.label }}</a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    <div class="spacer">
-                        <div class="divider"></div>
-                    </div>
                 </div>
             {% endif %}
             {% if article.funders.all %}
@@ -111,19 +98,29 @@
                     <ul>
                         {% for galley in galleys %}
                             <li>
-                                <a href="{% url 'article_download_galley' article.id galley.id %}">{% trans "Download" %} {{ galley.label }}</a>
+                                <a class="article-sidebar-download article-sidebar-download-{% if galley.label == 'PDF' %}pdf{% elif galley.label == 'EPUB' %}epub{% endif %}" 
+                                href="{% url 'article_download_galley' article.id galley.id %}">{% trans "Download" %} {{ galley.label }}</a>
                                 {% if galley.file.mime_type == 'application/pdf' and journal.view_pdf_button %}
                                 </li>
                                 <li>
-                                    <a target="_blank"
+                                    <a  target="_blank"
                                        href="{% url 'article_view_galley' article.id galley.id %}">{% trans "View" %} {{ galley.label }}</a>
                                 {% endif %}
                             </li>
                         {% endfor %}
                     </ul>
-                    <div class="spacer">
-                        <div class="divider"></div>
-                    </div>
+                    {% if article.supplementary_files.all %}
+                        <ul>
+                            {% for file in article.supplementary_files.all %}
+                                <li>
+                                    <a href="{{ file.url }}">{{ file.label }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                {% endif %}
+                <div class="spacer">
+                    <div class="divider"></div>
+                </div>
                 {% endif %}
                 {% include "journal/article_issue_list.html" %}
                 <div class="spacer">
