@@ -1,13 +1,10 @@
 """Data migration POC."""
 import os
-import re
-from collections import namedtuple
 from datetime import datetime
 from io import BytesIO
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 import lxml.html
-import pycountry
 import pytz
 import requests
 from core import models as core_models
@@ -28,11 +25,18 @@ from submission import models as submission_models
 from utils.logger import get_logger
 
 from wjs.jcom_profile import models as wjs_models
-from wjs.jcom_profile.import_utils import query_wjapp_by_pubid, set_author_country
+from wjs.jcom_profile.import_utils import (
+    decide_galley_label,
+    drop_existing_galleys,
+    fake_request,
+    publish_article,
+    query_wjapp_by_pubid,
+    set_author_country,
+    set_language,
+)
 from wjs.jcom_profile.utils import from_pubid_to_eid
 
 logger = get_logger(__name__)
-FakeRequest = namedtuple("FakeRequest", ["user"])
 rome_timezone = pytz.timezone("Europe/Rome")
 # Expect a "body" to be available since last issue of 2016 (Issue 06,
 # 2016); the first document of that issue has been published
@@ -53,9 +57,6 @@ HISTORY_EXPECTED_DATE = timezone.datetime(2015, 9, 29, tzinfo=rome_timezone)
 # - from last issue 2008 to today: CC BY NC ND, but no explicit copyright
 # (and all articles in the next-to-last issue have been published 2009-09-19)
 LICENCE_CCBY_FROM_DATE = timezone.datetime(2008, 9, 20, tzinfo=rome_timezone)
-
-JANEWAY_LANGUAGES_BY_CODE = {t[0]: t[1] for t in submission_models.LANGUAGE_CHOICES}
-assert len(JANEWAY_LANGUAGES_BY_CODE) == len(submission_models.LANGUAGE_CHOICES)
 
 # Default order of sections in any issue.
 # It is not possible to mix different types (e.g. A1 E1 A2...)
@@ -96,10 +97,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Command entry point."""
         self.options = options
-        # TODO: who whould this user be???
-        admin = core_models.Account.objects.filter(is_admin=True).first()
-        self.fake_request = FakeRequest(user=admin)
-
         self.prepare()
 
         for raw_data in self.find_articles():
@@ -231,7 +228,7 @@ class Command(BaseCommand):
         self.set_issue(article, raw_data)
         self.set_authors(article, raw_data)
         self.set_license(article, raw_data)
-        self.publish_article(article, raw_data)
+        publish_article(article)
         self.set_children(article, raw_data)
         return article
 
@@ -362,16 +359,7 @@ class Command(BaseCommand):
         # See also plugin imports.ojs.importers.import_galleys.
 
         # First, let's drop all existing galleys
-        for galley in article.galley_set.all():
-            for file_obj in galley.images.all():
-                file_obj.delete()
-            galley.images.clear()
-            galley.file.delete()
-            galley.file = None
-            galley.delete()
-        article.galley_set.clear()
-        article.render_galley = None
-        article.save()
+        drop_existing_galleys(article)
 
         # Set default language to English. This will be overridden
         # later if we find a non-English galley.
@@ -387,7 +375,11 @@ class Command(BaseCommand):
             file_dict = self.fetch_data_dict(file_node["file"]["uri"])
             file_download_url = file_dict["url"]
             uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
-            label, language = self.decide_galley_label(raw_data, file_node, file_dict)
+            label, language = decide_galley_label(
+                pubid=raw_data["field_id"],
+                file_name=file_dict["name"],
+                file_mimetype=file_dict["mime"],
+            )
             if language and language != "en":
                 if article.language != "eng":
                     # We can have 2 non-English galleys (PDF and EPUB),
@@ -399,10 +391,10 @@ class Command(BaseCommand):
                     # set the language again.
                     pass
                 else:
-                    self.set_language(article, language)
+                    set_language(article, language)
             save_galley(
                 article,
-                request=self.fake_request,
+                request=fake_request,
                 uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
                 is_galley=True,
                 label=label,
@@ -410,25 +402,6 @@ class Command(BaseCommand):
                 public=True,
             )
         logger.debug("  %s - attachments / galleys (%s)", raw_data["field_id"], len(attachments))
-
-    def decide_galley_label(self, raw_data, file_node, file_dict):
-        """Decide the galley's label."""
-        # Remember that we can have ( PDF + EPUB galley ) x languages (usually two),
-        # so a label of just "PDF" might not be sufficient.
-        lang_match = re.search(r"_([a-z]{2,3})\.", file_dict["name"])
-        mime_to_extension = {
-            "application/pdf": "PDF",
-            "application/epub+zip": "EPUB",
-        }
-        label = mime_to_extension.get(file_dict["mime"], None)
-        if label is None:
-            logger.error("""Unknown mime type "%s" for %s""", file_dict["mime"], raw_data["field_id"])
-            label = "Other"
-        language = None
-        if lang_match is not None:
-            language = lang_match.group(1)
-            label = f"{label} ({language})"
-        return (label, language)
 
     def set_supplementary_material(self, article, raw_data):
         """Import JCOM's supllementary material as another galley."""
@@ -445,7 +418,7 @@ class Command(BaseCommand):
             uploaded_file = self.uploaded_file(file_download_url, file_dict["name"])
             save_supp_file(
                 article,
-                request=self.fake_request,
+                request=fake_request,
                 uploaded_file=uploaded_file,  # how does this compare with `save_to_disk`???
                 label=file_node["description"],
             )
@@ -481,10 +454,10 @@ class Command(BaseCommand):
         if self.options["article_image_meta_only"]:
             article.meta_image = image_file
         else:
-            handle_article_large_image_file(image_file, article, self.fake_request)
+            handle_article_large_image_file(image_file, article, fake_request)
         if self.options["article_image_thumbnail"]:
             image_file.name = self.make_thumb_name(image_file.name)
-            handle_article_thumb_image_file(image_file, article, self.fake_request)
+            handle_article_thumb_image_file(image_file, article, fake_request)
             thumb_size = [138, 138]
             resize_and_crop(article.thumbnail_image_file.self_article_path(), thumb_size)
         article.save()
@@ -557,7 +530,7 @@ class Command(BaseCommand):
         body_as_file = File(BytesIO(body_bytes), name)
         new_galley = save_galley(
             article,
-            request=self.fake_request,
+            request=fake_request,
             uploaded_file=body_as_file,
             is_galley=True,
             label=label,
@@ -864,18 +837,6 @@ class Command(BaseCommand):
             article.license = self.license_ccbyncnd
         article.save()
 
-    def publish_article(self, article, raw_data):
-        """Publish an article."""
-        # see src/journal/views.py:1078
-        article.stage = submission_models.STAGE_PUBLISHED
-        article.snapshot_authors()
-        article.close_core_workflow_objects()
-        if article.date_published < article.issue.date_published:
-            article.issue.date = article.date_published
-            article.issue.save()
-        article.save()
-        logger.debug("  %s - Janeway publication process", raw_data["field_id"])
-
     def uploaded_file(self, url, name):
         """Download a file from the given url and upload it into Janeway."""
         response = requests.get(url, auth=self.basic_auth)
@@ -990,7 +951,7 @@ class Command(BaseCommand):
         image_file = self.uploaded_file(image_source_url, name=image_name)
         new_file: core_models.File = save_galley_image(
             article.get_render_galley,
-            request=self.fake_request,
+            request=fake_request,
             uploaded_file=image_file,
             label=image_name,  # [*]
         )
@@ -1050,29 +1011,3 @@ class Command(BaseCommand):
             logger.debug("  %s - retrieving child %s", raw_data["field_id"], child_raw_data["field_id"])
             child_article = self.process(child_raw_data)
             genealogy.children.add(child_article)
-
-    def set_language(self, article, language):
-        """Set the article's language.
-
-        Must map from Drupal's iso639-2 (two chars) to Janeway iso639-3 (three chars).
-        """
-        lang = pycountry.languages.get(alpha_2=language)
-        if lang.alpha_3 not in JANEWAY_LANGUAGES_BY_CODE:
-            logger.error(
-                'Unknown language "%s" (from "%s") for %s. Keeping default "English"',
-                lang.alpha_3,
-                language,
-                article.get_identifier("pubid"),
-            )
-            return
-
-        article.language = JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3]
-        if lang.name not in JANEWAY_LANGUAGES_BY_CODE.values():
-            logger.warning(
-                """ISO639 language for "%s" is "%s" and is different from Janeway's "%s" (using the latter) for %s""",
-                language,
-                lang.name,
-                JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3],
-                article.get_identifier("pubid"),
-            )
-        article.save()

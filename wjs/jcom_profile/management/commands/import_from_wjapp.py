@@ -1,33 +1,41 @@
 """Data migration POC."""
 import datetime
 import os
-import pathlib
 import sys
 import tempfile
 import time
 import zipfile
+from pathlib import Path
+import shutils
 
 from core.models import Account
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from identifiers import models as identifiers_models
 from journal import models as journal_models
 from lxml import etree
+from production.logic import save_galley, save_galley_image, save_supp_file
 from submission import models as submission_models
 from utils.logger import get_logger
 from watchdog.events import LoggingEventHandler
 from watchdog.observers import Observer
 
 from wjs.jcom_profile import models as wjs_models
-from wjs.jcom_profile.import_utils import query_wjapp_by_pubid, set_author_country
+from wjs.jcom_profile.import_utils import (
+    decide_galley_label,
+    drop_existing_galleys,
+    fake_request,
+    query_wjapp_by_pubid,
+    set_author_country,
+    set_language,
+    publish_article,
+)
 from wjs.jcom_profile.management.commands.import_from_drupal import (
     NON_PEER_REVIEWED,
     SECTION_ORDER,
     rome_timezone,
 )
 from wjs.jcom_profile.utils import from_pubid_to_eid
-
-# , set_language
-# JANEWAY_LANGUAGES_BY_CODE = ...
 
 # Map wjapp article types to Janeway section names
 SECTIONS_MAPPING = {
@@ -47,7 +55,7 @@ SECTIONS_MAPPING = {
 
 logger = get_logger(__name__)
 
-WATCH_DIR = pathlib.Path("/tmp/wjapp-wjs")
+WATCH_DIR = Path("/tmp/wjapp-wjs")
 
 
 class Command(BaseCommand):
@@ -86,7 +94,7 @@ class Command(BaseCommand):
 
     def read_from_watched_dir(self):
         """Read zip files from the watched folder and start the import process."""
-        files = os.listdir(WATCH_DIR)
+        files = WATCH_DIR.glob("*.zip")
         for zip_file in files:
             self.process(WATCH_DIR / zip_file)
 
@@ -102,25 +110,22 @@ class Command(BaseCommand):
             if mtime_t1 == mtime_t0:
                 break
         # Unzip in a temporary dir
-        tmpdir = tempfile.mkdtemp()
+        tmpdir = Path(tempfile.mkdtemp())
         with zipfile.ZipFile(zip_file, "r") as zip_ref:
             zip_ref.extractall(tmpdir)
-        # Expect to find one XML and one PDF file
-        xml_files = list(pathlib.Path(tmpdir).rglob("*.xml"))
+        # Expect to find a folder
+        workdir = os.listdir(tmpdir)
+        if len(workdir) != 1:
+            logger.error(f"Found {len(workdir)} files in the root of the zip file. Trying the first: {workdir[0]}")
+        workdir = tmpdir / Path(workdir[0])
+        # Expect to find one XML (and some PDF files)
+        xml_files = list(workdir.glob("*.xml"))
         if len(xml_files) == 0:
             logger.critical(f"No XML file found in {zip_file}. Quitting and leaving a mess...")
             sys.exit(1)
         if len(xml_files) > 1:
             logger.warning("Found {len(xml_file)} XML files in {zip_file}. Using the first one {xml_files[0]}")
         xml_file = xml_files[0]
-
-        pdf_files = list(pathlib.Path(tmpdir).rglob("*.pdf"))
-        if len(pdf_files) == 0:
-            logger.critical(f"No PDF file found in {zip_file}. Quitting and leaving a mess...")
-            sys.exit(1)
-        if len(pdf_files) > 1:
-            logger.warning("Found {len(pdf_file)} PDF files in {zip_file}. Using the first one {pdf_files[0]}")
-        pdf_file = pdf_files[0]
 
         # Read the XML file and create an Article
         # TODO: apply fixer4xml.py
@@ -299,6 +304,62 @@ class Command(BaseCommand):
         article.license = submission_models.Licence.objects.get(short_name="CC BY-NC-ND 4.0")
         article.save()
 
+        # PDF galleys
+        # Should find one file (common case) or two files (original language + english translation)
+        pdf_files = list(workdir.glob("*.pdf"))
+        if len(pdf_files) == 0:
+            logger.critical(f"No PDF file found in {zip_file}. Quitting and leaving a mess...")
+            sys.exit(1)
+        if len(pdf_files) > 2:
+            logger.warning(f"Found {len(pdf_files)} PDF files in {zip_file}. Please check.")
+
+        drop_existing_galleys(article)
+
+        # Set default language to English. This will be overridden
+        # later if we find a non-English galley.
+        #
+        # I'm not sure that it is correct to set a language different
+        # from English when the doi points to English-only metadata
+        # (even if there are two PDF files). But see #194.
+        article.language = "eng"
+
+        for pdf_file in pdf_files:
+            file_name = os.path.basename(pdf_file)
+            file_mimetype = "application/pdf"  # I just know it! (sry :)
+            uploaded_file = File(open(pdf_file, "rb"), file_name)
+            label, language = decide_galley_label(pubid, file_name=file_name, file_mimetype=file_mimetype)
+            if language and language != "en":
+                if article.language != "eng":
+                    # We can have 2 non-English galleys (PDF and EPUB),
+                    # they are supposed to be of the same language. Not checking.
+                    #
+                    # If the article language is different from
+                    # english, this means that a non-English gally has
+                    # already been processed and there is no need to
+                    # set the language again.
+                    pass
+                else:
+                    set_language(article, language)
+            save_galley(
+                article,
+                request=fake_request,
+                uploaded_file=uploaded_file,
+                is_galley=True,
+                label=label,
+                save_to_disk=True,
+                public=True,
+            )
+            logger.debug(f"PDF galley {label} set onto {pubid}")
+
+        publish_article(article)
+
+        # Generate the full-text html from the TeX sources
+        logger.error("WRITEME: generate and set HTML galley from src files")
+        # Generate the EPUB from the TeX sources
+        logger.error("WRITEME: generate and set HTML galley from src files")
+        # Cleanup
+        shutils.rmtree(tmpdir)
+
     def set_authors(self, article, xml_obj):
         """Find and set the article's authors, creating them if necessary."""
         # The "source" of this author's info, used for future reference
@@ -359,14 +420,3 @@ class Command(BaseCommand):
         article.correspondence_author = main_author
         article.save()
         logger.debug(f"Set {article.authors.count()} authors onto {pubid}")
-
-    #     # Set the PDF file as a galley of the Article
-    #     # Generate the full-text html from the TeX sources
-    # # import jcomassistant
-    # # html_file: Path = jcomassistant.mkft(cwd)
-    #     # Set the full-text html as the render_galley of the article
-    #     # Generate the EPUB from the TeX sources
-    # # epub_file: Path = jcomassistant.mkepub(html_file, publication_year, number, issue, type)
-    #     # Set the EPUB file as a galley of the Article
-    #     # Cleanup
-    #     shutil.rmtree(tmpdir)
