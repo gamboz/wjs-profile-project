@@ -1,12 +1,12 @@
 """Data migration POC."""
 import datetime
 import os
+import shutil
 import sys
 import tempfile
 import time
 import zipfile
 from pathlib import Path
-import shutils
 
 from core.models import Account
 from django.core.files import File
@@ -25,10 +25,10 @@ from wjs.jcom_profile.import_utils import (
     decide_galley_label,
     drop_existing_galleys,
     fake_request,
+    publish_article,
     query_wjapp_by_pubid,
     set_author_country,
     set_language,
-    publish_article,
 )
 from wjs.jcom_profile.management.commands.import_from_drupal import (
     NON_PEER_REVIEWED,
@@ -100,24 +100,27 @@ class Command(BaseCommand):
 
     def process(self, zip_file):
         """Uncompress the zip file, and create the importing Article from the XML metadata."""
+        logger.debug(f"Looking at {zip_file}")
         # Wait for the file to be finished writing to.
         # Add 1 sec. overhead, but it's insubstantial
-        logger.debug(f"Looking at {zip_file}")
         mtime_t0 = os.stat(zip_file).st_mtime
         while True:
             time.sleep(1)
             mtime_t1 = os.stat(zip_file).st_mtime
             if mtime_t1 == mtime_t0:
                 break
+
         # Unzip in a temporary dir
         tmpdir = Path(tempfile.mkdtemp())
         with zipfile.ZipFile(zip_file, "r") as zip_ref:
             zip_ref.extractall(tmpdir)
+
         # Expect to find a folder
         workdir = os.listdir(tmpdir)
         if len(workdir) != 1:
             logger.error(f"Found {len(workdir)} files in the root of the zip file. Trying the first: {workdir[0]}")
         workdir = tmpdir / Path(workdir[0])
+
         # Expect to find one XML (and some PDF files)
         xml_files = list(workdir.glob("*.xml"))
         if len(xml_files) == 0:
@@ -126,239 +129,24 @@ class Command(BaseCommand):
         if len(xml_files) > 1:
             logger.warning("Found {len(xml_file)} XML files in {zip_file}. Using the first one {xml_files[0]}")
         xml_file = xml_files[0]
-
-        # Read the XML file and create an Article
-        # TODO: apply fixer4xml.py
-
-        xml_obj = etree.parse(xml_file)
-
-        pubid = xml_obj.find("//document/articleid").text
-        jcom = journal_models.Journal.objects.get(code="JCOM")
-        logger.debug(f"Creating {pubid}")
-        article = submission_models.Article.get_article(
-            journal=jcom,
-            identifier_type="pubid",
-            identifier=pubid,
-        )
-        if article:
-            # This is not the default situation: if we are here it
-            # means that the article has been already imported and
-            # that we are re-importing.
-            logger.warning(f"Re-importing existing article {pubid} at {article.id}")
-        else:
-            article = submission_models.Article.objects.create(
-                journal=jcom,
-            )
-        article.title = xml_obj.find("//document/title").text
-        article.abstract = xml_obj.find("//document/abstract").text
-        article.imported = True
-        article.date_accepted = rome_timezone.localize(
-            datetime.datetime.fromisoformat(xml_obj.find("//document/date_accepted").text),
-        )
-        article.date_submitted = rome_timezone.localize(
-            datetime.datetime.fromisoformat(xml_obj.find("//document/date_submitted").text),
-        )
-        article.date_published = rome_timezone.localize(
-            datetime.datetime.fromisoformat(xml_obj.find("//document/date_published").text),
-        )
-        article.save()
-        identifiers_models.Identifier.objects.get_or_create(
-            identifier=xml_obj.find("//document/doi").text,
-            article=article,
-            id_type="doi",  # should be a member of the set identifiers_models.IDENTIFIER_TYPES
-            enabled=True,
-        )
-        logger.debug(f"Set doi {article.get_doi()} onto {article.pk}")
-        identifiers_models.Identifier.objects.get_or_create(
-            identifier=pubid,
-            article=article,
-            id_type="pubid",  # should be a member of the set identifiers_models.IDENTIFIER_TYPES
-            enabled=True,
-        )
-        logger.debug(f"Set pubid {pubid} onto {article.pk}")
-        article.page_numbers = from_pubid_to_eid(pubid)
-        article.save()
-        article.refresh_from_db()
-
-        # Keywords
-        # Drop all article's kwds (and KeywordArticles, used for kwd ordering)
-        article.keywords.clear()
-        for order, kwd_obj in enumerate(xml_obj.findall("//document/keyword")):
-            # Janeway's keywords are a simple model with a "word" field for the kwd text
-            kwd_word = kwd_obj.text.strip()
-            keyword, created = submission_models.Keyword.objects.get_or_create(word=kwd_word)
-            if created:
-                logger.warning('Created keyword "{kwd_word}" for {pubid}. Kwds are not ofter created. Please check!')
-            submission_models.KeywordArticle.objects.get_or_create(
-                article=article,
-                keyword=keyword,
-                order=order,
-            )
-            logger.debug(f"Keyword {kwd_word} set at order {order}")
-            article.keywords.add(keyword)
-        article.save()
-
-        # Issue / volume
-        # wjapp's XML has the same info in several places. Let's do some sanity check.
-        vol_obj_a = xml_obj.find("//volume")
-        vol_obj_b = xml_obj.find("//document/volume")
-        issue_obj_a = xml_obj.find("//issue")
-        issue_obj_b = xml_obj.find("//document/issue")
-        volume = vol_obj_a.get("volumeid")
-        issue = issue_obj_a.get("issueid")
-        if vol_obj_a.get("volumeid") != vol_obj_b.get("volumeid"):
-            logger.error(f"Mismatching volume ids for {pubid}. Using {volume}")
-        if issue_obj_a.get("issueid") != issue_obj_b.get("issueid"):
-            logger.error(f"Mismatching issue ids for {pubid}. Using {issue}")
-        # The first issue element also has a reference to the volumeid...
-        if issue_obj_a.get("volumeid") != volume:
-            logger.error(f"Mismatching issue/volume ids for {pubid}.")
-        if not issue.startswith(volume):
-            logger.error(f'Unexpected issueid "{issue}". Trying to proceed anyway.')
-
-        issue = issue.replace(volume, "")
-        issue = int(issue)
-        volume = int(volume)
-
-        # More sanity check: the volume's title always has the form
-        # "Volume 01, 2002"
-        volume_title = vol_obj_a.text
-        year = 2001 + volume
-        if volume_title != f"Volume {volume:02}, {year}":
-            logger.error(f'Unexpected volume title "{volume_title}"')
-
-        # If the issue's text has a form different from
-        # "Issue 01, 2023"
-        # then it's a special issue (aka "collection")
-        issue_type__code = "issue"
-        issue_title = ""
-        if "Special" in issue_obj_a.text:
-            logger.warning(f'Unexpected issue title "{issue_title}", consider this a "special issue"')
-            issue_type__code = "collection"
-            issue_title = issue_obj_a.text
-
-        issue, created = journal_models.Issue.objects.get_or_create(
-            journal=jcom,
-            volume=volume,
-            issue=issue,
-            issue_type__code=issue_type__code,
-            defaults={
-                "date": article.date_published,  # ⇦ delicate
-                "issue_title": issue_title,
-            },
-        )
-
-        issue.issue_title = issue_title
-
-        if created:
-            issue_type = journal_models.IssueType.objects.get(
-                code=issue_type__code,
-                journal=jcom,
-            )
-            issue.issue_type = issue_type
-            issue.save()
-
-        issue.save()
-
-        # not needed(?): journal_models.SectionOrdering.objects.filter(issue=issue).delete()
-        section_name = xml_obj.find("//document/type").text
-        if section_name not in SECTIONS_MAPPING:
-            logger.critical(f'Unknown article type "{section_name}" for {pubid}')
-            sys.exit(1)
-        section_name = SECTIONS_MAPPING.get(section_name)
-
-        section, created = submission_models.Section.objects.get_or_create(
-            journal=article.journal,
-            name=section_name,
-        )
-        if created:
-            logger.warning(
-                'Created section "{section_name}" for {pubid}. Sections are not ofter created. Please check!',
-            )
-
-        article.section = section
-
-        if article.section.name in NON_PEER_REVIEWED:
-            article.peer_reviewed = False
-
-        # Must ensure that a SectionOrdering exists for this issue,
-        # otherwise issue.articles.add() will fail.
-        #
-        section_order = SECTION_ORDER[section.name]
-        journal_models.SectionOrdering.objects.get_or_create(
-            issue=issue,
-            section=section,
-            defaults={"order": section_order},
-        )
-
-        article.primary_issue = issue
-        article.save()
-        issue.articles.add(article)
-        issue.save()
-        logger.debug(f"Issue {issue.volume}({issue.issue}) set for {pubid}")
-
-        # Authors
+        xml_obj = self.preprocess_xmlfile(xml_file)
+        article, pubid = self.create_article(xml_obj)
+        self.set_keywords(article, xml_obj, pubid)
+        issue = self.set_issue(article, xml_obj, pubid)
+        self.set_section(article, xml_obj, pubid, issue)
         self.set_authors(article, xml_obj)
-
-        # License (always the same)
-        article.license = submission_models.Licence.objects.get(short_name="CC BY-NC-ND 4.0")
-        article.save()
-
-        # PDF galleys
-        # Should find one file (common case) or two files (original language + english translation)
-        pdf_files = list(workdir.glob("*.pdf"))
-        if len(pdf_files) == 0:
-            logger.critical(f"No PDF file found in {zip_file}. Quitting and leaving a mess...")
-            sys.exit(1)
-        if len(pdf_files) > 2:
-            logger.warning(f"Found {len(pdf_files)} PDF files in {zip_file}. Please check.")
-
-        drop_existing_galleys(article)
-
-        # Set default language to English. This will be overridden
-        # later if we find a non-English galley.
-        #
-        # I'm not sure that it is correct to set a language different
-        # from English when the doi points to English-only metadata
-        # (even if there are two PDF files). But see #194.
-        article.language = "eng"
-
-        for pdf_file in pdf_files:
-            file_name = os.path.basename(pdf_file)
-            file_mimetype = "application/pdf"  # I just know it! (sry :)
-            uploaded_file = File(open(pdf_file, "rb"), file_name)
-            label, language = decide_galley_label(pubid, file_name=file_name, file_mimetype=file_mimetype)
-            if language and language != "en":
-                if article.language != "eng":
-                    # We can have 2 non-English galleys (PDF and EPUB),
-                    # they are supposed to be of the same language. Not checking.
-                    #
-                    # If the article language is different from
-                    # english, this means that a non-English gally has
-                    # already been processed and there is no need to
-                    # set the language again.
-                    pass
-                else:
-                    set_language(article, language)
-            save_galley(
-                article,
-                request=fake_request,
-                uploaded_file=uploaded_file,
-                is_galley=True,
-                label=label,
-                save_to_disk=True,
-                public=True,
-            )
-            logger.debug(f"PDF galley {label} set onto {pubid}")
-
-        publish_article(article)
+        self.set_license(article)
+        self.set_pdf_galleys(article, xml_obj, pubid, workdir)
+        self.set_supplementary_files(article, xml_obj, workdir)
 
         # Generate the full-text html from the TeX sources
         logger.error("WRITEME: generate and set HTML galley from src files")
         # Generate the EPUB from the TeX sources
         logger.error("WRITEME: generate and set HTML galley from src files")
+
+        publish_article(article)
         # Cleanup
-        shutils.rmtree(tmpdir)
+        shutil.rmtree(tmpdir)
 
     def set_authors(self, article, xml_obj):
         """Find and set the article's authors, creating them if necessary."""
@@ -420,3 +208,246 @@ class Command(BaseCommand):
         article.correspondence_author = main_author
         article.save()
         logger.debug(f"Set {article.authors.count()} authors onto {pubid}")
+
+    def set_keywords(self, article, xml_obj, pubid):
+        """Set the keywords."""
+        # Drop all article's kwds (and KeywordArticles, used for kwd ordering)
+        article.keywords.clear()
+        for order, kwd_obj in enumerate(xml_obj.findall("//document/keyword")):
+            # Janeway's keywords are a simple model with a "word" field for the kwd text
+            kwd_word = kwd_obj.text.strip()
+            keyword, created = submission_models.Keyword.objects.get_or_create(word=kwd_word)
+            if created:
+                logger.warning('Created keyword "{kwd_word}" for {pubid}. Kwds are not often created. Please check!')
+            submission_models.KeywordArticle.objects.get_or_create(
+                article=article,
+                keyword=keyword,
+                order=order,
+            )
+            logger.debug(f"Keyword {kwd_word} set at order {order}")
+            article.keywords.add(keyword)
+        article.save()
+
+    def set_issue(self, article, xml_obj, pubid):
+        """Set the issue."""
+        # Issue / volume
+        # wjapp's XML has the same info in several places. Let's do some sanity check.
+        vol_obj_a = xml_obj.find("//volume")
+        vol_obj_b = xml_obj.find("//document/volume")
+        issue_obj_a = xml_obj.find("//issue")
+        issue_obj_b = xml_obj.find("//document/issue")
+        volume = vol_obj_a.get("volumeid")
+        issue = issue_obj_a.get("issueid")
+        if vol_obj_a.get("volumeid") != vol_obj_b.get("volumeid"):
+            logger.error(f"Mismatching volume ids for {pubid}. Using {volume}")
+        if issue_obj_a.get("issueid") != issue_obj_b.get("issueid"):
+            logger.error(f"Mismatching issue ids for {pubid}. Using {issue}")
+        # The first issue element also has a reference to the volumeid...
+        if issue_obj_a.get("volumeid") != volume:
+            logger.error(f"Mismatching issue/volume ids for {pubid}.")
+        if not issue.startswith(volume):
+            logger.error(f'Unexpected issueid "{issue}". Trying to proceed anyway.')
+
+        issue = issue.replace(volume, "")
+        issue = int(issue)
+        volume = int(volume)
+
+        # More sanity check: the volume's title always has the form
+        # "Volume 01, 2002"
+        volume_title = vol_obj_a.text
+        year = 2001 + volume
+        if volume_title != f"Volume {volume:02}, {year}":
+            logger.error(f'Unexpected volume title "{volume_title}"')
+
+        # If the issue's text has a form different from
+        # "Issue 01, 2023"
+        # then it's a special issue (aka "collection")
+        issue_type__code = "issue"
+        issue_title = ""
+        if "Special" in issue_obj_a.text:
+            logger.warning(f'Unexpected issue title "{issue_title}", consider this a "special issue"')
+            issue_type__code = "collection"
+            issue_title = issue_obj_a.text
+
+        issue, created = journal_models.Issue.objects.get_or_create(
+            journal=article.journal,
+            volume=volume,
+            issue=issue,
+            issue_type__code=issue_type__code,
+            defaults={
+                "date": article.date_published,  # ⇦ delicate
+                "issue_title": issue_title,
+            },
+        )
+
+        issue.issue_title = issue_title
+
+        if created:
+            issue_type = journal_models.IssueType.objects.get(
+                code=issue_type__code,
+                journal=article.journal,
+            )
+            issue.issue_type = issue_type
+            issue.save()
+
+        issue.save()
+        return issue
+
+    def set_section(self, article, xml_obj, pubid, issue):
+        """Set the section and the section's order in the issue."""
+        # not needed(?): journal_models.SectionOrdering.objects.filter(issue=issue).delete()
+        section_name = xml_obj.find("//document/type").text
+        if section_name not in SECTIONS_MAPPING:
+            logger.critical(f'Unknown article type "{section_name}" for {pubid}')
+            sys.exit(1)
+        section_name = SECTIONS_MAPPING.get(section_name)
+
+        section, created = submission_models.Section.objects.get_or_create(
+            journal=article.journal,
+            name=section_name,
+        )
+        if created:
+            logger.warning(
+                'Created section "{section_name}" for {pubid}. Sections are not ofter created. Please check!',
+            )
+
+        article.section = section
+
+        if article.section.name in NON_PEER_REVIEWED:
+            article.peer_reviewed = False
+
+        # Must ensure that a SectionOrdering exists for this issue,
+        # otherwise issue.articles.add() will fail.
+        #
+        section_order = SECTION_ORDER[section.name]
+        journal_models.SectionOrdering.objects.get_or_create(
+            issue=issue,
+            section=section,
+            defaults={"order": section_order},
+        )
+
+        article.primary_issue = issue
+        article.save()
+        issue.articles.add(article)
+        issue.save()
+        logger.debug(f"Issue {issue.volume}({issue.issue}) set for {pubid}")
+
+    def set_license(self, article):
+        """Set the license (always the same)."""
+        article.license = submission_models.Licence.objects.get(short_name="CC BY-NC-ND 4.0")
+        article.save()
+
+    def set_pdf_galleys(self, article, xml_obj, pubid, workdir):
+        """Set the PDF galleys: original language and tranlastion."""
+        # PDF galleys
+        # Should find one file (common case) or two files (original language + english translation)
+        pdf_files = list(workdir.glob("*.pdf"))
+        if len(pdf_files) == 0:
+            logger.critical(f"No PDF file found in {workdir}. Quitting and leaving a mess...")
+            sys.exit(1)
+        if len(pdf_files) > 2:
+            logger.warning(f"Found {len(pdf_files)} PDF files for {pubid}. Please check.")
+
+        drop_existing_galleys(article)
+
+        # Set default language to English. This will be overridden
+        # later if we find a non-English galley.
+        #
+        # I'm not sure that it is correct to set a language different
+        # from English when the doi points to English-only metadata
+        # (even if there are two PDF files). But see #194.
+        article.language = "eng"
+
+        for pdf_file in pdf_files:
+            file_name = os.path.basename(pdf_file)
+            file_mimetype = "application/pdf"  # I just know it! (sry :)
+            uploaded_file = File(open(pdf_file, "rb"), file_name)
+            label, language = decide_galley_label(pubid, file_name=file_name, file_mimetype=file_mimetype)
+            if language and language != "en":
+                if article.language != "eng":
+                    # We can have 2 non-English galleys (PDF and EPUB),
+                    # they are supposed to be of the same language. Not checking.
+                    #
+                    # If the article language is different from
+                    # english, this means that a non-English gally has
+                    # already been processed and there is no need to
+                    # set the language again.
+                    pass
+                else:
+                    set_language(article, language)
+            save_galley(
+                article,
+                request=fake_request,
+                uploaded_file=uploaded_file,
+                is_galley=True,
+                label=label,
+                save_to_disk=True,
+                public=True,
+            )
+            logger.debug(f"PDF galley {label} set onto {pubid}")
+
+    def create_article(self, xml_obj):
+        """Create the article."""
+        pubid = xml_obj.find("//document/articleid").text
+        jcom = journal_models.Journal.objects.get(code="JCOM")
+        logger.debug(f"Creating {pubid}")
+        article = submission_models.Article.get_article(
+            journal=jcom,
+            identifier_type="pubid",
+            identifier=pubid,
+        )
+        if article:
+            # This is not the default situation: if we are here it
+            # means that the article has been already imported and
+            # that we are re-importing.
+            logger.warning(f"Re-importing existing article {pubid} at {article.id}")
+        else:
+            article = submission_models.Article.objects.create(
+                journal=jcom,
+            )
+        article.title = xml_obj.find("//document/title").text
+        article.abstract = xml_obj.find("//document/abstract").text
+        article.imported = True
+        article.date_accepted = rome_timezone.localize(
+            datetime.datetime.fromisoformat(xml_obj.find("//document/date_accepted").text),
+        )
+        article.date_submitted = rome_timezone.localize(
+            datetime.datetime.fromisoformat(xml_obj.find("//document/date_submitted").text),
+        )
+        article.date_published = rome_timezone.localize(
+            datetime.datetime.fromisoformat(xml_obj.find("//document/date_published").text),
+        )
+        article.save()
+        identifiers_models.Identifier.objects.get_or_create(
+            identifier=xml_obj.find("//document/doi").text,
+            article=article,
+            id_type="doi",  # should be a member of the set identifiers_models.IDENTIFIER_TYPES
+            enabled=True,
+        )
+        logger.debug(f"Set doi {article.get_doi()} onto {article.pk}")
+        identifiers_models.Identifier.objects.get_or_create(
+            identifier=pubid,
+            article=article,
+            id_type="pubid",  # should be a member of the set identifiers_models.IDENTIFIER_TYPES
+            enabled=True,
+        )
+        logger.debug(f"Set pubid {pubid} onto {article.pk}")
+        article.page_numbers = from_pubid_to_eid(pubid)
+        article.save()
+        article.refresh_from_db()
+        return (article, pubid)
+
+    def set_supplementary_files(self, article, xml_obj, workdir):
+        """Set supplementary files if necessary."""
+        logger.error("WRITEME suppl files")
+
+    def preprocess_xmlfile(self, xml_file):
+        """Correct know errors in wjapp XML file.
+
+        - clean up residual TeX fragments from title and abstract
+        - correct authors' names
+        - re-order authors
+        """
+        xml_obj = etree.parse(xml_file)
+        logger.error("WRITEME: apply fixer4xml.py")
+        return xml_obj

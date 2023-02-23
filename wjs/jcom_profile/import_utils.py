@@ -1,12 +1,12 @@
 """Utility functions used only during data import."""
-from collections import namedtuple
-import pycountry
 import re
+from collections import namedtuple
 
+import pycountry
 import requests
 from core.models import Account, Country
-from submission import models as submission_models
 from django.conf import settings
+from submission import models as submission_models
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

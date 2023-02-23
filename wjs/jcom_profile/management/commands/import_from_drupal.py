@@ -598,7 +598,9 @@ class Command(BaseCommand):
             section, _ = submission_models.Section.objects.get_or_create(
                 journal=article.journal,
                 name=section_name,
-                sequence=SECTION_ORDER[section_name],
+                defaults={
+                    "sequence": SECTION_ORDER[section_name],
+                },
             )
             Command.seen_sections[section_uri] = section.pk
 
