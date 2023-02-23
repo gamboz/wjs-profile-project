@@ -1,6 +1,7 @@
 {% extends "core/base.html" %}
 {% load truncate %}
 {% load i18n %}
+{% load wjs_tags %}
 
 {% block title %}{{ journal_settings.news.news_title}} - {{ news_item.title }}{% endblock title %}
 
@@ -30,8 +31,9 @@
                         <h2 class="no-top-margin">{{ news_item.title }}</h2>
                     {% endif %}
                 {{ news_item.posted|date:"Y-m-d" }}
-
-                    <p>{{ news_item.body|safe }}</p>
+                    <div class="abstract">{{ news_item|news_part:'abstract'|safe }}</div>
+                    
+                    <div class="body">{{ news_item|news_part:'body'|safe }}</div>
                     {% if news_item.tags.all %}
                         <br />
                         <h7>{% trans "Tags" %} <i class="fa fa-tags">&nbsp;</i></h7>
