@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand
 from identifiers import models as identifiers_models
 from journal import models as journal_models
 from lxml import etree
-from production.logic import save_galley, save_galley_image, save_supp_file
+from production.logic import save_galley, save_supp_file
 from submission import models as submission_models
 from utils.logger import get_logger
 from watchdog.events import LoggingEventHandler
@@ -137,7 +137,7 @@ class Command(BaseCommand):
         self.set_authors(article, xml_obj)
         self.set_license(article)
         self.set_pdf_galleys(article, xml_obj, pubid, workdir)
-        self.set_supplementary_files(article, xml_obj, workdir)
+        self.set_supplementary_material(article, pubid, workdir)
 
         # Generate the full-text html from the TeX sources
         logger.error("WRITEME: generate and set HTML galley from src files")
@@ -437,9 +437,32 @@ class Command(BaseCommand):
         article.refresh_from_db()
         return (article, pubid)
 
-    def set_supplementary_files(self, article, xml_obj, workdir):
+    def set_supplementary_material(self, article, pubid, workdir):
         """Set supplementary files if necessary."""
-        logger.error("WRITEME suppl files")
+        # There is no useful info in wjapp's XML file about
+        # supplementary material, so we don't need any reference to
+        # the XML file.
+
+        # We might be working on an exiting article, let's cleanup
+        for supp_file in article.supplementary_files.all():
+            supp_file.file.delete()
+            supp_file.file = None
+        article.supplementary_files.clear()
+
+        attachments_folder = workdir / "attachments"
+        if not os.path.exists(attachments_folder):
+            return
+
+        for supplementary_file in os.listdir(attachments_folder):
+            file_name = os.path.basename(supplementary_file)
+            uploaded_file = File(open(attachments_folder / supplementary_file, "rb"), file_name)
+            save_supp_file(
+                article,
+                request=fake_request,
+                uploaded_file=uploaded_file,
+                label=file_name,
+            )
+            logger.debug(f"Supplementary material {file_name} set onto {pubid}")
 
     def preprocess_xmlfile(self, xml_file):
         """Correct know errors in wjapp XML file.
