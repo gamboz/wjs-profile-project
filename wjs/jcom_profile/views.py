@@ -1203,7 +1203,7 @@ def filter_articles(request, section=None, keyword=None, author=None):
     if section:
         filters["section"] = section
         title = _("Filter by section")
-        paragraph = _("Publications included in this section")
+        paragraph = _("Publications included in this section.")
         filtered_object = get_object_or_404(Section, pk=section).name
     if keyword:
         filters["keywords__pk"] = keyword
@@ -1213,7 +1213,7 @@ def filter_articles(request, section=None, keyword=None, author=None):
     if author:
         filters["frozenauthor__author"] = author
         title = _("Filter by author")
-        paragraph = _("All author's publications are listed below")
+        paragraph = _("All author's publications are listed below.")
         filtered_object = get_object_or_404(Account, pk=author).full_name()
 
     filtered_articles = Article.objects.filter(**filters).order_by("-date_published")
