@@ -1,0 +1,28 @@
+.homepage-grid {
+  display: grid;
+  grid-template-areas: 
+  'main main sidebar'
+  'main main sidebar-second-element'
+  'main main sidebar-third-element'
+  ;
+  column-gap: 1.5rem;
+}
+
+#homepage-publications {
+  grid-area: main;
+}
+
+#homepage-news {
+  height: 20vh;
+  grid-area: sidebar;
+}
+
+#homepage-newsletter {
+  height: 40vh;
+  grid-area: sidebar-second-element;
+}
+
+#homepage-most-read {
+  height: 60vh;
+  grid-area: sidebar-third-element;
+}

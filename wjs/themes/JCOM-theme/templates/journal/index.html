@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}
+{% load truncate %}
+
+{% block body %}
+
+<div class="homepage-grid">
+  <!-- s: 12  l:8 -->
+  <div class="card" id="homepage-publications"></div>
+  <!-- s: 12   l:4 -->
+    <div class="card" id="homepage-news"></div>
+    <div class="card" id="homepage-newsletter"></div>
+    <div class="card" id="homepage-most-read"></div>
+  
+</div>
+
+{% endblock body %}
+
+{% block js %}
+    <script>
+        $(document).ready(function () {
+            $('.carousel.carousel-slider').carousel({fullWidth: true});
+        })
+        $('.carousel').carousel();
+        setInterval(function () {
+            $('.carousel').carousel('next');
+        }, 8000);
+    </script>
+
+{% endblock %}
