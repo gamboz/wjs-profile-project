@@ -53,7 +53,7 @@ class Command(BaseCommand):
             #
             # Use Crossref test deposit server - Whether or not to use
             # Crossref's test server.
-            ("Identifiers", "crossref_test", "off"),
+            ("Identifiers", "crossref_test", ""),
             #
             # Crossref username - The username to log in to Crossref's deposit API.
             ("Identifiers", "crossref_username", "sissa"),
@@ -78,7 +78,7 @@ class Command(BaseCommand):
             #
             # Display Altmetric Badges - If enabled altmetric badges
             # will be displayed in the sidebar.
-            ("article", "display_altmetric_badge", "off"),
+            ("article", "display_altmetric_badge", ""),
             #
             # DOI display prefix - Text to prepend to DOIs. Also used to generate URLs.
             ("Identifiers", "doi_display_prefix", "https://doi.org/"),
@@ -97,13 +97,13 @@ class Command(BaseCommand):
             # TBV: ("kbart", "embargo_period", VALUE),
             #
             # Enable Crosscheck - If enabled, links to crosscheck reports will be displayed
-            ("crosscheck", "enable", "off"),
+            ("crosscheck", "enable", ""),
             #
             # Enable Editorial Team Display - If checked, editorial team link will display in Navigation
-            ("general", "enable_editorial_display", "off"),
+            ("general", "enable_editorial_display", ""),
             #
             # Enable Editorial Team Image Display - If checked, Editorial Team images will display.
-            ("styling", "enable_editorial_images", "off"),
+            ("styling", "enable_editorial_images", ""),
             #
             # Focus and Scope - Journal's Focus and Scope, displayed on the Submissions page.
             # TBV: ("general", "focus_and_scope", VALUE),
@@ -113,7 +113,7 @@ class Command(BaseCommand):
             #
             # Hide Author Email Links - If enabled the article page
             # will not display links to email correspondence authors.
-            ("article", "hide_author_email_links", "off"),
+            ("article", "hide_author_email_links", ""),
             #
             # Journal Uses HTTPS - Used for URL generation.
             ("general", "is_secure", "on"),
@@ -163,11 +163,11 @@ class Command(BaseCommand):
             ("news", "news_title", "News"),
             #
             # Number of Articles - Number of news articles to display on the homepage.
-            ("plugin:News", "number_of_articles", 11),
+            ("plugin:News", "number_of_articles", "11"),
             #
             # Number of Most Popular Articles to Display - Determines
             # how many popular articles we should display.
-            ("plugin:Popular Articles", "num_most_popular", 10),
+            ("plugin:Popular Articles", "num_most_popular", "10"),
             #
             # Print ISSN - The ISSN of the printed version of the journal.
             ("general", "print_issn", ""),
@@ -197,7 +197,7 @@ class Command(BaseCommand):
             # Auto-register issue-level DOIs - Automatically register
             # issue DOIs on article publication, based on the issue
             # DOI pattern
-            ("Identifiers", "register_issue_dois", "off"),
+            ("Identifiers", "register_issue_dois", ""),
             #
             # Reply-To Address - Address set as the 'Reply-to' for system emails.
             ("general", "replyto_address", ""),
@@ -243,10 +243,10 @@ class Command(BaseCommand):
             #
             # Suppress How to Cite - If enabled this will suppress the
             # how to cite block on the article page.
-            ("article", "suppress_how_to_cite", "off"),
+            ("article", "suppress_how_to_cite", ""),
             #
             # Switch Language - Allow users to change their language.
-            ("general", "switch_language", "off"),
+            ("general", "switch_language", ""),
             #
             # Twitter Handle - Journal's twitter handle.
             ("general", "twitter_handle", "https://twitter.com/JsciCOM"),
@@ -255,11 +255,12 @@ class Command(BaseCommand):
             ("Identifiers", "use_crossref", "on"),
             #
             # Use Google Analytics 4 - Use cookieless GA 4 instead of traditional analytics.
-            ("general", "use_ga_four", "off"),
+            ("general", "use_ga_four", ""),
         ]
 
         for group_name, setting_name, value in jcom_settings:
-            current_value = setting_handler.get_setting(group_name, setting_name, jcom, create=False, default=False)
+            current_value = setting_handler.get_setting(group_name, setting_name, jcom, create=False, default=True)
+            current_value = current_value and current_value.value or None
             if options["force"]:
                 if current_value and current_value != value:
                     logger.debug(f'Forcing {setting_name} to "{value}" (was "{current_value}")')
@@ -267,7 +268,6 @@ class Command(BaseCommand):
             elif options["check_only"]:
                 if current_value and current_value != value:
                     self.notice(f'Setting {setting_name} is "{current_value}" vs. expected "{value}"')
-
             else:
                 if not current_value:
                     setting_handler.save_setting(group_name, setting_name, jcom, value)
