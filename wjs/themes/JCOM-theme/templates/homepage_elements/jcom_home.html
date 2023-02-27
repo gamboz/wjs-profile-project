@@ -1,0 +1,17 @@
+<h2>Articles</h2>
+<ul>
+{% for article in latest_articles %}
+    <li>{{ article.title }}</li>
+{% endfor %}
+</ul>
+<h2>News</h2>
+<ul>
+{% for news in latest_news %}
+    <li>{{ news.title }}</li>
+{% endfor %}
+</ul>
+<form>
+    Subscribe
+    <input type="email">
+</form>
+

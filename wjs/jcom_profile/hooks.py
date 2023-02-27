@@ -1,8 +1,6 @@
 """Hooks."""
-from comms.models import NewsItem
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext as _
-from submission.models import Article
 
 
 def prova_hook(request_context):
@@ -48,9 +46,3 @@ def extra_edit_subscription_hook(request_context):
     return rendered
 
 
-def latest_articles_context(request, homepage_elements):
-    return {"latest_articles": Article.objects.order_by("-date_published")[:10]}
-
-
-def latest_news_context(request, homepage_elements):
-    return {"latest_news": NewsItem.objects.order_by("-posted")[:10]}
