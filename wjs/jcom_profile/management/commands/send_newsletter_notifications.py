@@ -3,6 +3,8 @@ import datetime
 from typing import List
 from unittest.mock import Mock
 
+from django.utils.timezone import now
+
 from comms.models import NewsItem
 from core.middleware import GlobalRequestMiddleware
 from django.conf import settings
@@ -49,6 +51,9 @@ class Command(BaseCommand):
             fail_silently=False,
         )
 
+    def add_arguments(self, parser):
+        parser.add_argument("--force", action="store_true")
+
     def handle(self, *args, **options):
         """
         Command entry point.
@@ -59,6 +64,8 @@ class Command(BaseCommand):
         """
         newsletter, created = Newsletter.objects.get_or_create()
         last_sent = newsletter.last_sent
+        if options.get("force", False):
+            last_sent = now() - datetime.timedelta(days=120)
         if created:
             self.stdout.write(
                 self.style.WARNING("A Newsletter object has been created."),
