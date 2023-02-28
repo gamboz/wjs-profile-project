@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                     "count",
                     models.PositiveSmallIntegerField(default=10, help_text="Number of items shown in the home page"),
                 ),
-                ("journal", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="journal.Journal", related_name='wjs_latest_articles_plugin_config')),
+                ("journal", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="journal.Journal", related_name='wjs_latest_news_plugin_config')),
             ],
         ),
     ]
