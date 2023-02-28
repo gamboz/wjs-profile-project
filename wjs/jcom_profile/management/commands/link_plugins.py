@@ -23,7 +23,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.NOTICE(f"Linking {plugin.name} to {destination}..."))
                 try:
                     os.symlink(plugin.absolute(), destination)
-                    call_command("install_plugins", "wjs_home")
+                    call_command("install_plugins", plugin.name)
                 except FileExistsError:
                     if destination.readlink() == plugin:
                         self.stdout.write(self.style.NOTICE("...link to plugin already there, nothing to do."))

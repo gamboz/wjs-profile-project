@@ -1,18 +1,21 @@
+from pathlib import Path
+
 from core.models import HomepageElement
 from django.contrib.contenttypes.models import ContentType
 from journal.models import Journal
+from submission.models import Article
 from utils import plugins
 
-PLUGIN_NAME = "WJS Home Plugin"
-DISPLAY_NAME = "WJS Home Plugin"
-DESCRIPTION = "A plugin to handle WJS HomePage elements"
+PLUGIN_NAME = "WJS Latest articles"
+DISPLAY_NAME = "WJS Latest articles"
+DESCRIPTION = "A plugin to provide latest articles home page element"
 AUTHOR = "Nephila"
 VERSION = "0.1"
-SHORT_NAME = "wjs_home"
+SHORT_NAME = str(Path(__file__).parent)
 JANEWAY_VERSION = "1.4.3"
 
 
-class WjsHomePlugin(plugins.Plugin):
+class WJSLatestArticles(plugins.Plugin):
     short_name = SHORT_NAME
     plugin_name = PLUGIN_NAME
     display_name = DISPLAY_NAME
@@ -24,13 +27,13 @@ class WjsHomePlugin(plugins.Plugin):
 
 
 def install():
-    WjsHomePlugin.install()
+    WJSLatestArticles.install()
     journal = Journal.objects.first()
     content_type = ContentType.objects.get_for_model(journal)
     HomepageElement.objects.get_or_create(
-        name="JCOM Homepage",
+        name=PLUGIN_NAME,
         defaults=dict(
-            template_path="homepage_elements/jcom_home.html",
+            template_path="homepage_elements/latest_articles.html",
             content_type=content_type,
             object_id=journal.pk,
             has_config=False,
@@ -38,13 +41,18 @@ def install():
     )
 
 
-# Plugins can register for hooks, when a hook is rendered in a template the registered function will be called.
 def hook_registry():
     return {
         "yield_homepage_element_context": {
-            "module": "plugins.wjs_home.hooks",
-            "function": "jcom_home_context",
+            "module": f"plugins.{SHORT_NAME}.plugin_settings",
+            "function": "latest_articles_context",
             "name": "JCOM Homepage",
         },
 
+    }
+
+
+def latest_articles_context(request, homepage_elements):
+    return {
+        "latest_articles": Article.objects.order_by("-date_published")[:10],
     }
