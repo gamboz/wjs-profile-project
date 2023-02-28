@@ -1,8 +1,8 @@
 from django.http import Http404
 from django.views.generic import UpdateView
 
-from .plugin_settings import PLUGIN_NAME
 from .models import PluginConfig
+from .plugin_settings import PLUGIN_NAME
 
 
 class ConfigUpdateView(UpdateView):

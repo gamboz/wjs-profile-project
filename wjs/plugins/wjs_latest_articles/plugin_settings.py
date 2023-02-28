@@ -13,7 +13,7 @@ AUTHOR = "Nephila"
 VERSION = "0.1"
 SHORT_NAME = str(Path(__file__).parent.name)
 JANEWAY_VERSION = "1.4.3"
-MANAGER_URL = f'{SHORT_NAME}_manager'
+MANAGER_URL = f"{SHORT_NAME}_manager"
 
 
 class WJSLatestArticles(plugins.Plugin):
@@ -40,8 +40,8 @@ def install():
             content_type=content_type,
             object_id=journal.pk,
             has_config=True,
-            configure_url=MANAGER_URL
-        )
+            configure_url=MANAGER_URL,
+        ),
     )
 
 
@@ -66,6 +66,6 @@ def get_plugin_context(request, homepage_elements):
 
     element = PluginConfig.objects.filter(journal=request.journal).first()
     return {
-        f"{SHORT_NAME}_list": Article.objects.order_by("-date_published")[:element.count] if element else 10,
+        f"{SHORT_NAME}_list": Article.objects.order_by("-date_published")[: element.count] if element else 10,
         f"{SHORT_NAME}_title": element.title if element else "Articles",
     }
