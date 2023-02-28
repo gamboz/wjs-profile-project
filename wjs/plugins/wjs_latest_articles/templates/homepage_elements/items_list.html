@@ -1,6 +1,6 @@
-<h2>{{ wjs_latest_articles_title }}</h2>
-<ul>
-{% for article in wjs_latest_articles_list %}
-    <li>{{ article.title }}</li>
-{% endfor %}
-</ul>
+{% if wjs_latest_articles_list %}
+    <h2>{{ wjs_latest_articles_title }}</h2>
+    {% for article in wjs_latest_articles_list %}
+        {% include "elements/article_listing.html" with article=article %}
+    {% endfor %}
+{% endif %}
