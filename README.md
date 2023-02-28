@@ -38,6 +38,14 @@ This is a django app that should live inside Janeway. To use it, proceed as foll
 
 Please see [this wiki](https://pre-commit.com/) for a detailed list of installation steps.
 
+## Compile frontend assets
+
+To compile frontend assets in the JCOM-Theme theme::
+
+   `./build-assets.sh`
+
+In order for this to work you have to install `sudo apt install inotify-tools`.
+
 ### Available customization commands
 
 | command                                            | arguments | description                                                      |
