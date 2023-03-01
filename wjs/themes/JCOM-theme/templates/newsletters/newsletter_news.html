@@ -1,12 +1,6 @@
 <tr>
-    <td>
-        <table>
-            <tr>
-                <th>{{ news.title }}</th>
-            </tr>
-            <tr>
-                <td>{{ news.body }}</td>
-            </tr>
-        </table>
-    </td>
+  <th>{{ news.title }}</th>
+</tr>
+<tr>
+  <td>{{ news.body|safe }}</td>
 </tr>

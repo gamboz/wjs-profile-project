@@ -49,6 +49,7 @@ class Command(BaseCommand):
             settings.DEFAULT_FROM_EMAIL,
             [subscriber.newsletter_destination_email],
             fail_silently=False,
+            html_message=newsletter_content
         )
 
     def add_arguments(self, parser):

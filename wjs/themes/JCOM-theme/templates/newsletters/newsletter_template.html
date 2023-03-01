@@ -1,21 +1,116 @@
+{% load static %}
+
+<!DOCTYPE html>
+
 <html>
-<style type="text/css">
-    h1 {
-        border: 1px solid black
-    }
+  <head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-type" content="text/html" ; charset="UTF-8" />
+    <title>Jcom newsletter</title>
+    <style type="text/css">
+      body {
+        background: #dfdfdf;
+        padding: 80px;
+        text-align: left;
+      }
 
-    p {
-        color: red;
-    }
-</style>
-<h1 style="font-weight:bolder">{{ journal }}</h1>
+      .container {
+        background: white;
+        padding: 40px;
+        margin-bottom: 40px;
+      }
 
-Ciao {{ subscriber.name }}
+      table {
+        border-collapse: collapse;
+        text-align: left;
+        width: 100%;
+      }
 
-<table>
-    {{ articles|safe }}
-</table>
-<table>
-    {{ news|safe }}
-</table>
+      .logos {
+        background: none;
+        margin-bottom: 20px;
+      }
+
+      .logo {
+        width: 80%;
+      }
+
+      h2 {
+        color: #0066cc;
+      }
+
+      .divider {
+        margin: 20px 0;
+      }
+
+      .unsubscribe {
+        font-size: 12px;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <table class="logos">
+        <tr>
+        <td align="left">
+                <img class="logo" src="http://local.jcom.com:8000/media/cover_images/062db29e-9bf1-45d1-ae1b-13d545e6f788.svg"/>
+            </td>
+            <td align="right">
+                <img class="logo" src="https://medialab.sissa.it/sites/all/themes/mathlab/images/logo.png"/>
+            </td> 
+        </tr>
+    </table>
+
+    <div class="container">
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <h2>Publications</h2>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        {{ articles|safe }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <hr class="divider">
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <h2>News</h2>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        {{ news|safe }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <table class="unsubscribe">
+        <tr>
+            <td>
+            <p>
+                You have received this email because you have subscribed to JCOM
+                publication alert.<br>
+                <span><a href="#">Click here to modify your topics of interest.</a></span>
+                <span>|</span>
+                <span><a href="#">Click here to unsubscribe</a></span>.<br> See our <a href="#">privacy policy</a> for information on
+                how we use your personal data or contact us for general information
+            </p>
+            </td>
+        </tr>
+    </table>
+  </body>
 </html>
