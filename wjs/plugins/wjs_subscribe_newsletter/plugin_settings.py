@@ -65,7 +65,6 @@ def get_plugin_context(request, homepage_elements):
     from .models import PluginConfig
 
     element = PluginConfig.objects.filter(journal=request.journal).first()
-    print(homepage_elements)
     return {
         f"{SHORT_NAME}_element": element,
     }
