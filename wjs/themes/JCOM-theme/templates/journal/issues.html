@@ -17,12 +17,7 @@
                 <ul class="volumes-list">
                     {% for issue in volume.list %}
                         <li>
-                            <a href="{% url 'journal_issue' issue.id %}">
-                                {% trans "Issue" %} {{ issue.issue }}, {{ issue.date.year }}
-                                {% if issue.issue_type.code == "collection" %}
-                                {{ issue.issue_title }}
-                                {% endif %}
-                            </a>
+                            <a href="{% url 'journal_issue' issue.id %}">{{ issue.issue_title }}</a>
                             <span class="count">({{ issue.get_sorted_articles.count }} {% trans "items" %})</span>
                         </li>
                     {% endfor %}
