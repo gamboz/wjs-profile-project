@@ -79,6 +79,10 @@ urlpatterns = [
         views.IMUStep3.as_view(),
         name="si-imu-3",
     ),
+
+    # Issues
+    url(r'^issues/$', views.issues, name='journal_issues'),
+
     #
     # JCOM has "()" in some pubid identifiers; I need to overwrite
     # "article_view" from journal.urls
