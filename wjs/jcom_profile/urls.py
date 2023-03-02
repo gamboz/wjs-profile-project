@@ -80,7 +80,7 @@ urlpatterns = [
         name="si-imu-3",
     ),
 
-    # Issues
+    # Issues - override view "journal_issues" from journal.urls
     url(r'^issues/$', views.issues, name='journal_issues'),
 
     #
