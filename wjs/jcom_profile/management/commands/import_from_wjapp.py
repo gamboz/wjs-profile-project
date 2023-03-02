@@ -2,9 +2,7 @@
 import datetime
 import os
 import shutil
-import sys
 import tempfile
-import time
 import zipfile
 from pathlib import Path
 
@@ -53,6 +51,10 @@ SECTIONS_MAPPING = {
 }
 
 
+class UnknownSection(Exception):
+    pass
+
+
 logger = get_logger(__name__)
 
 WATCH_DIR = Path("/tmp/wjapp-wjs")
@@ -78,7 +80,8 @@ class Command(BaseCommand):
     def start_watchdog(self):
         """Start the watchdog (if it's not yet running)."""
         logger.error("Watchdog not implemented!")
-        sys.exit(1)
+        raise Exception()
+
         event_handler = LoggingEventHandler()
         observer = Observer()
 
@@ -101,14 +104,8 @@ class Command(BaseCommand):
     def process(self, zip_file):
         """Uncompress the zip file, and create the importing Article from the XML metadata."""
         logger.debug(f"Looking at {zip_file}")
-        # Wait for the file to be finished writing to.
-        # Add 1 sec. overhead, but it's insubstantial
-        mtime_t0 = os.stat(zip_file).st_mtime
-        while True:
-            time.sleep(1)
-            mtime_t1 = os.stat(zip_file).st_mtime
-            if mtime_t1 == mtime_t0:
-                break
+        # wjapp provides an "atomic" upload: when the file if present,
+        # it is ready and fully uploaded.
 
         # Unzip in a temporary dir
         tmpdir = Path(tempfile.mkdtemp())
@@ -125,7 +122,7 @@ class Command(BaseCommand):
         xml_files = list(workdir.glob("*.xml"))
         if len(xml_files) == 0:
             logger.critical(f"No XML file found in {zip_file}. Quitting and leaving a mess...")
-            sys.exit(1)
+            raise FileNotFoundError(f"No XML file found in {zip_file}")
         if len(xml_files) > 1:
             logger.warning("Found {len(xml_file)} XML files in {zip_file}. Using the first one {xml_files[0]}")
         xml_file = xml_files[0]
@@ -299,7 +296,7 @@ class Command(BaseCommand):
         section_name = xml_obj.find("//document/type").text
         if section_name not in SECTIONS_MAPPING:
             logger.critical(f'Unknown article type "{section_name}" for {pubid}')
-            sys.exit(1)
+            raise UnknownSection(f'Unknown article type "{section_name}" for {pubid}')
         section_name = SECTIONS_MAPPING.get(section_name)
 
         section, created = submission_models.Section.objects.get_or_create(
@@ -344,7 +341,7 @@ class Command(BaseCommand):
         pdf_files = list(workdir.glob("*.pdf"))
         if len(pdf_files) == 0:
             logger.critical(f"No PDF file found in {workdir}. Quitting and leaving a mess...")
-            sys.exit(1)
+            raise FileNotFoundError(f"No PDF file found in {workdir}.")
         if len(pdf_files) > 2:
             logger.warning(f"Found {len(pdf_files)} PDF files for {pubid}. Please check.")
 
