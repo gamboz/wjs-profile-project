@@ -10,6 +10,7 @@ from core.models import Account
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from identifiers import models as identifiers_models
+from jcomassistant import make_xhtml
 from journal import models as journal_models
 from lxml import etree
 from production.logic import save_galley, save_supp_file
@@ -137,7 +138,16 @@ class Command(BaseCommand):
         self.set_supplementary_material(article, pubid, workdir)
 
         # Generate the full-text html from the TeX sources
-        logger.error("WRITEME: generate and set HTML galley from src files")
+        src_folder = workdir / "src"
+        if not os.path.exists(src_folder):
+            raise FileNotFoundError(f"Missing src folder {src_folder}")
+        tex_filenames = list(src_folder.glob("JCOM_*.tex"))
+        if len(tex_filenames) > 1:
+            logger.warning(f"Found {len(tex_filenames)} tex files. Using {tex_filenames[0]}")
+        tex_filename = tex_filenames[0]
+        make_xhtml.make(tex_filename)
+        # TODO: use the HTML galley
+
         # Generate the EPUB from the TeX sources
         logger.error("WRITEME: generate and set HTML galley from src files")
 
@@ -331,7 +341,7 @@ class Command(BaseCommand):
 
     def set_license(self, article):
         """Set the license (always the same)."""
-        article.license = submission_models.Licence.objects.get(short_name="CC BY-NC-ND 4.0")
+        article.license = submission_models.Licence.objects.get(short_name="CC BY-NC-ND 4.0", journal=article.journal)
         article.save()
 
     def set_pdf_galleys(self, article, xml_obj, pubid, workdir):
