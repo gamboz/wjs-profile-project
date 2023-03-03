@@ -1,6 +1,13 @@
-<tr>
-  <th>{{ news.title }}</th>
-</tr>
-<tr>
-  <td>{{ news.body|safe }}</td>
-</tr>
+{% load i18n %}
+{% load wjs_tags %}
+{% load truncate %}
+
+<h4 class="section-name">{{ news.section.name }}
+  
+<h3 class="title">{{ news.title }}</h3>
+<p>{{ news|news_part:'abstract'|safe }}</p>
+
+<h5 class="date">{{ news.date_published|date:"M d, Y" }}</h5>
+
+<hr class="divider">
+

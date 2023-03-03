@@ -7,22 +7,20 @@
     <meta http-equiv="Content-type" content="text/html" charset="UTF-8" />
     <title>Jcom newsletter</title>
     <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap');
+
       body {
         background: #dfdfdf;
+        font-family: 'Roboto', sans-serif;
         padding: 80px;
         text-align: left;
       }
 
       .container {
         background: white;
-        padding: 40px;
         margin-bottom: 40px;
-      }
-
-      table {
-        border-collapse: collapse;
+        padding: 20px;
         text-align: left;
-        width: 100%;
       }
 
       .logos {
@@ -33,9 +31,35 @@
       .logo {
         width: 80%;
       }
+      
 
       h2 {
-        color: #0066cc;
+        background: #0066cc;
+        color: #fff;
+        padding: 10px;
+      }
+
+      .section-name {
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 0;
+        text-transform: uppercase;
+      }
+
+      .title {
+        color: #06c;
+        font-size: 24px;
+        margin: 0;
+      }
+
+      .author {
+        font-size: 14px;
+        font-style: italic;
+        margin-top: 0;
+      }
+
+      .date {
+        text-align: right;
       }
 
       .divider {
@@ -51,7 +75,7 @@
 
   <body>
     <table class="logos">
-        <tr>
+      <tr>
         <td align="left">
                 <img class="logo" src="/media/cover_images/062db29e-9bf1-45d1-ae1b-13d545e6f788.svg"/>
             </td>
@@ -62,39 +86,28 @@
     </table>
 
     <div class="container">
-        <table>
-            <tbody>
-                <tr>
-                    <td>
-                        <h2>{% trans "Publications" %}</h2>
-                    </td>
-                </tr>
+      <table>
+        <tr>
+            <td>
+                <h2>{% trans "Publications" %}</h2>
+            </td>
+        </tr>
 
-                <tr>
-                    <td>
-                        {{ articles|safe }}
-                    </td>
-                </tr>
+        <tr>
+          <td>{{ articles|safe }}</td>
+        </tr>
 
-                <tr>
-                    <td>
-                        <hr class="divider">
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>
-                        <h2>{% trans "News" %}</h2>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>
-                        {{ news|safe }}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <tr>
+            <td>
+                <h2>{% trans "News" %}</h2>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                {{ news|safe }}
+            </td>
+        </tr>
+      </table>
     </div>
 
     <table class="unsubscribe">
