@@ -29,6 +29,7 @@ from wjs.jcom_profile.import_utils import (
     decide_galley_label,
     drop_existing_galleys,
     fake_request,
+    process_body,
     publish_article,
     query_wjapp_by_pubid,
     set_author_country,
@@ -153,6 +154,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Do create a thumbnail for the article from the large image.",
         )
+        parser.add_argument(
+            "--journal-code",
+            default="JCOM",
+            help="Toward which journal to import. Defaults to %(default)s.",
+        )
 
     def find_articles(self):
         """Find all articles to process.
@@ -241,7 +247,7 @@ class Command(BaseCommand):
           nothing (the old value is preserverd).
 
         """
-        journal = journal_models.Journal.objects.get(code="JCOM")
+        journal = journal_models.Journal.objects.get(code=self.options["journal_code"])
         # There is a document with no DOI (JCOM_1303_2014_RCR), so I use the "pubid"
         article = submission_models.Article.get_article(
             journal=journal,
@@ -526,7 +532,7 @@ class Command(BaseCommand):
 
         name = "body.html"
         label = "HTML"
-        body_bytes = self.process_body(article, body)
+        body_bytes = process_body(body)
         body_as_file = File(BytesIO(body_bytes), name)
         new_galley = save_galley(
             article,
@@ -854,76 +860,6 @@ class Command(BaseCommand):
         assert response.status_code == 200, f"Got {response.status_code}!"
         return response.json()
 
-    def process_body(self, article, body: str) -> bytes:
-        """Rewrite and adapt body to match Janeway's expectations.
-
-        Take care of
-        - TOC (heading levels)
-        - how-to-cite
-
-        Images included in body are done elsewhere since they require an existing galley.
-        """
-        html = lxml.html.fromstring(body)
-
-        # src/themes/material/assets/toc.js expects
-        # - the root element of the article must have id="main_article"
-        html.set("id", "main_article")
-        # - the headings that go in the toc must be h2-level, but Drupal has them at h3-level
-        self.promote_headings(html)
-        self.drop_toc(html)
-        self.drop_how_to_cite(html)
-        return lxml.html.tostring(html)
-
-    def promote_headings(self, html: HtmlElement):
-        """Promote all h2-h6 headings by one level."""
-        for level in range(2, 7):
-            for heading in html.findall(f"h{level}"):
-                heading.tag = f"h{level-1}"
-
-    def drop_toc(self, html: HtmlElement):
-        """Drop the "manual" TOC present in Drupal body content."""
-        tocs = html.find_class("tableofcontents")
-        if len(tocs) == 0:
-            logger.warning("No TOC in WRITEME!!!")
-            return
-
-        if len(tocs) > 1:
-            logger.error("Multiple TOCs in WRITEME!!!")
-
-        tocs[0].drop_tree()
-
-    def drop_how_to_cite(self, html: HtmlElement):
-        """Drop the "manual" How-to-cite present in Drupal body content."""
-        htc_h2 = html.xpath(".//h2[text()='How to cite']")
-        if len(htc_h2) == 0:
-            logger.warning("No How-to-cite in WRITEME!!!")
-            return
-
-        if len(htc_h2) > 1:
-            logger.error("Multiple How-to-cites in WRITEME!!!")
-
-        htc_h2 = htc_h2[0]
-        max_expected = 3
-        count = 0
-        while True:
-            # we are going to `drop_tree` this element, so `getnext()`
-            # should provide for new elments
-            p = htc_h2.getnext()
-            count += 1
-            if count > max_expected:
-                logger.warning("Too many elements after How-to-cite's H2 in WRITEME!!!")
-                break
-            if p is None:
-                break
-            if p.tag != "p":
-                break
-            if p.text is not None and p.text.strip() == "":
-                p.drop_tree()
-                break
-            p.drop_tree()
-
-        htc_h2.drop_tree()
-
     # Adapted from plugins/imports/logic.py
     def mangle_images(self, article):
         """Download all <img>s in the article's galley and adapt the "src" attribute."""
@@ -982,6 +918,7 @@ class Command(BaseCommand):
         # journal. We just know it's there.
         self.license_ccbyncnd = submission_models.Licence.objects.get(
             short_name="CC BY-NC-ND 4.0",
+            journal=journal_models.Journal.objects.get(code=self.options["journal_code"]),
         )
         if "NoDerivatives" not in self.license_ccbyncnd.name:
             logger.warning('Please fix the text of the ND licenses: should read "NoDerivatives".')

@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import zipfile
 from difflib import get_close_matches
+from io import BytesIO
 from pathlib import Path
 
 from core.models import Account
@@ -27,6 +28,7 @@ from wjs.jcom_profile.import_utils import (
     decide_galley_label,
     drop_existing_galleys,
     fake_request,
+    process_body,
     publish_article,
     query_wjapp_by_pubid,
     set_author_country,
@@ -245,15 +247,49 @@ class Command(BaseCommand):
         self.set_supplementary_material(article, pubid, workdir)
 
         # Generate the full-text html from the TeX sources
-        make_xhtml.make(tex_filename)
-        # TODO: use the HTML galley
+        html_galley_filename = make_xhtml.make(tex_filename)
+        self.set_html_galley(article, html_galley_filename)
 
         # Generate the EPUB from the TeX sources
-        make_epub.make(tex_filename)
+        epub_galley_filename = make_epub.make(html_galley_filename, tex_data=tex_data)
+        self.set_epub_galley(article, epub_galley_filename)
 
         publish_article(article)
         # Cleanup
         shutil.rmtree(tmpdir)
+
+    def set_html_galley(self, article, html_galley_filename):
+        """Set the give file as HTML galley."""
+        html_galley_text = open(html_galley_filename).read()
+        processed_html_galley_as_bytes = process_body(html_galley_text)
+        name = "body.html"
+        html_galley_file = File(BytesIO(processed_html_galley_as_bytes), name)
+        label = "HTML"
+        new_galley = save_galley(
+            article,
+            request=fake_request,
+            uploaded_file=html_galley_file,
+            is_galley=True,
+            label=label,
+            save_to_disk=True,
+            public=True,
+        )
+        expected_mimetype = "text/html"
+        acceptable_mimetypes = [
+            "text/plain",
+        ]
+        if new_galley.file.mime_type != expected_mimetype:
+            if new_galley.file.mime_type not in acceptable_mimetypes:
+                logger.warning(f"Wrong mime type {new_galley.file.mime_type} for {html_galley_filename}")
+            new_galley.file.mime_type = expected_mimetype
+            new_galley.file.save()
+        article.render_galley = new_galley
+        article.save()
+        logger.error("WRITEME mangle html images")
+
+    def set_epub_galley(self, article, html_galley_filename):
+        """Set the give file as EPUB galley."""
+        logger.error("WRITE ME set epub galley")
 
     def set_authors(self, article, xml_obj):
         """Find and set the article's authors, creating them if necessary."""

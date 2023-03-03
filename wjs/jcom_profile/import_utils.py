@@ -2,10 +2,12 @@
 import re
 from collections import namedtuple
 
+import lxml.html
 import pycountry
 import requests
 from core.models import Account, Country
 from django.conf import settings
+from lxml.html import HtmlElement
 from submission import models as submission_models
 from utils.logger import get_logger
 
@@ -137,3 +139,77 @@ def publish_article(article):
         article.issue.save()
     article.save()
     logger.debug(f"Article {article.get_identifier('pubid')} run through Janeway's publication process")
+
+
+def promote_headings(html: HtmlElement):
+    """Promote all h2-h6 headings by one level."""
+    for level in range(2, 7):
+        for heading in html.findall(f".//h{level}"):
+            heading.tag = f"h{level-1}"
+
+
+def drop_toc(html: HtmlElement):
+    """Drop the "manual" TOC present in Drupal body content."""
+    tocs = html.find_class("tableofcontents")
+    if len(tocs) == 0:
+        logger.warning("No TOC in WRITEME!!!")
+        return
+
+    if len(tocs) > 1:
+        logger.error("Multiple TOCs in WRITEME!!!")
+
+    tocs[0].drop_tree()
+
+
+def drop_how_to_cite(html: HtmlElement):
+    """Drop the "manual" How-to-cite present in Drupal body content."""
+    htc_h2 = html.xpath(".//h2[text()='How to cite']")
+    if len(htc_h2) == 0:
+        logger.warning("No How-to-cite in WRITEME!!!")
+        return
+
+    if len(htc_h2) > 1:
+        logger.error("Multiple How-to-cites in WRITEME!!!")
+
+    htc_h2 = htc_h2[0]
+    max_expected = 3
+    count = 0
+    while True:
+        # we are going to `drop_tree` this element, so `getnext()`
+        # should provide for new elments
+        p = htc_h2.getnext()
+        count += 1
+        if count > max_expected:
+            logger.warning("Too many elements after How-to-cite's H2 in WRITEME!!!")
+            break
+        if p is None:
+            break
+        if p.tag != "p":
+            break
+        if p.text is not None and p.text.strip() == "":
+            p.drop_tree()
+            break
+        p.drop_tree()
+
+    htc_h2.drop_tree()
+
+
+def process_body(body: str) -> bytes:
+    """Rewrite and adapt body / full-text HTML to match Janeway's expectations.
+
+    Take care of
+    - TOC (heading levels)
+    - how-to-cite
+
+    Images included in body are done elsewhere since they require an existing galley.
+    """
+    html = lxml.html.fromstring(body)
+
+    # src/themes/material/assets/toc.js expects
+    # - the root element of the article must have id="main_article"
+    html.set("id", "main_article")
+    # - the headings that go in the toc must be h2-level, but Drupal has them at h3-level
+    promote_headings(html)
+    drop_toc(html)
+    drop_how_to_cite(html)
+    return lxml.html.tostring(html)
