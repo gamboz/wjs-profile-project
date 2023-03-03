@@ -1,6 +1,8 @@
 import datetime
 from typing import List, Tuple, Iterable, Dict, Union, TypedDict
 from unittest.mock import Mock
+
+from django.contrib.contenttypes.models import ContentType
 from premailer import transform
 
 from django.http import HttpRequest
@@ -109,8 +111,14 @@ class SendNewsletter:
     def _get_objects(
         self, journal: Journal, last_sent: datetime.datetime
     ) -> Tuple[Iterable[Recipient], Iterable[Article], Iterable[NewsItem]]:
+        content_type = ContentType.objects.get_for_model(journal)
+
         filtered_articles = Article.objects.filter(date_published__date__gt=last_sent, journal=journal)
-        filtered_news = NewsItem.objects.filter(posted__date__gt=last_sent, journal=journal)
+        filtered_news = NewsItem.objects.filter(
+            posted__date__gt=last_sent,
+            content_type=content_type,
+            object_id=journal.pk,
+        )
         filtered_subscribers = Recipient.objects.filter(
             Q(topics__in=filtered_articles.values_list("keywords")) | Q(news=True),
         ).distinct()

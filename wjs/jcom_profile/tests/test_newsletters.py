@@ -2,6 +2,8 @@ import datetime
 import random
 
 import pytest
+from django.contrib.contenttypes.models import ContentType
+
 from comms.models import NewsItem
 from django.core import mail, management
 from django.db.models import Q
@@ -101,10 +103,13 @@ def test_newsletters_with_news_items_only_must_be_sent(
 ):
     newsletter = newsletter_factory()
     news_user, no_news_user = account_factory(email="news@news.it"), account_factory(email="nonews@nonews.it")
+    content_type = ContentType.objects.get_for_model(journal)
 
     news_recipient = recipient_factory(user=news_user, news=True)
     news_item_factory(
         posted=timezone.now() + datetime.timedelta(days=1),
+        content_type=content_type,
+        object_id=journal.pk,
     )
     recipient_factory(user=no_news_user, news=False)
 
@@ -244,11 +249,14 @@ def test_two_recipients_one_news(
 
     """
     newsletter = newsletter_factory()
+    content_type = ContentType.objects.get_for_model(journal)
     # Two news recipients
     nr1 = recipient_factory(user=account_factory(), news=True)
     nr2 = recipient_factory(user=account_factory(), news=True)
     news_item_factory(
         posted=timezone.now() + datetime.timedelta(days=1),
+        content_type=content_type,
+        object_id=journal.pk,
     )
 
     management.call_command("send_newsletter_notifications", journal.code)
