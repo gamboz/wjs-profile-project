@@ -11,4 +11,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Run SendNewsletter service to send newsletter"""
-        SendNewsletter().execute(options["journal"], options["force"])
+        SendNewsletter().render_and_send(options["journal"], options["force"])
