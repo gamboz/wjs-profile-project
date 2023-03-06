@@ -450,7 +450,7 @@ class Command(BaseCommand):
             journal=article.journal,
             name=section_name,
             defaults={
-                "order": SECTION_ORDER[section_name][0],
+                "sequence": SECTION_ORDER[section_name][0],
                 "plural": SECTION_ORDER[section_name][1],
             },
         )
