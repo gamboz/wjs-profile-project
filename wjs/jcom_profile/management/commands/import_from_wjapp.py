@@ -9,7 +9,9 @@ from difflib import get_close_matches
 from io import BytesIO
 from pathlib import Path
 
+import lxml.html
 from core.models import Account
+from core.models import File as JanewayFile
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from identifiers import models as identifiers_models
@@ -17,7 +19,8 @@ from jcomassistant import make_epub, make_xhtml
 from jcomassistant.utils import TeXData, buildTag, read_tex
 from journal import models as journal_models
 from lxml import etree
-from production.logic import save_galley, save_supp_file
+from lxml.html import HtmlElement
+from production.logic import save_galley, save_galley_image, save_supp_file
 from submission import models as submission_models
 from utils.logger import get_logger
 from watchdog.events import LoggingEventHandler
@@ -255,8 +258,8 @@ class Command(BaseCommand):
         self.set_epub_galley(article, epub_galley_filename)
 
         publish_article(article)
-        # Cleanup
-        shutil.rmtree(tmpdir)
+        # Cleanup  shutil.rmtree(tmpdir)
+        logger.warning("RE-ENABLE CLEANUP")
 
     def set_html_galley(self, article, html_galley_filename):
         """Set the give file as HTML galley."""
@@ -285,7 +288,7 @@ class Command(BaseCommand):
             new_galley.file.save()
         article.render_galley = new_galley
         article.save()
-        logger.error("WRITEME mangle html images")
+        mangle_images(article)
 
     def set_epub_galley(self, article, html_galley_filename):
         """Set the give file as EPUB galley."""
@@ -606,3 +609,41 @@ class Command(BaseCommand):
                 label=file_name,
             )
             logger.debug(f"Supplementary material {file_name} set onto {pubid}")
+
+
+# TODO: consider refactoring with import_from_drupal
+def download_and_store_article_file(image_source_url, article):
+    """Downaload a media file and link it to the article."""
+    if not os.path.exists(image_source_url):
+        logger.error(f"Img {image_source_url} does not exist in {os.getcwd()}")
+    image_name = image_source_url.split("/")[-1]
+    image_file = File(open(image_source_url, "rb"), name=image_name)
+    new_file: JanewayFile = save_galley_image(
+        article.get_render_galley,
+        request=fake_request,
+        uploaded_file=image_file,
+        label=image_name,  # [*]
+    )
+    # [*] I tryed to look for some IPTC metadata in the image
+    # itself (Exif would probably useless as it is mostly related
+    # to the picture technical details) with `exiv2 -P I ...`, but
+    # found 3 maybe-useful metadata on ~1600 files and abandoned
+    # this idea.
+    return new_file
+
+
+def mangle_images(article):
+    """Download all <img>s in the article's galley and adapt the "src" attribute."""
+    render_galley = article.get_render_galley
+    galley_file: JanewayFile = render_galley.file
+    galley_string: str = galley_file.get_file(article)
+    html: HtmlElement = lxml.html.fromstring(galley_string)
+    images = html.findall(".//img")
+    for image in images:
+        img_src = image.attrib["src"].split("?")[0]
+        img_obj: JanewayFile = download_and_store_article_file(img_src, article)
+        # TBV: the `src` attribute is relative to the article's URL
+        image.attrib["src"] = img_obj.label
+
+    with open(galley_file.self_article_path(), "wb") as out_file:
+        out_file.write(lxml.html.tostring(html, pretty_print=False))
