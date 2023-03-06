@@ -468,6 +468,10 @@ class Command(BaseCommand):
         section, created = submission_models.Section.objects.get_or_create(
             journal=article.journal,
             name=section_name,
+            defaults={
+                "order": SECTION_ORDER[section_name][0],
+                "plural": SECTION_ORDER[section_name][1],
+            },
         )
         if created:
             logger.warning(
@@ -482,7 +486,7 @@ class Command(BaseCommand):
         # Must ensure that a SectionOrdering exists for this issue,
         # otherwise issue.articles.add() will fail.
         #
-        section_order = SECTION_ORDER[section.name]
+        section_order = SECTION_ORDER[section.name][0]
         journal_models.SectionOrdering.objects.get_or_create(
             issue=issue,
             section=section,

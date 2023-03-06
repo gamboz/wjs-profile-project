@@ -62,16 +62,16 @@ LICENCE_CCBY_FROM_DATE = timezone.datetime(2008, 9, 20, tzinfo=rome_timezone)
 # Default order of sections in any issue.
 # It is not possible to mix different types (e.g. A1 E1 A2...)
 SECTION_ORDER = {
-    "Editorial": 1,
-    "Article": 2,
-    "Review Article": 3,
-    "Practice insight": 4,
-    "Essay": 5,
-    "Focus": 6,
-    "Commentary": 7,
-    "Letter": 8,
-    "Book Review": 9,
-    "Conference Review": 10,
+    "Editorial": (1, "Editorials"),
+    "Article": (2, "Articles"),
+    "Review Article": (3, "Review Articles"),
+    "Practice insight": (4, "Practice insights"),
+    "Essay": (5, "Essays"),
+    "Focus": (6, "Focus"),
+    "Commentary": (7, "Commentaries"),
+    "Letter": (8, "Letters"),
+    "Book Review": (9, "Book Reviews"),
+    "Conference Review": (10, "Conference Reviews"),
 }
 
 # Non-peer reviewd sections (#200)
@@ -605,7 +605,8 @@ class Command(BaseCommand):
                 journal=article.journal,
                 name=section_name,
                 defaults={
-                    "sequence": SECTION_ORDER[section_name],
+                    "sequence": SECTION_ORDER[section_name][0],
+                    "plural": SECTION_ORDER[section_name][1],
                 },
             )
             Command.seen_sections[section_uri] = section.pk
@@ -620,7 +621,7 @@ class Command(BaseCommand):
         #
         # Drupal has a `section_data["weight"]`, but we decided to
         # go with a default ordereing, which seems more "orderly".
-        section_order = SECTION_ORDER[section.name]
+        section_order = SECTION_ORDER[section.name][0]
         journal_models.SectionOrdering.objects.get_or_create(
             issue=issue,
             section=section,
