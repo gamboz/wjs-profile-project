@@ -68,8 +68,6 @@ class WjappXMLError(Exception):
 
 logger = get_logger(__name__)
 
-WATCH_DIR = Path("/tmp/wjapp-wjs")
-
 
 def clean_string(string: str) -> str:
     """Sostuisce alcuni caratteri che sappiamo creare problemi nell'XML."""
@@ -169,16 +167,20 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         """Add arguments to command."""
         parser.add_argument(
-            "--writeme",
-            action="store_true",
-            help="Do smth.",
+            "--watch-dir",
+            default="/home/wjs/incoming",
+            help="Where to look for zip files to process. Defaults to %(default)s",
         )
 
     def read_from_watched_dir(self):
         """Read zip files from the watched folder and start the import process."""
-        files = WATCH_DIR.glob("*.zip")
+        if not os.path.isdir(self.options["watch_dir"]):
+            logger.critical(f"No such directory {self.options['watch_dir']}")
+            raise FileNotFoundError(f"No such directory {self.options['watch_dir']}")
+        watch_dir = Path(self.options["watch_dir"])
+        files = watch_dir.glob("*.zip")
         for zip_file in files:
-            self.process(WATCH_DIR / zip_file)
+            self.process(watch_dir / zip_file)
 
     def process(self, zip_file):
         """Uncompress the zip file, and create the importing Article from the XML metadata."""
