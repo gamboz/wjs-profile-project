@@ -255,11 +255,11 @@ class Command(BaseCommand):
 
         # Generate the EPUB from the TeX sources
         epub_galley_filename = make_epub.make(html_galley_filename, tex_data=tex_data)
-        self.set_epub_galley(article, epub_galley_filename)
+        self.set_epub_galley(article, epub_galley_filename, pubid)
 
         publish_article(article)
-        # Cleanup  shutil.rmtree(tmpdir)
-        logger.warning("RE-ENABLE CLEANUP")
+        # Cleanup
+        shutil.rmtree(tmpdir)
 
     def set_html_galley(self, article, html_galley_filename):
         """Set the give file as HTML galley."""
@@ -290,9 +290,26 @@ class Command(BaseCommand):
         article.save()
         mangle_images(article)
 
-    def set_epub_galley(self, article, html_galley_filename):
+    def set_epub_galley(self, article, epub_galley_filename, pubid):
         """Set the give file as EPUB galley."""
-        logger.error("WRITE ME set epub galley")
+        # We should be working in the folder where
+        # `epub_galley_filename` resides, so the file name and the
+        # file path are the same.
+        epub_galley_file = File(open(epub_galley_filename, "rb"), name=epub_galley_filename)
+        label = "EPUB"
+        file_mimetype = "application/epub+zip"
+        label, language = decide_galley_label(pubid, file_name=epub_galley_filename, file_mimetype=file_mimetype)
+        # language is set when we process the PDF galleys
+        save_galley(
+            article,
+            request=fake_request,
+            uploaded_file=epub_galley_file,
+            is_galley=True,
+            label=label,
+            save_to_disk=True,
+            public=True,
+        )
+        logger.debug(f"EPUB galley {label} set onto {pubid}")
 
     def set_authors(self, article, xml_obj):
         """Find and set the article's authors, creating them if necessary."""
