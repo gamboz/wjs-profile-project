@@ -264,7 +264,7 @@ class Command(BaseCommand):
     def set_html_galley(self, article, html_galley_filename):
         """Set the give file as HTML galley."""
         html_galley_text = open(html_galley_filename).read()
-        processed_html_galley_as_bytes = process_body(html_galley_text)
+        processed_html_galley_as_bytes = process_body(html_galley_text, style="wjapp")
         name = "body.html"
         html_galley_file = File(BytesIO(processed_html_galley_as_bytes), name)
         label = "HTML"

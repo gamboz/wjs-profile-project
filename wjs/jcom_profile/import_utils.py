@@ -1,6 +1,7 @@
 """Utility functions used only during data import."""
 import re
 from collections import namedtuple
+from typing import Optional
 
 import lxml.html
 import pycountry
@@ -194,7 +195,88 @@ def drop_how_to_cite(html: HtmlElement):
     htc_h2.drop_tree()
 
 
-def process_body(body: str) -> bytes:
+def extract_reviews_info(maketitle: HtmlElement) -> Optional[HtmlElement]:
+    """Extract Book and Conference Review info from div.maketitle."""
+    # The part that we are interested in starts with a <h2> (please
+    # note that this method is called _after_ headings have been
+    # promoted), then some text, then a <br/>, then some final text.
+    # It should be at the end of the div.maketitle. E.g.:
+    #
+    # ...
+    # <h2 class="likesectionHead"><a id="x1-3000"/>Contents</h2>
+    #
+    # <h2 class="likesectionHead"><a id="x1-4000"/>Reviewed Conference<a id="Q1-1-7"/></h2>
+    # Forum Wissenschaftskommunikation 2022<br/>
+    # Leibniz Universit&#228;t, Hannover, Germany, 4&#8211;6 October 2022
+    # </div>
+    # ...
+    #
+    # Per evitare questo, dovremmo spostare il comando al di fuori del maketitle
+    #
+    header: HtmlElement = None
+    found = False
+    for header in maketitle.findall("h2"):
+        if header_text := header.text_content():
+            if header_text.startswith("Reviewed"):
+                found = True
+                break
+
+    if not found:
+        return None
+
+    logger.debug(f'Found "{header_text}"')
+
+    if not header == maketitle[-2]:
+        logger.error("Reviewd info found in unexpected place. Trying to continue.")
+
+    # I prefer to have an element to move around
+    wrapper = lxml.html.etree.Element("div")
+    wrapper.append(header)
+    # Let's also encapsulate the text in a <p>
+    p = lxml.html.etree.SubElement(wrapper, "p")
+
+    # The first text line should be the conference's title...
+    p.text = header.tail
+    header.tail = None
+
+    br = maketitle[-1]
+    if br.tag != "br":
+        logger.error(f"Unexpected tag {br} found. Trying to continue.")
+
+    p.append(br)
+    # ...and the second text line should be the conference's venue and date.
+    if not br.tail:
+        logger.error("Missing expect final text. Trying to continue.")
+    return wrapper
+
+
+def drop_frontmatter(html: HtmlElement):
+    """Drop <head> and the div.maketitle, but keep reivews info if present."""
+    heads = html.findall("head")
+
+    if len(heads) != 1:
+        logger.error(f"Found {len(heads)} (expected 1). Proceeding anyway")
+    for head in heads:
+        html.remove(head)
+
+    maketitle: HtmlElement = html.find(".//div[@class='maketitle']")
+    if maketitle is None:
+        logger.error("No <div class='maketitle'> found!")
+        return
+
+    review_data = extract_reviews_info(maketitle)
+    if review_data is not None:
+        html.insert(0, review_data)
+
+    maketitle.drop_tree()
+
+
+def remove_images_dimensions(html: HtmlElement):
+    """Remove dimensions from <img> tags, let Janeway decide."""
+    logger.error("WRITEME!")
+
+
+def process_body(body: str, style=None) -> bytes:
     """Rewrite and adapt body / full-text HTML to match Janeway's expectations.
 
     Take care of
@@ -212,4 +294,7 @@ def process_body(body: str) -> bytes:
     promote_headings(html)
     drop_toc(html)
     drop_how_to_cite(html)
+    if style == "wjapp":
+        drop_frontmatter(html)
+        remove_images_dimensions(html)
     return lxml.html.tostring(html)
