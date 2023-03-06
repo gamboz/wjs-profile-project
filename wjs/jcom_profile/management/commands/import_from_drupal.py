@@ -488,6 +488,8 @@ class Command(BaseCommand):
         abstract_dict = raw_data["field_abstract"]
         if not abstract_dict:
             logger.warning("Missing abstract in %s (%s)", raw_data["field_id"], raw_data["nid"])
+            article.abstract = ""
+            article.save()
             return
 
         abstract = abstract_dict.get("value", None)
