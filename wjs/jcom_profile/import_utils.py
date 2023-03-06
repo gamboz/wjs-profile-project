@@ -29,6 +29,15 @@ JANEWAY_LANGUAGES_BY_CODE = {t[0]: t[1] for t in submission_models.LANGUAGE_CHOI
 assert len(JANEWAY_LANGUAGES_BY_CODE) == len(submission_models.LANGUAGE_CHOICES)
 
 
+# A mapping between some non-standard codes used in JCOM and iso639-2
+FUNNY_LANGUAGE_CODES = {
+    "slo": "sl",  # Slovenian
+    "sp": "es",  # Spanish, Castilian
+    "dk": "da",  # Danish
+    "po": "pt",  # Portuguese
+}
+
+
 FakeRequest = namedtuple("FakeRequest", ["user"])
 # TODO: who whould this user be???
 admin = Account.objects.filter(is_admin=True).first()
@@ -98,6 +107,7 @@ def decide_galley_label(pubid, file_name: str, file_mimetype: str):
     language = None
     if lang_match is not None:
         language = lang_match.group(1)
+        language = FUNNY_LANGUAGE_CODES.get(language, language)
         label = f"{label} ({language})"
     return (label, language)
 
@@ -107,7 +117,16 @@ def set_language(article, language):
 
     Must map from Drupal's iso639-2 (two chars) to Janeway iso639-3 (three chars).
     """
+    # Some non-standard language codes have been used in JCOM through the years...
+    language = FUNNY_LANGUAGE_CODES.get(language, language)
     lang = pycountry.languages.get(alpha_2=language)
+    if lang is None:
+        logger.error(
+            'Unknown language code "%s" for %s. Keeping default "English"',
+            language,
+            article.get_identifier("pubid"),
+        )
+        return
     if lang.alpha_3 not in JANEWAY_LANGUAGES_BY_CODE:
         logger.error(
             'Unknown language "%s" (from "%s") for %s. Keeping default "English"',
