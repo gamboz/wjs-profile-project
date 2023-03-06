@@ -23,8 +23,6 @@ from lxml.html import HtmlElement
 from production.logic import save_galley, save_galley_image, save_supp_file
 from submission import models as submission_models
 from utils.logger import get_logger
-from watchdog.events import LoggingEventHandler
-from watchdog.observers import Observer
 
 from wjs.jcom_profile import models as wjs_models
 from wjs.jcom_profile.import_utils import (
@@ -166,7 +164,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Command entry point."""
         self.options = options
-        # Not yet: self.start_watchdog()
         self.read_from_watched_dir()
 
     def add_arguments(self, parser):
@@ -176,24 +173,6 @@ class Command(BaseCommand):
             action="store_true",
             help="Do smth.",
         )
-
-    def start_watchdog(self):
-        """Start the watchdog (if it's not yet running)."""
-        logger.error("Watchdog not implemented!")
-        raise Exception()
-
-        event_handler = LoggingEventHandler()
-        observer = Observer()
-
-        observer.schedule(event_handler, WATCH_DIR)
-        observer.start()
-        try:
-            while observer.is_alive():
-                observer.join(1)
-        finally:
-            observer.stop()
-            observer.join()
-            logger.info("Watchdog stopped for %s", WATCH_DIR)
 
     def read_from_watched_dir(self):
         """Read zip files from the watched folder and start the import process."""
