@@ -292,6 +292,7 @@ class Command(BaseCommand):
             ("name", "SISSA Journals"),
         )
         press = Press.objects.get()
+        press_changed = False
         for attribute, value in attributes:
             if not hasattr(press, attribute):
                 self.error(f"Press {press} has not attribute {attribute}!")
@@ -301,11 +302,14 @@ class Command(BaseCommand):
                 if current_value != value:
                     logger.debug(f'Forcing press.{attribute} to "{value}" (was "{current_value}")')
                 setattr(press, attribute, value)
+                press_changed = True
             elif self.options["check_only"]:
                 if current_value != value:
                     self.notice(f'Press.{attribute} is "{current_value}" vs. expected "{value}"')
             else:
                 raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
+        if press_changed:
+            press.save()
 
     def set_journal_attributes(self):
         """Take care of the Journal attibutes."""
@@ -319,6 +323,7 @@ class Command(BaseCommand):
             ("display_issue_year", True),
         )
         journal = self.journal
+        journal_changed = False
         for attribute, value in attributes:
             if not hasattr(journal, attribute):
                 self.error(f"Journal {journal} has not attribute {attribute}!")
@@ -328,11 +333,14 @@ class Command(BaseCommand):
                 if current_value != value:
                     logger.debug(f'Forcing journal.{attribute} to "{value}" (was "{current_value}")')
                 setattr(journal, attribute, value)
+                journal_changed = True
             elif self.options["check_only"]:
                 if current_value != value:
                     self.notice(f'Journal.{attribute} is "{current_value}" vs. expected "{value}"')
             else:
                 raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
+        if journal_changed:
+            journal.save()
 
     def notice(self, msg):
         """Emit a notice."""
