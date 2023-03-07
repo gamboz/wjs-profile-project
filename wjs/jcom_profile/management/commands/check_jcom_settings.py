@@ -269,12 +269,7 @@ class Command(BaseCommand):
                 if current_value and current_value != value:
                     self.notice(f'Setting {setting_name} is "{current_value}" vs. expected "{value}"')
             else:
-                if not current_value:
-                    setting_handler.save_setting(group_name, setting_name, jcom, value)
-                elif current_value != value:
-                    self.notice(
-                        f'Setting {setting_name} is "{current_value}" vs. expected "{value}". Leaving it as it is.',
-                    )
+                raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
 
     def notice(self, msg):
         """Emit a notice."""
@@ -282,7 +277,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Add arguments to command."""
-        behavior = parser.add_mutually_exclusive_group()
+        behavior = parser.add_mutually_exclusive_group(required=True)
         behavior.add_argument(
             "--check-only",
             action="store_true",
