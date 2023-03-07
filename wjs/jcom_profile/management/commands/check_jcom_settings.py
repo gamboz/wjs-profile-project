@@ -10,12 +10,18 @@ VALUE = "CHECK ME!"
 
 
 class Command(BaseCommand):
-    help = "Check (and/or set) Janeway settings suitable for JCOM"  # noqa
+    help = "Check (and/or set) Janeway settings suitable for a journal"  # noqa
 
     def handle(self, *args, **options):
         """Command entry point."""
-        jcom = Journal.objects.get(code="JCOM")
+        self.journal = Journal.objects.get(code=options["journal_code"])
+        self.options = options
+        self.set_journal_settings()
+        self.set_journal_attributes()
+        self.set_press_attributes()
 
+    def set_journal_settings(self):
+        """Take care of the journal settings."""
         jcom_settings = [
             #
             # Collection Name - Overrides the term "Collections" across all the templates.
@@ -261,13 +267,19 @@ class Command(BaseCommand):
         ]
 
         for group_name, setting_name, value in jcom_settings:
-            current_value = setting_handler.get_setting(group_name, setting_name, jcom, create=False, default=True)
+            current_value = setting_handler.get_setting(
+                group_name,
+                setting_name,
+                self.journal,
+                create=False,
+                default=True,
+            )
             current_value = current_value and current_value.value or None
-            if options["force"]:
+            if self.options["force"]:
                 if current_value and current_value != value:
                     logger.debug(f'Forcing {setting_name} to "{value}" (was "{current_value}")')
-                setting_handler.save_setting(group_name, setting_name, jcom, value)
-            elif options["check_only"]:
+                setting_handler.save_setting(group_name, setting_name, self.journal, value)
+            elif self.options["check_only"]:
                 if current_value and current_value != value:
                     self.notice(f'Setting {setting_name} is "{current_value}" vs. expected "{value}"')
             else:
@@ -295,6 +307,33 @@ class Command(BaseCommand):
             else:
                 raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
 
+    def set_journal_attributes(self):
+        """Take care of the Journal attibutes."""
+        attributes = (
+            ("display_article_number", False),
+            ("display_article_page_numbers", False),
+            ("display_issue_doi", False),
+            ("display_issue_number", True),
+            ("display_issue_title", True),
+            ("display_issue_volume", True),
+            ("display_issue_year", True),
+        )
+        journal = self.journal
+        for attribute, value in attributes:
+            if not hasattr(journal, attribute):
+                self.error(f"Journal {journal} has not attribute {attribute}!")
+                continue
+            current_value = getattr(journal, attribute)
+            if self.options["force"]:
+                if current_value != value:
+                    logger.debug(f'Forcing journal.{attribute} to "{value}" (was "{current_value}")')
+                setattr(journal, attribute, value)
+            elif self.options["check_only"]:
+                if current_value != value:
+                    self.notice(f'Journal.{attribute} is "{current_value}" vs. expected "{value}"')
+            else:
+                raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
+
     def notice(self, msg):
         """Emit a notice."""
         self.stdout.write(self.style.NOTICE(msg))
@@ -315,4 +354,9 @@ class Command(BaseCommand):
             "--force",
             action="store_true",
             help="Set all. By default, we don't change anything that is different from the default/unset state",
+        )
+        parser.add_argument(
+            "--journal-code",
+            default="JCOM",
+            help="The code of the journal that we are working on. Defaults to $(default)s.",
         )
