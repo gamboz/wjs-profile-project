@@ -1,6 +1,7 @@
 """Check (and/or set) Janeway settings suitable for JCOM."""
 from django.core.management.base import BaseCommand
 from journal.models import Journal
+from press.models import Press
 from utils import setting_handler
 from utils.logger import get_logger
 
@@ -272,9 +273,35 @@ class Command(BaseCommand):
             else:
                 raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
 
+    def set_press_attributes(self):
+        """Take care of the Press attibutes."""
+        attributes = (
+            ("main_contact", "eo@medialab.sissa.it"),
+            ("name", "SISSA Journals"),
+        )
+        press = Press.objects.get()
+        for attribute, value in attributes:
+            if not hasattr(press, attribute):
+                self.error(f"Press {press} has not attribute {attribute}!")
+                continue
+            current_value = getattr(press, attribute)
+            if self.options["force"]:
+                if current_value != value:
+                    logger.debug(f'Forcing press.{attribute} to "{value}" (was "{current_value}")')
+                setattr(press, attribute, value)
+            elif self.options["check_only"]:
+                if current_value != value:
+                    self.notice(f'Press.{attribute} is "{current_value}" vs. expected "{value}"')
+            else:
+                raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
+
     def notice(self, msg):
         """Emit a notice."""
         self.stdout.write(self.style.NOTICE(msg))
+
+    def error(self, msg):
+        """Emit an error."""
+        self.stdout.write(self.style.ERROR(msg))
 
     def add_arguments(self, parser):
         """Add arguments to command."""
