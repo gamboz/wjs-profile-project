@@ -138,13 +138,15 @@ def set_language(article, language):
 
     article.language = JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3]
     if lang.name not in JANEWAY_LANGUAGES_BY_CODE.values():
-        logger.warning(
-            """ISO639 language for "%s" is "%s" and is different from Janeway's "%s" (using the latter) for %s""",
-            language,
-            lang.name,
-            JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3],
-            article.get_identifier("pubid"),
-        )
+        # We know about "Spanish" vs. "Spanish; Castilian" and it's ok to keep the latter.
+        if lang.name != "Spanish":
+            logger.warning(
+                """ISO639 language for "%s" is "%s" and is different from Janeway's "%s" (using the latter) for %s""",
+                language,
+                lang.name,
+                JANEWAY_LANGUAGES_BY_CODE[lang.alpha_3],
+                article.get_identifier("pubid"),
+            )
     article.save()
 
 

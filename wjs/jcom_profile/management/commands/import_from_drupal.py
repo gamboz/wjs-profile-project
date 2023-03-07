@@ -546,13 +546,17 @@ class Command(BaseCommand):
             public=True,
         )
         expected_mimetype = "text/html"
+        acceptable_mimetypes = [
+            "text/plain",
+        ]
         if new_galley.file.mime_type != expected_mimetype:
-            logger.warning(
-                "Wrong mime type %s for %s (%s)",
-                new_galley.file.mime_type,
-                new_galley.file.uuid_filename,
-                raw_data["field_id"],
-            )
+            if new_galley.file.mime_type not in acceptable_mimetypes:
+                logger.warning(
+                    "Wrong mime type %s for %s (%s)",
+                    new_galley.file.mime_type,
+                    new_galley.file.uuid_filename,
+                    raw_data["field_id"],
+                )
             new_galley.file.mime_type = "text/html"
             new_galley.file.save()
         article.render_galley = new_galley
@@ -668,7 +672,7 @@ class Command(BaseCommand):
         if issue_data["field_number"] == "3-4":
             issue_num = 3
         else:
-            issue_num = '{:02d}'.format(int(issue_data["field_number"]))
+            issue_num = "{:02d}".format(int(issue_data["field_number"]))
 
         # Drupal has "created" and "changed", but they are not what we
         # need here.
@@ -680,17 +684,12 @@ class Command(BaseCommand):
         #   the publication date of the issue to the oldest of the two
         date_published = article.date_published
 
-        # TODO: JCOM has "special issues" published alongside normal
-        # issues, while Janeway has "collections", that are orthogonal
-        # (i.e. one article can belong to only one issue, but to
-        # multiple collections). Also, issues are enumerated in a
-        # dedicated page, but this page does not include collections.
         issue_type__code = "issue"
         # No title for standard issues.
         issue_title = ""
         if "Special" in issue_data["title"]:
             issue_type__code = "collection"
-            issue_title = issue_data["title"][issue_data["title"].find("Special "):]
+            issue_title = issue_data["title"][issue_data["title"].find("Special ") :]  # NOQA
         issue, created = journal_models.Issue.objects.get_or_create(
             journal=article.journal,
             volume=volume_num,
