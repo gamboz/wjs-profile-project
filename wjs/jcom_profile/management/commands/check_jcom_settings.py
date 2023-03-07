@@ -38,7 +38,7 @@ class Command(BaseCommand):
             #
             # Crossref Date Suffix - For migrated content where we
             # need to tweak the crossref date.
-            # TBV: ("crossref", "crossref_date_suffix", VALUE),
+            ("crossref", "crossref_date_suffix", ""),
             #
             # Crossref depositor email - The email of the depositor
             # for this journal on Crossref's system.
@@ -101,7 +101,7 @@ class Command(BaseCommand):
             # Embargo Period (KBART) - Optional period of embargo this
             # journal is subject to. It must follow the kbart format
             # such as 'R2Y' or 'P1Y'
-            # TBV: ("kbart", "embargo_period", VALUE),
+            ("kbart", "embargo_period", ""),
             #
             # Enable Crosscheck - If enabled, links to crosscheck reports will be displayed
             ("crosscheck", "enable", ""),
@@ -113,7 +113,7 @@ class Command(BaseCommand):
             ("styling", "enable_editorial_images", ""),
             #
             # Focus and Scope - Journal's Focus and Scope, displayed on the Submissions page.
-            # TBV: ("general", "focus_and_scope", VALUE),
+            ("general", "focus_and_scope", FOCUS_AND_SCOPE),
             #
             # From Address - System emails are sent From this address.
             ("general", "from_address", "jcom-eo@jcom.sissa.it"),
@@ -162,7 +162,7 @@ class Command(BaseCommand):
             ("general", "keyword_list_page", "on"),
             #
             # Main Contact - Primary contact for the journal.
-            # TBV: ("general", "main_contact", VALUE),
+            # ("general", "main_contact", default is ok!),
             #
             # Matomo Tracking Code - Tracking code for Matomo.
             ("general", "matromo_tracking_code", "WRITEME! #120"),
@@ -237,10 +237,10 @@ class Command(BaseCommand):
             #
             # Janeway Support Contact for Staff - Support message to
             # display to editors and staff on Manager page.
-            # TBV: ("general", "support_contact_message_for_staff", VALUE),
+            # ("general", "support_contact_message_for_staff", default is ok!),
             #
             # Support Email - Support email address for editors and staff users.
-            ("general", "support_email", "gamboz@medialab.sissa.it"),
+            ("general", "support_email", "wjs-support@medialab.sissa.it"),
             #
             # Suppress Citation Metrics - If enabled this will
             # suppress the citations counter on the article page. The
@@ -368,3 +368,81 @@ class Command(BaseCommand):
             default="JCOM",
             help="The code of the journal that we are working on. Defaults to $(default)s.",
         )
+
+
+FOCUS_AND_SCOPE = """<p>JCOM -
+Journal of Science Communication welcomes original research,
+theoretical reflections, case studies of best practice and
+evaluations. JCOM seeks to provide a space which brings together
+scholars and practitioners, enabling discussion of issue of interest
+to both communities. In fact, the Journal is aimed at researchers,
+educators, trainers and professional and occasional practitioners in
+science communication.  Contributors should bear in mind the breadth
+of this target audience in writing papers intended for publication in
+JCOM.</p>
+<p>We take a broad view of science communication, encompassing, for
+example, popular science publishing, science in information and
+entertainment forms of media, public demonstrations and discussions
+of science, mediations between scientific and other social
+institutions, science museums and centres, science journalism and
+science information services.</p>
+<p>JCOM has a global remit and we invite submissions from all parts
+of the world, and concerning all parts of the world. We also seek to
+encourage new scholarship and new perspectives; we welcome
+submissions from prospective contributors who are at early stages in
+their careers and seeking to build up a portfolio of published work.</p>
+<p>Why &quot;science communication&quot;? Because we want to
+challenge and enter into dialogue with the social studies of science
+and science and technology studies communities, as well as reach
+practitioners involved in a wide range of communication activities
+related to science and technology. The Journal publishes work that
+explores the importance of communicative processes to the development
+of science as well as studies exploring the dynamics of contemporary
+knowledge societies. We chose this privileged point of view even
+though we know that we are still looking for deep theoretical
+reflection, strong methodological tools and a clear identity. JCOM
+seeks to contribute to the development of the field and creation of
+its identity by adopting a model that promotes the free circulation
+of information and non-Eurocentric perspectives, encompassing
+heterogeneous visions such as gender studies, social history,
+action-research. Furthermore, JCOM is a platform where distant
+communities can meet: academic scholars, journalists, museum
+operators, and scientists who live and work in fields where
+theoretical reflection and concrete action are strongly intertwined.</p>
+<p>So JCOM investigates the needs for communication between science
+and citizens and within the scientific community itself; the problems
+that are to be faced when models for theoretical analysis or
+practical means to popularize science are used; the changing relation
+between science and social institutions; and the informative,
+pedagogical, interpretative and political dimensions of science
+communication.</p>
+<p>The main topics covered by JCOM are:</p>
+<ul>
+        <li><p>Citizen science</p>
+        <li><p>Community action</p>
+        <li><p>Environmental communication</p>
+        <li><p>Health communication</p>
+        <li><p>History of public communication of science</p>
+        <li><p>Informal learning</p>
+        <li><p>Participation and science governance</p>
+        <li><p>Popularization of science and technology</p>
+        <li><p>Professionalism, professional development and training in science communication</p>
+        <li><p>Public engagement with science and technology</p>
+        <li><p>Public perception of science and technology</p>
+        <li><p>Public understanding of science and technology</p>
+        <li><p>Representations of science and technology</p>
+        <li><p>Risk communication</p>
+        <li><p>Scholarly communication</p>
+        <li><p>Science and media</p>
+        <li><p>Science and policy-making</p>
+        <li><p>Science and technology, art and literature</p>
+        <li><p>Science centres and museums</p>
+        <li><p>Science communication in the developing world</p>
+        <li><p>Science communication: theory and models</p>
+        <li><p>Science education</p>
+        <li><p>Science writing</p>
+        <li><p>Social inclusion</p>
+        <li><p>Visual communication</p>
+        <li><p>Women in science</p>
+</ul>
+"""
