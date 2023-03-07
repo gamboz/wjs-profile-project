@@ -171,6 +171,11 @@ class Command(BaseCommand):
             default="/home/wjs/incoming",
             help="Where to look for zip files to process. Defaults to %(default)s",
         )
+        parser.add_argument(
+            "--store-dir",
+            default="/home/wjs/received-from-wjapp",
+            help="Where to keep zip files received from wjapp (and processed). Defaults to %(default)s",
+        )
 
     def read_from_watched_dir(self):
         """Read zip files from the watched folder and start the import process."""
@@ -188,8 +193,13 @@ class Command(BaseCommand):
         # wjapp provides an "atomic" upload: when the file if present,
         # it is ready and fully uploaded.
 
-        # Unzip in a temporary dir
-        tmpdir = Path(tempfile.mkdtemp())
+        # Copy to "storage" dir and unzip there in a temporary dir
+        store_dir = Path(self.options["store_dir"])
+        store_dir.mkdir(parents=True, exist_ok=True)
+        shutil.move(zip_file, store_dir)
+        zip_file = store_dir / os.path.basename(zip_file)
+
+        tmpdir = Path(tempfile.mkdtemp(dir=store_dir))
         with zipfile.ZipFile(zip_file, "r") as zip_ref:
             zip_ref.extractall(tmpdir)
 
