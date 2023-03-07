@@ -139,8 +139,9 @@ class Command(BaseCommand):
             # Journal ISSN - The ISSN of the journal.
             ("general", "journal_issn", "1824-2049"),
             #
+            # TODO: broken in 1.4, fixed in 1.5 - see thread on Discord
             # Journal Languages - Languages available for this journal.
-            ("general", "journal_languages", ["en"]),
+            # Just ignore for now: ("general", "journal_languages", ["en"]),
             #
             # Journal Name - Name of the journal.
             ("general", "journal_name", "Journal of Science Communication"),
