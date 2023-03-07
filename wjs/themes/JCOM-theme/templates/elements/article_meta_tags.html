@@ -36,7 +36,7 @@
     <meta name="citation_journal_title" content="{{ article.journal_title }}"/>
     <meta name="citation_issn" content="{{ article.journal_issn }}"/>
     {% for author in article.frozen_authors.all %}
-        <meta name="citation_author" content="{{ author.full_name }}"/>
+        <meta name="citation_author" content="{{ author.dc_name_string }}"/>
         {% if not '@journal.org' in author.author.email %}
             <meta name="citation_author_email" content="{{ author.author.email }}"/>
         {% endif %}
