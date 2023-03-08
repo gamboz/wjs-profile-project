@@ -34,7 +34,7 @@ class Command(BaseCommand):
             # Copyright Notice - Displayed on the About and Submission
             # pages. You should update this to display the Journal's
             # copyright requirements.
-            # TBV: ("general", "copyright_notice", VALUE),
+            ("general", "copyright_notice", COPYRIGHT_NOTICE),
             #
             # Crossref Date Suffix - For migrated content where we
             # need to tweak the crossref date.
@@ -366,9 +366,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--journal-code",
             default="JCOM",
-            help="The code of the journal that we are working on. Defaults to $(default)s.",
+            help="The code of the journal that we are working on. Defaults to %(default)s.",
         )
 
+
+COPYRIGHT_NOTICE = """
+<p><a href="https://jcom.sissa.it/jcom/help/JCOM/CR_OA.pdf">JCOM Open Access and Copyright Terms</a></p>
+"""
 
 FOCUS_AND_SCOPE = """<p>JCOM -
 Journal of Science Communication welcomes original research,
