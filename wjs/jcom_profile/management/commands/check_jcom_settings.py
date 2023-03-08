@@ -267,20 +267,20 @@ class Command(BaseCommand):
         ]
 
         for group_name, setting_name, value in jcom_settings:
-            current_value = setting_handler.get_setting(
+            current_setting = setting_handler.get_setting(
                 group_name,
                 setting_name,
                 self.journal,
                 create=False,
                 default=True,
             )
-            current_value = current_value and current_value.value or None
+            current_value = current_setting.value
             if self.options["force"]:
-                if current_value and current_value != value:
+                if current_value != value:
                     logger.debug(f'Forcing {setting_name} to "{value}" (was "{current_value}")')
                 setting_handler.save_setting(group_name, setting_name, self.journal, value)
             elif self.options["check_only"]:
-                if current_value and current_value != value:
+                if current_value != value:
                     self.notice(f'Setting {setting_name} is "{current_value}" vs. expected "{value}"')
             else:
                 raise Exception("Come sei arrivato qui?! qualcuno mi ha cambiato le opzioni??? 😠")
