@@ -33,7 +33,7 @@ class SendNewsletter:
         return now() - datetime.timedelta(days=120)
 
     def transform(self, content: str, journal: Journal):
-        processed = transform(content, base_url=f"http://{journal.domain}")
+        processed = transform(content, base_url=f"https://{journal.domain}")
         return processed
 
     def render_message(
@@ -191,6 +191,7 @@ class SendNewsletter:
                 self.send_newsletter(rendered["subscriber"], rendered["content"])
             except Exception as e:
                 messages.append(str(e))
+                logger.error(e)
 
         newsletter.save()
         return messages

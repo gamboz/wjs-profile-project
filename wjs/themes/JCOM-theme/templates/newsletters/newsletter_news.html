@@ -2,7 +2,7 @@
 {% load wjs_tags %}
 {% load truncate %}
 
-<h4 class="section-name">{{ news.section.name }}
+<h4 class="section-name">{% for tag in news.tags.all %}{{ tag.text }} {% endfor %}
   
 <h3 class="title">{{ news.title }}</h3>
 <p>{{ news|news_part:'abstract'|safe }}</p>
