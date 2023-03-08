@@ -60,7 +60,7 @@
     {% for keyword in article.keywords.all %}
         <meta name="citation_keywords" content="{{ keyword.word }}"/>
     {% endfor %}
-
+    <meta name="citation_public_url" content="{{ article.url }}"/>
     {% if article.pdfs.exists %}
     <meta name="citation_pdf_url" content="{% journal_url 'serve_article_pdf' 'id' article.id %}"/>
     {% endif %}
