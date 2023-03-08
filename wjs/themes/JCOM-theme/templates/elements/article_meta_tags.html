@@ -1,4 +1,4 @@
-
+{% load wjs_tags %}
     <!-- Commented out meta fields are TODO -->
 
     <!-- <meta name="DC.Coverage.spatial" xml:lang="en" content="London"/> -->
@@ -52,6 +52,7 @@
     {% elif article.page_range %}
         <meta name="citation_firstpage" content="{{ article.page_range }}"/>
     {% endif %}
+    <meta name="citation_id" content="{{ article|citation_id }}"/>
     {% if article.identifier.id_type == "doi" %}<meta name="citation_doi" content="{{ article.identifier.identifier }}"/>{% endif %}
     <meta name="citation_abstract_html_url" content="{{ article.url }}"/>
     {% if article.language %}<meta name="citation_language" content="{{ article.language }}"/>{% endif %}

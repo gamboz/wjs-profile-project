@@ -90,3 +90,9 @@ def all_issues(context):
         journal=request.journal,
         date__lte=timezone.now(),
     )
+
+
+@register.filter
+def citation_id(article):
+    """Given an Article, returns the meta tag "citation_id" value"""
+    return f"{article.issue.volume}/{int(article.issue.issue)}/{article.page_range}"
