@@ -7,7 +7,9 @@ RewriteEngine On
 
 # e.g. https://janeway-test.sissamedialab.it/JCOM/archive...
 # oppure https://jcom-test.sissamedialab.it/archive...
-RewriteRule "^/(?P<journal_code>JCOM/)?archive/(?P<volume>\d{2})/(?P<issue>\d{2})/(?P<pubid>[\w.()-]+)/(?P<rest>.*)$" "/(?P=journal_code)articles/pubid/(?P=pubid)/(?P=rest)"
+
+RewriteRule "^/archive/(\d{2})/(\d{2})/([\w.()-]+)(.*)$" "/article/pubid/$3$4" [R,L]
+# RewriteRule "^/archive/(?P<volume>\d{2})/(?P<issue>\d{2})/(?P<pubid>[\w.()-]+)(?P<rest>.*)$" "/article/pubid/(?P=pubid)(?P=rest)" [R,L]
 
 # TODO: open issue di pulizia:
 #       isolare i vecchi redirect che si possono elimnare (e.g. rss / struttura del sito)
