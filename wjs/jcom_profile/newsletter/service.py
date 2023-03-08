@@ -1,13 +1,15 @@
 import datetime
-from typing import List, Tuple, Iterable, Dict, Union, TypedDict
+from typing import List, Tuple, Iterable, TypedDict
 from unittest.mock import Mock
 
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 from premailer import transform
 
 from django.http import HttpRequest
 from django.utils.timezone import now
 
+from cms.models import Page
 from comms.models import NewsItem
 from core.middleware import GlobalRequestMiddleware
 from django.conf import settings
@@ -28,16 +30,48 @@ class NewsletterItem(TypedDict):
 
 
 class SendNewsletter:
+    def site_url(self, journal: Journal):
+        """
+        Get base site URL.
+
+        Allow overriding Journal.site_url using NEWSLETTER_URL Django setting.
+        """
+        if getattr(settings, "NEWSLETTER_URL", None):
+            return settings.NEWSLETTER_URL
+        else:
+            return journal.site_url()
+
     @property
     def send_always_timestamp(self) -> datetime.datetime:
         return now() - datetime.timedelta(days=120)
 
-    def transform(self, content: str, journal: Journal):
-        processed = transform(content, base_url=f"https://{journal.domain}")
+    def process_content(self, content: str, journal: Journal):
+        processed = transform(
+            content,
+            base_url=self.site_url(journal),
+            allow_network=True,
+        )
         return processed
+
+    def get_unsubscribe_url(self, subscriber: Recipient):
+        """Return the unsubscribe URL according to the subscriber type."""
+        if subscriber.newsletter_token:
+            return f'{reverse("edit_newsletters")}?token={subscriber.newsletter_token}'
+        else:
+            return reverse("edit_newsletters")
+
+    def get_privacy_url(self, journal: Journal):
+        """Return the privacy page URL (if exists)."""
+        content_type = ContentType.objects.get_for_model(journal)
+        try:
+            page = Page.objects.filter(content_type=content_type, object_id=journal.pk, name="privacy").get()
+            return reverse("cms_page", args=(page.name,))
+        except Page.DoesNotExist:
+            return ""
 
     def render_message(
         self,
+        journal: Journal,
         subscriber: Recipient,
         rendered_articles: List[str],
         rendered_news: List[str],
@@ -45,6 +79,7 @@ class SendNewsletter:
         """
         Render the newsletter for a subscriber.
 
+        :param journal: Journal instance.
         :param subscriber: The subscriber Recipient model.
         :param rendered_articles: The articles to be rendered in newsletter email.
         :param rendered_news: The news to be rendered in newsletter emails.
@@ -65,11 +100,14 @@ class SendNewsletter:
                 "articles": "".join(rendered_articles),
                 "news": "".join(rendered_news),
                 "intro_message": intro_message,
+                "journal": journal,
+                "site_url": self.site_url(journal),
+                "unsubscribe_url": self.get_unsubscribe_url(subscriber),
+                "privacy_url": self.get_privacy_url(journal),
             },
         )
 
-        processed = self.transform(content, subscriber.journal)
-        return processed
+        return self.process_content(content, subscriber.journal)
 
     def send_newsletter(self, subscriber: Recipient, newsletter_content: str) -> bool:
         subject = get_setting(
@@ -167,7 +205,8 @@ class SendNewsletter:
 
             if rendered_news or rendered_articles:
                 yield NewsletterItem(
-                    subscriber=subscriber, content=self.render_message(subscriber, rendered_articles, rendered_news)
+                    subscriber=subscriber,
+                    content=self.render_message(journal, subscriber, rendered_articles, rendered_news),
                 )
 
     def render_sample(self, journal_code: str) -> str:
@@ -191,7 +230,6 @@ class SendNewsletter:
                 self.send_newsletter(rendered["subscriber"], rendered["content"])
             except Exception as e:
                 messages.append(str(e))
-                logger.error(e)
 
         newsletter.save()
         return messages

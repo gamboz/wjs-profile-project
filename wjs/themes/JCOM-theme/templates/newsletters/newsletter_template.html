@@ -1,92 +1,32 @@
 {% load i18n %}
+{% load static %}
+{% load svg_or_image from press_url %}
 <!DOCTYPE html>
 
 <html>
   <head>
     <meta name="viewport" content="width=device-width" />
     <meta http-equiv="Content-type" content="text/html" charset="UTF-8" />
-    <title>Jcom newsletter</title>
-    <style type="text/css">
-      @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap');
+    <title>Publication Alert - {{ journal.name }}</title>
+    <link rel="stylesheet" href="{{ site_url     }}{% static "JCOM-theme/css/newsletter.css" %}">
 
-      body {
-        background: #dfdfdf;
-        font-family: 'Roboto', sans-serif;
-        padding: 80px;
-        text-align: left;
-      }
-
-      .container {
-        background: white;
-        margin-bottom: 40px;
-        padding: 20px;
-        text-align: left;
-      }
-
-      .logos {
-        background: none;
-        margin-bottom: 20px;
-      }
-
-      .logo {
-        width: 80%;
-      }
-      
-
-      h2 {
-        background: #0066cc;
-        color: #fff;
-        padding: 10px;
-      }
-
-      .section-name {
-        font-size: 12px;
-        font-weight: bold;
-        margin-bottom: 0;
-        text-transform: uppercase;
-      }
-
-      .title {
-        color: #06c;
-        font-size: 24px;
-        margin: 0;
-      }
-
-      .author {
-        font-size: 14px;
-        font-style: italic;
-        margin-top: 0;
-      }
-
-      .date {
-        text-align: right;
-      }
-
-      .divider {
-        margin: 20px 0;
-      }
-
-      .unsubscribe {
-        font-size: 12px;
-        text-align: center;
-      }
-    </style>
   </head>
 
   <body>
-    <table class="logos">
+    <table width="100%">
       <tr>
         <td align="left">
-                <img class="logo" src="{% url 'journal_cover_download' %}"/>
-            </td>
-            <td align="right">
-                <img class="logo" src="/sites/all/themes/mathlab/images/logo.png"/>
-            </td>
+            {% svg_or_image journal.default_cover_image %}
+        </td>
+        <td align="right">
+            {% svg_or_image journal.press_image_override %}
+        </td>
         </tr>
     </table>
 
     <div class="container">
       <table>
+        {% if articles %}
         <tr>
             <td>
                 <h2>{% trans "Publications" %}</h2>
@@ -96,7 +36,8 @@
         <tr>
           <td>{{ articles|safe }}</td>
         </tr>
-
+        {% endif %}
+        {% if news %}
         <tr>
             <td>
                 <h2>{% trans "News" %}</h2>
@@ -107,6 +48,7 @@
                 {{ news|safe }}
             </td>
         </tr>
+        {% endif %}
       </table>
     </div>
 
@@ -114,12 +56,13 @@
         <tr>
             <td>
             <p>
-                {% blocktrans %}
+                {% blocktrans with unsubscribe_url=unsubscribe_url privacy_url=privacy_url %}
                 You have received this email because you have subscribed to JCOM
                 publication alert.<br>
-                <span><a href="#">Click here to modify your topics of interest.</a></span>
+                <span><a href="{{ unsubscribe_url }}">Click here to modify your topics of interest.</a></span>
                 <span>|</span>
-                <span><a href="#">Click here to unsubscribe</a></span>.<br> See our <a href="#">privacy policy</a> for information on
+                <span><a href="{{ unsubscribe_url }}">Click here to unsubscribe</a></span>.<br>
+                See our <a href="{{ privacy_url }}">privacy policy</a> for information on
                 how we use your personal data or contact us for general information
                 {% endblocktrans %}
             </p>
