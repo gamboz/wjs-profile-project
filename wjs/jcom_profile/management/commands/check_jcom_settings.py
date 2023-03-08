@@ -6,7 +6,6 @@ from utils import setting_handler
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
-VALUE = "CHECK ME!"
 
 
 class Command(BaseCommand):
