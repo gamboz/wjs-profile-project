@@ -34,6 +34,7 @@
     {% elif journal_settings.general.publisher_name %}<meta name="citation_publisher" content="{{ journal_settings.general.publisher_name }}"/>
     {% endif %}
     <meta name="citation_journal_title" content="{{ article.journal_title }}"/>
+    <meta name="citation_journal_abbrev" content="{{ article.journal.code }}"/>
     <meta name="citation_issn" content="{{ article.journal_issn }}"/>
     {% for author in article.frozen_authors.all %}
         <meta name="citation_author" content="{{ author.dc_name_string }}"/>
