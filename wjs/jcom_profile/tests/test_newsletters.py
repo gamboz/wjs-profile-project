@@ -54,7 +54,9 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     custom_newsletter_setting,
     keywords,
     journal,
+    settings,
 ):
+    settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
     users = []
     correspondence_author = account_factory()
@@ -100,7 +102,9 @@ def test_newsletters_with_news_items_only_must_be_sent(
     custom_newsletter_setting,
     keywords,
     journal,
+    settings
 ):
+    settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
     news_user, no_news_user = account_factory(email="news@news.it"), account_factory(email="nonews@nonews.it")
     content_type = ContentType.objects.get_for_model(journal)
@@ -132,7 +136,9 @@ def test_newsletters_with_articles_only_must_be_sent(
     keyword_factory,
     custom_newsletter_setting,
     journal,
+    settings
 ):
+    settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
     correspondence_author = account_factory()
     newsletter_user_keyword = keyword_factory()
@@ -188,7 +194,9 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscrib
     custom_newsletter_setting,
     keywords,
     journal,
+    settings
 ):
+    settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
     correspondence_author = account_factory()
     for _ in range(10):
@@ -239,6 +247,7 @@ def test_two_recipients_one_news(
     news_item_factory,
     custom_newsletter_setting,
     journal,
+    settings
 ):
     """Service test.
 
@@ -248,6 +257,8 @@ def test_two_recipients_one_news(
     run this test (with pytest -s).
 
     """
+
+    settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
     content_type = ContentType.objects.get_for_model(journal)
     # Two news recipients
@@ -281,6 +292,7 @@ def test_two_recipients_one_article(
     keyword_factory,
     custom_newsletter_setting,
     journal,
+    settings
 ):
     """Service test.
 
@@ -290,6 +302,8 @@ def test_two_recipients_one_article(
     run this test (with pytest -s).
 
     """
+
+    settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
 
     # One published article, with a known kwd
@@ -319,11 +333,13 @@ def test_one_recipient_one_article_two_topics(
     keyword_factory,
     custom_newsletter_setting,
     journal,
+    settings
 ):
-    """Test recipients not related to any account.
-
-    Bozza! :)
     """
+    Test recipients not related to any account.
+    """
+
+    settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
 
     # One published article, with a known kwd
