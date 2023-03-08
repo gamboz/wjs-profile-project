@@ -30,16 +30,21 @@ def check_email_body(outbox):
     for email in outbox:
         user_email = email.to[0]
         try:
-            user_keywords = Recipient.objects.get(user__email=user_email).topics.all()
+            recipient = Recipient.objects.get(user__email=user_email)
         except Recipient.DoesNotExist:
-            user_keywords = Recipient.objects.get(email=user_email).topics.all()
+            recipient = Recipient.objects.get(email=user_email)
+        user_keywords = recipient.topics.all()
         for topic in user_keywords:
             articles = Article.objects.filter(keywords__in=[topic], date_published__date__gt=timezone.now())
             for article in articles:
                 assert article.title in email.body
         news_items = NewsItem.objects.filter(posted__date__gt=timezone.now())
-        for item in news_items:
-            assert item.title in email.body
+        if recipient.news:
+            for item in news_items:
+                assert item.title in email.body
+        else:
+            for item in news_items:
+                assert item.title not in email.body
 
 
 @pytest.mark.django_db
@@ -58,6 +63,7 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
 ):
     settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
+    content_type = ContentType.objects.get_for_model(journal)
     users = []
     correspondence_author = account_factory()
     for _ in range(10):
@@ -65,6 +71,8 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     for _ in range(10):
         news_item_factory(
             posted=timezone.now() + datetime.timedelta(days=-2),
+            content_type=content_type,
+            object_id=journal.pk,
         )
     for user in users:
         recipient = recipient_factory(
@@ -198,10 +206,13 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscrib
 ):
     settings.NEWSLETTER_URL = "http://testserver.com"
     newsletter = newsletter_factory()
+    content_type = ContentType.objects.get_for_model(journal)
     correspondence_author = account_factory()
     for _ in range(10):
         news_item_factory(
             posted=timezone.now() + datetime.timedelta(days=1),
+            content_type=content_type,
+            object_id=journal.pk,
         )
     for i in range(30):
         is_anonymous = random.choice([True, False])
