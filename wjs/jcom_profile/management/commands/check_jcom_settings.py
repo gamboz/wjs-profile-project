@@ -191,7 +191,7 @@ class Command(BaseCommand):
             #
             # Publisher Name - Name of the Journal's
             # Publisher. Displayed throughout the site and metadata.
-            ("general", "publisher_name", "Sissa Medialab"),
+            ("general", "publisher_name", "Sissa Medialab srl"),
             #
             # Publisher URL - URL of the Journal's Publisher.
             ("general", "publisher_url", "https://medialab.sissa.it/"),
