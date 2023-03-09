@@ -1380,6 +1380,8 @@ def search(request):
     search_term, keyword, sort, form, redir = journal_logic.handle_search_controls(request)
     sections = request.GET.get('sections', "")
     keywords = request.GET.get('keywords', "")
+    show = int(request.GET.get('show', 20))
+    page = int(request.GET.get('page', 1))
     if sections.strip():
         sections = sections.strip().split(",")
     if keywords.strip():
@@ -1437,14 +1439,23 @@ def search(request):
         article__date_published__lte=timezone.now(),
     ).annotate(articles_count=Count('article')).order_by("-articles_count")[:keyword_limit]
 
+    paginator = Paginator(articles, per_page=show)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
     template = 'journal/search.html'
+
     context = {
-        'articles': articles,
+        'articles': page_obj,
         'article_search': search_term,
         'keywords': keywords,
         'sections': sections,
         'form': form,
         'sort': sort,
+        'show': show,
         'all_keywords': popular_keywords
     }
 
