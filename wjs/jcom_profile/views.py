@@ -1213,7 +1213,7 @@ def filter_articles(request, section=None, keyword=None, author=None):
     if keyword:
         filters["keywords__pk"] = keyword
         title = _("Filter by keyword")
-        paragraph = _("Publications that use this keyword are listed below.")
+        paragraph = _("Publications including this keyword are listed below.")
         filtered_object = get_object_or_404(Keyword, pk=keyword).word
     if author:
         filters["frozenauthor__author"] = author
