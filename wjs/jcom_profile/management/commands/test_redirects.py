@@ -12,9 +12,24 @@ TESTS = (
     ("/archive/21/07/JCOM_2107_2022_A02", 301, "/article/pubid/JCOM_2107_2022_A02"),
     ("/archive/21/07/JCOM_2107_2022_A02/", 301, "/article/pubid/JCOM_2107_2022_A02/"),
     ("/archive/21/07/JCOM_2107_2022_A02/ciao", 301, "/article/pubid/JCOM_2107_2022_A02/ciao"),
+    #     - old-style pubid
+    ("/archive/01/01/E0101", 301, "/article/pubid/E0101"),
+    # warning: remember that the last item is a regexp: () have special meaning
+    ("/archive/09/04/Jcom0904(2010)E", 301, r"/article/pubid/Jcom0904\(2010\)E"),
+    #
     # Issue
     ("/archive/03/03", 301, r"/issue/(\d+)/info"),
-    ("/archive/03/03/", 301, r"/issue/\d+/info/"),
+    ("/archive/03/03/", 301, r"/issue/(\d+)/info/"),
+    #
+    # Galleys
+    ("/sites/default/files/documents/JCOM_2107_2022_A02.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    ("/sites/default/files/documents/Jcom0904(2010)E_it.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    #     - with language
+    ("/sites/default/files/documents/JCOM_2002_2021_A01_en.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    ("/sites/default/files/documents/JCOM_2002_2021_A01_pt.epub", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    #     - citation_pdf_url (for google scholar, must be sibling or the paper's landing page)
+    ("/archive/20/02/JCOM_2002_2021_A01_en.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    ("/archive/22/01/JCOM_2201_2023_N01.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
 )
 
 
