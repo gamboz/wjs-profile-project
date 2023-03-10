@@ -85,6 +85,7 @@ def mock_premailer_load_url(mocker):
     )
     return mock
 
+
 @pytest.fixture
 def user():
     """Create / reset a user in the DB.
