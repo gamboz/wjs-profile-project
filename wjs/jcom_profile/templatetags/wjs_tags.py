@@ -1,6 +1,7 @@
 """WJS tags."""
 from django import template
 from django.utils import timezone
+from django.utils.html import strip_tags
 
 from journal.models import Issue
 from submission.models import Article
@@ -96,3 +97,13 @@ def all_issues(context):
 def citation_id(article):
     """Given an Article, returns the meta tag "citation_id" value"""
     return f"{article.issue.volume}/{int(article.issue.issue)}/{article.page_range}"
+
+
+@register.filter
+def description(article):
+    """Given an Article, returns the meta tag "description" value"""
+    # Strip HTML tags and get at most 320 characters
+    shorter_abstract = strip_tags(article.abstract)[:320]
+    # To avoid truncated words at the end of the string, drop the characters after the last space
+    # This splits shorter_abstract on spaces into words, takes all but the last word, and rejoins them with spaces.
+    return " ".join(shorter_abstract.split(" ")[:-1])
