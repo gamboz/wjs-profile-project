@@ -5,37 +5,55 @@
 
 RewriteEngine On
 
-# e.g. https://janeway-test.sissamedialab.it/JCOM/archive...
-# oppure https://jcom-test.sissamedialab.it/archive...
 
-RewriteRule "^/archive/(\d{2})/(\d{2})/([\w.()-]+)(.*)$" "/article/pubid/$3$4" [R,L]
-# RewriteRule "^/archive/(?P<volume>\d{2})/(?P<issue>\d{2})/(?P<pubid>[\w.()-]+)(?P<rest>.*)$" "/article/pubid/(?P=pubid)(?P=rest)" [R,L]
+# Tryed references by name (https://pcre.org/current/doc/html/pcre2syntax.html#SEC22).
+# These fail:
+# (?P=pubid)
+# \k<pubid>
+# \k'pubid'
+# \g{pubid}
+# ...
+# and then I abandoned the idea of backreference by name... sigh...
 
-# TODO: open issue di pulizia:
-#       isolare i vecchi redirect che si possono elimnare (e.g. rss / struttura del sito)
-#       da quelli che invece si vuole tenere (e.g. articoli/PDF)
-
-### Tutti i rewrite delle url dal vecchio sito Plone al nuovo Drupal:
-#
-# Plone:    //jcom.sissa.it/jcom0303.html
-# Drupal:   //jcom.sissa.it/archive/03/03/
-#           OCCHIO: /quasi/ matcha l'url del WJ; funziona solamente
-#                   perché nel WJ non c'è nessun file statico ".html"
-RewriteRule ^/jcom(..)(..).*.html       /archive/$1/$2/ [R,L]
-
-# Plone:    //jcom.sissa.it/comment/com020102_or.html
-# Drupal:   //jcom.sissa.it/archive/02/01/C020102-en
-RewriteRule ^/editorial/edit(..)(..).*  /archive/$1/$2/E$1$2-en [R,L]
-RewriteRule ^/focus/foc(..)(..)(..).*   /archive/$1/$2/F$1$2$3-en [R,L]
-RewriteRule ^/article/art(..)(..)(..).* /archive/$1/$2/A$1$2$3-en [R,L]
-RewriteRule ^/comment/com(..)(..)(..).* /archive/$1/$2/C$1$2$3-en [R,L]
-RewriteRule ^/review/rev(..)(..)(..).*  /archive/$1/$2/R$1$2$3-en [R,L]
-RewriteRule ^/letter/let(..)(..)(..).*  /archive/$1/$2/L$1$2$3-en [R,L]
+# Important! Papers' landing page
+# From: //jcom.sissa.it/archive/13/04/JCOM_1304_2014_E
+# To:   //jcom.sissa.it/article/pubid/JCOM_1304_2014_E
+RewriteRule "^/archive/(?<volume>\d{2})/(?<issue>\d{2})/(?<pubid>[\w.()-]+)(?<rest>.*)$" "/article/pubid/$3$4" [R=301,L]
 
 
-# from plone to drupal - manage old file urls (mg 2015-03-25)
-# plone was: http://jcom.sissa.it/archive/13/04/JCOM_1304_2014_E/JCOM_1304_2014_E.pdf
-# drupal is: http://jcom.sissa.it/sites/default/files/documents/JCOM_1304_2014_E.pdf
+# Drop redirects for URLs pre-2015
+# E.g.
+# - //jcom.sissa.it/jcom0303.html
+# - //jcom.sissa.it/comment/com020102_or.html
+# - //jcom.sissa.it/archive/13/04/JCOM_1304_2014_E/JCOM_1304_2014_E.pdf
+# - //jcom.sissa.it/all-articles/RSS$
+# - //jcom.sissa.it/search_rss.*
+# - //jcom.sissa.it/.*atct_topic_view.*
+# - //jcom.sissa.it/all/.*
+# - //jcom.sissa.it/mc-logo.png
+# - //jcom.sissa.it/contentsof.*
+# - //jcom.sissa.it/to-submit/submissionform.*
+
+
+# Issue
+# From: //jcom.sissa.it/archive/03/03/
+# To:   //jcom.sissa.it/issue/97/info/
+# Managed by Janeway
+
+
+# TODO
+# TODO  /rss.xml? [R=301,L]
+# TODO  /archive? [R=301,L]
+# TODO  # drupal is: /author/pietro-greco
+# TODO  /author/%1-%2-%3-%4? [R=301,L]
+# TODO  /author/%1-%2-%3? [R=301,L]
+# TODO  /author/%1-%2? [R=301,L]
+# TODO  /author/%1-%2? [R=301,L]
+# TODO
+
+# Files/galleys
+# From: https://jcom.sissa.it/sites/default/files/documents/JCOM_1304_2014_E.pdf
+# To:   https://jcom.sissa.it/article/1134/galley/2251/download/
 #
 # {as} 2017-06-13: spostato nel backend, dove faccio /quasi/ la stessa cosa,
 #                  mettendo in un meta l'url in /archive...
@@ -46,54 +64,6 @@ RewriteRule ^/letter/let(..)(..)(..).*  /archive/$1/$2/L$1$2$3-en [R,L]
 #RewriteRule ^/archive/.+/([^/]+.pdf)$   /sites/default/files/documents/$1 [R,L]
 
 
-# from plone to drupal - manage old RSS urls (mg 2015-04-01)
-RewriteRule ^/all-articles/RSS$         /rss.xml [R=301,L]
-RewriteRule ^/all-comments/RSS$         /rss.xml [R=301,L]
-RewriteRule ^/all-editorials/RSS$       /rss.xml [R=301,L]
-RewriteRule ^/all-essays/RSS$           /rss.xml [R=301,L]
-RewriteRule ^/all-focus/RSS$            /rss.xml [R=301,L]
-RewriteRule ^/all-letters/RSS$          /rss.xml [R=301,L]
-RewriteRule ^/all-reviews/RSS$          /rss.xml [R=301,L]
-RewriteRule ^/all/RSS$                  /rss.xml [R=301,L]
-
-# In plone, we had rss for any search. The following is just a catch all.
-RewriteRule ^/search_rss.*              /rss.xml? [R=301,L]
-
-# A specific view of a plone object:
-RewriteCond %{REQUEST_URI} atct_topic_view
-RewriteRule ^(.*)atct_topic_view.*      $1? [R]
-
-# no more "all" page; redirecting to archive
-# NB: this is delicate; we may want to remove it
-# so that a page named "all" can be created in the site
-RewriteRule ^/all/.*                    /archive? [R=301,L]
-
-# letters and focus don't have a dedicated "all-X" page any more
-# NB: these are delicate; we may want to remove them
-# and create the pages in the site
-RewriteRule ^/all-letters.*             /documents/letter? [R=301,L]
-RewriteRule ^/all-focus.*               /documents/focus? [R=301,L]
-
-RewriteRule ^/mc-logo.png               /sites/default/files/styles/banner_260/public/banner/mc-logo.png [R=301,L]
-
-# plone was: contentsof?Authors=Pietro%20Greco
-# drupal is: /author/pietro-greco
-RewriteCond %{QUERY_STRING}         "Authors=(.+)%20(.+)%20(.+)%20(.+)"
-RewriteRule ^/contentsof.*              /author/%1-%2-%3-%4? [R=301,L]
-RewriteCond %{QUERY_STRING}         "Authors=(.+)%20(.+)%20(.+)"
-RewriteRule ^/contentsof.*              /author/%1-%2-%3? [R=301,L]
-RewriteCond %{QUERY_STRING}         "Authors=(.+)%20(.+)"
-RewriteRule ^/contentsof.*              /author/%1-%2? [R=301,L]
-RewriteCond %{QUERY_STRING}         "Authors=(.+)\+(.+)"
-RewriteRule ^/contentsof.*              /author/%1-%2? [R=301,L]
-
-# catch all the rest (accented names, longer names, etc.)
-RewriteCond %{REQUEST_URI}          ^/contentsof
-RewriteRule ^/contentsof.*          /search/node [R=301,L]
-
-# redirect old link to submission form (few requests, but can be important)
-RewriteRule ^/to-submit/submissionform.* /jcom [R,L]
-#
 ### /Plone
 
 # TODO: verify if needed!

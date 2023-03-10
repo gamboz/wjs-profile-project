@@ -79,10 +79,8 @@ urlpatterns = [
         views.IMUStep3.as_view(),
         name="si-imu-3",
     ),
-
     # Issues - override view "journal_issues" from journal.urls
-    url(r'^issues/$', views.issues, name='journal_issues'),
-
+    url(r"^issues/$", views.issues, name="journal_issues"),
     #
     # JCOM has "()" in some pubid identifiers; I need to overwrite
     # "article_view" from journal.urls
@@ -114,8 +112,9 @@ urlpatterns = [
     url(r"^articles/keyword/(?P<keyword>[\w.-]+)/$", views.filter_articles, name="articles_by_keyword"),
     url(r"^articles/section/(?P<section>[\w.-]+)/$", views.filter_articles, name="articles_by_section"),
     url(r"^articles/author/(?P<author>[\w.-]+)/$", views.filter_articles, name="articles_by_author"),
+    # Redirects - start
     url(
-        r"archive/(?P<volume>\d{2})/(?P<issue>[\d-]{2,3})/$",
+        r"archive/(?P<volume>\d{2})/(?P<issue>[\d-]{2,3})/?$",
         views.JcomIssueRedirect.as_view(),
         name="jcom_redirect_issue",
     ),
@@ -146,6 +145,7 @@ urlpatterns = [
         views.JcomFileRedirect.as_view(),
         name="jcom_redirect_file",
     ),
+    # Redirects - end
 ]
 
 # Some experimental / Easter-egg URLs

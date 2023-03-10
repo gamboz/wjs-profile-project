@@ -33,14 +33,14 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
-from journal.models import Issue
 from journal import decorators as journal_decorators
+from journal.models import Issue
 from repository import models as preprint_models
 from security.decorators import (
     article_edit_user_required,
     article_is_not_submitted,
-    submission_authorised,
     has_journal,
+    submission_authorised,
 )
 from submission import decorators
 from submission import forms as submission_forms
@@ -1235,13 +1235,13 @@ def filter_articles(request, section=None, keyword=None, author=None):
 
 
 class JcomIssueRedirect(RedirectView):
-    permanent = False
+    permanent = True
     query_string = True
 
     def get_redirect_url(self, *args, **kwargs):  # noqa
         issues = Issue.objects.filter(
             volume=kwargs["volume"],
-            issue=int(kwargs["issue"]),
+            issue=kwargs["issue"],
         ).order_by("-date")
         if issues.count() > 1:
             logger.warning(
@@ -1250,12 +1250,13 @@ class JcomIssueRedirect(RedirectView):
         if not issues.first():
             raise Http404()
 
-        return reverse(
+        redirect_location = reverse(
             "journal_issue",
             kwargs={
                 "issue_id": issues.first().pk,
             },
         )
+        return redirect_location
 
 
 class JcomFileRedirect(RedirectView):
@@ -1351,7 +1352,7 @@ class JcomFileRedirect(RedirectView):
 @has_journal
 @journal_decorators.frontend_enabled
 def issues(request):
-    """ Renders the list of issues in the journal.
+    """Render the list of issues in the journal.
 
     :param request: the request associated with this call
     :return: a rendered template of all issues
@@ -1360,8 +1361,8 @@ def issues(request):
         journal=request.journal,
         date__lte=timezone.now(),
     )
-    template = 'journal/issues.html'
+    template = "journal/issues.html"
     context = {
-        'issues': issue_objects,
+        "issues": issue_objects,
     }
     return render(request, template, context)
