@@ -117,11 +117,18 @@ class SendNewsletter:
             create=False,
             default=True,
         )
+        from_email = get_setting(
+            "general",
+            "from_address",
+            subscriber.journal,
+            create=False,
+            default=True,
+        )
 
         return send_mail(
             subject.value.format(journal=subscriber.journal, date=datetime.date.today()),
             newsletter_content,
-            settings.DEFAULT_FROM_EMAIL,
+            from_email,
             [subscriber.newsletter_destination_email],
             fail_silently=False,
             html_message=newsletter_content,
