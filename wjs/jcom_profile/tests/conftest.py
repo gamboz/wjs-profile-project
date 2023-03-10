@@ -77,6 +77,14 @@ def clear_cache():
 
 
 @pytest.fixture
+def mock_premailer_load_url(mocker):
+    mock = mocker.patch(
+        "premailer.premailer.Premailer._load_external_url",
+        return_value=""
+    )
+    return mock
+
+@pytest.fixture
 def user():
     """Create / reset a user in the DB.
 

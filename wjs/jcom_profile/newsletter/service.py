@@ -39,7 +39,7 @@ class SendNewsletter:
         if getattr(settings, "NEWSLETTER_URL", None):
             return settings.NEWSLETTER_URL
         else:
-            return journal.site_url()
+            return journal.site_url().strip("/")
 
     @property
     def send_always_timestamp(self) -> datetime.datetime:
@@ -189,6 +189,7 @@ class SendNewsletter:
         """Create the list of rendered news."""
         rendered_news = []
 
+        print("RENDER", subscriber.pk, subscriber.news, filtered_news)
         if subscriber.news:
             for news in filtered_news:
                 if not hasattr(news, "rendered"):
