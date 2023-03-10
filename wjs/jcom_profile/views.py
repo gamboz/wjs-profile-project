@@ -1121,13 +1121,9 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
     def get_success_url(self):  # noqa
         user = self.request.user
         url = reverse("edit_newsletters")
+        url = f"{url}?update=1"
         if user.is_anonymous():
-            url += f"?{urlencode({'token': self.object.newsletter_token})}"
-        messages.add_message(
-            self.request,
-            messages.SUCCESS,
-            _("Newsletter preferences updated."),
-        )
+            url = f"{url}&{urlencode({'token': self.object.newsletter_token})}"
         return url
 
 
@@ -1174,7 +1170,11 @@ class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
     template_name = "elements/accounts/anonymous_subscription_email_sent.html"
 
 
-def unsubscribe_newsletter(request, recipient_pk):
+class UnsubscribeUserConfirmation(TemplateView):
+    template_name = "elements/accounts/delete_subscription.html"
+
+
+def unsubscribe_newsletter(request, token):
     """
     Unsubscribe from newsletter.
 
@@ -1182,23 +1182,17 @@ def unsubscribe_newsletter(request, recipient_pk):
     """
     user = request.user
     try:
-        recipient = Recipient.objects.get(pk=recipient_pk)
+        if user.is_anonymous():
+            recipient = Recipient.objects.get(newsletter_token=token)
+            recipient.delete()
+        else:
+            recipient = Recipient.objects.get(user=request.user)
+            recipient.news = False
+            recipient.topics.clear()
+            recipient.save()
     except Recipient.DoesNotExist:
         return Http404
-    if user.is_anonymous():
-        recipient.delete()
-        response = HttpResponseRedirect(reverse("website_index"))
-    else:
-        recipient.news = False
-        recipient.topics.clear()
-        recipient.save()
-        response = HttpResponseRedirect(reverse("core_edit_profile"))
-    messages.add_message(
-        request,
-        messages.SUCCESS,
-        _("Unsubscription successful"),
-    )
-    return response
+    return HttpResponseRedirect(reverse("unsubscribe_newsletter_confirm"))
 
 
 def filter_articles(request, section=None, keyword=None, author=None):
