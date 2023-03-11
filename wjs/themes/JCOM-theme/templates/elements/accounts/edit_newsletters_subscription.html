@@ -13,12 +13,19 @@
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button class="btn" type="submit"><i
-                    class="fa fa-check">&nbsp;</i>{% trans "Save preferences" %}
-            </button>
-            <a href="#modal1" class="btn modal-trigger"><i
-                    class="fa fa-times">&nbsp;</i>{% trans "Unsubscribe" %}
-            </a>
+            {% if active %}
+                <button class="btn" type="submit"><i
+                        class="fa fa-check">&nbsp;</i>{% trans "Save preferences" %}
+                </button>
+                <a href="#modal1" class="btn modal-trigger"><i
+                        class="fa fa-times">&nbsp;</i>{% trans "Unsubscribe" %}
+                </a>
+            {% else %}
+                <p>{% trans "Select a topic or a news to activate subscriptiom" %}.</p>
+                <button class="btn" type="submit"><i
+                        class="fa fa-check">&nbsp;</i>{% trans "Activate" %}
+                </button>
+            {% endif %}
         </form>
         {% include "elements/accounts/unsubscribe_confirmation_modal.html" %}
     </div>
