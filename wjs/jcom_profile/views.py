@@ -1191,7 +1191,7 @@ def unsubscribe_newsletter(request, token):
             recipient = Recipient.objects.get(newsletter_token=token)
             recipient.delete()
         else:
-            recipient = Recipient.objects.get(user=request.user)
+            recipient = Recipient.objects.get(user=request.user, journal=request.journal)
             recipient.news = False
             recipient.topics.clear()
             recipient.save()
