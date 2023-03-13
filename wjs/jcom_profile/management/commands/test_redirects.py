@@ -47,6 +47,9 @@ TESTS = (
     ("/archive", 301, "/articles/"),
     ("/archive/01", 301, "/articles/"),
     ("/archive/01/", 301, "/articles/"),
+    #
+    # Supplementary material / attachments
+    ("/sites/default/files/documents/supplementary_material/JCOM_2106_2022_Y01_ATTACH_1.pdf", 301, ""),
 )
 
 
