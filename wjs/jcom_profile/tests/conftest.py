@@ -425,7 +425,7 @@ def issue(issue_type, published_articles):
     issue = Issue.objects.create(
         journal=issue_type.journal,
         date=timezone.now(),
-        issue="1",
+        issue="01",
         issue_title=f"Issue 01, {timezone.now().year}",
         issue_type=issue_type,
     )
