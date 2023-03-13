@@ -21,6 +21,9 @@ def list_of_target_pages(article):
 def test_analytics_code(published_articles, generic_analytics_code_setting, client):
     """Set a random code and test that it's present in some important pages."""
     article = published_articles[0]
+    article.snapshot_authors()
+    # Set the script_prefix so that reverse() works properly
+    client.get(f"/{article.journal.code}/")
     random_text = faker.Faker().text()
     setting_handler.save_setting(
         "general",
