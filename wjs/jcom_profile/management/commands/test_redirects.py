@@ -7,14 +7,18 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# warning: remember that the last item is a regexp: () have special meaning
 TESTS = (
     # Landing page
     ("/archive/21/07/JCOM_2107_2022_A02", 301, "/article/pubid/JCOM_2107_2022_A02"),
     ("/archive/21/07/JCOM_2107_2022_A02/", 301, "/article/pubid/JCOM_2107_2022_A02/"),
     ("/archive/21/07/JCOM_2107_2022_A02/ciao", 301, "/article/pubid/JCOM_2107_2022_A02/ciao"),
+    #     - sub documents / children
+    ("/archive/16/01/JCOM_1601_2017_C01/JCOM_1601_2017_C02", 301, "/article/pubid/JCOM_1601_2017_C02"),
+    ("/archive/02/04/C020401/C020402", 301, "/article/pubid/C020402"),
+    ("/archive/09/04/Jcom0904(2010)C01/Jcom0904(2010)C02", 301, r"/article/pubid/Jcom0904\(2010\)C02"),
     #     - old-style pubid
     ("/archive/01/01/E0101", 301, "/article/pubid/E0101"),
-    # warning: remember that the last item is a regexp: () have special meaning
     ("/archive/09/04/Jcom0904(2010)E", 301, r"/article/pubid/Jcom0904\(2010\)E"),
     #
     # Issue
@@ -28,8 +32,21 @@ TESTS = (
     ("/sites/default/files/documents/JCOM_2002_2021_A01_en.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
     ("/sites/default/files/documents/JCOM_2002_2021_A01_pt.epub", 301, r"/article/(\d+)/galley/(\d+)/download/"),
     #     - citation_pdf_url (for google scholar, must be sibling or the paper's landing page)
+    #     - old citation_pdf_url bring to galley
     ("/archive/20/02/JCOM_2002_2021_A01_en.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
     ("/archive/22/01/JCOM_2201_2023_N01.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    ("/archive/21/07/JCOM_2107_2022_C01/JCOM_2107_2022_C07.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    ("/archive/09/04/Jcom0904(2010)C01/Jcom0904(2010)C02.pdf", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    #     - new citation_pdf_url bring to galley
+    #       WARNING: cannot write a generic test because the galleyid
+    #       appears in the "src" part (and may change because of
+    #       import order)
+    # NON-GENERIC: ("/article/pubid/JCOM_2002_2021_A01/1234", 301, r"/article/(\d+)/galley/(\d+)/download/"),
+    #
+    # Archive and volumes
+    ("/archive", 301, "/articles/"),
+    ("/archive/01", 301, "/articles/"),
+    ("/archive/01/", 301, "/articles/"),
 )
 
 
