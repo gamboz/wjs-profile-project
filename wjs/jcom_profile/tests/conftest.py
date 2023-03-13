@@ -79,10 +79,7 @@ def clear_cache():
 @pytest.fixture
 def mock_premailer_load_url(mocker):
     """Provide a empty response for css when fetched by premailer."""
-    mock = mocker.patch(
-        "premailer.premailer.Premailer._load_external_url",
-        return_value=""
-    )
+    mock = mocker.patch("premailer.premailer.Premailer._load_external_url", return_value="")
     return mock
 
 

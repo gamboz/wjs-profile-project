@@ -6,8 +6,6 @@ from typing import Iterable
 from urllib.parse import urlencode
 
 import pandas as pd
-from django.db.models import Count, Q
-
 from core import files as core_files
 from core import logic
 from core import models as core_models
@@ -21,6 +19,7 @@ from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import validate_email
 from django.db import IntegrityError
+from django.db.models import Count, Q
 from django.forms import modelformset_factory
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -36,8 +35,9 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
+from journal import decorators as journal_decorators
+from journal import logic as journal_logic
 from journal.models import Issue
-from journal import decorators as journal_decorators, logic as journal_logic
 from repository import models as preprint_models
 from security.decorators import (
     article_edit_user_required,
@@ -1378,15 +1378,16 @@ def issues(request):
 @journal_decorators.frontend_enabled
 def search(request):
     """
-    Allows a user to search for articles by name or author name.
+    Allow a user to search for articles by name or author name.
+
     :param request: HttpRequest object
     :return: HttpResponse object
     """
     search_term, keyword, sort, form, redir = journal_logic.handle_search_controls(request)
-    sections = request.GET.get('sections', "")
-    keywords = request.GET.get('keywords', "")
-    show = int(request.GET.get('show', 20))
-    page = int(request.GET.get('page', 1))
+    sections = request.GET.get("sections", "")
+    keywords = request.GET.get("keywords", "")
+    show = int(request.GET.get("show", 20))
+    page = int(request.GET.get("page", 1))
     if sections.strip():
         sections = sections.strip().split(",")
     if keywords.strip():
@@ -1402,31 +1403,29 @@ def search(request):
         # then matches author based on below regex split search term.
         split_term = [re.escape(word) for word in search_term.split(" ")]
         split_term.append(escaped)
-        search_regex = "^({})$".format(
-            "|".join({name for name in split_term})
-        )
-        articles = articles.filter(
-            (
-                    Q(title__icontains=search_term) |
-                    Q(keywords__word__iregex=search_regex) |
-                    Q(subtitle__icontains=search_term)
+        search_regex = "^({})$".format("|".join(set(split_term)))
+        articles = (
+            articles.filter(
+                (
+                    Q(title__icontains=search_term)
+                    | Q(keywords__word__iregex=search_regex)
+                    | Q(subtitle__icontains=search_term)
+                )
+                | (Q(frozenauthor__first_name__iregex=search_regex) | Q(frozenauthor__last_name__iregex=search_regex)),
+                journal=request.journal,
+                stage=submission_models.STAGE_PUBLISHED,
+                date_published__lte=timezone.now(),
             )
-            |
-            (
-                    Q(frozenauthor__first_name__iregex=search_regex) |
-                    Q(frozenauthor__last_name__iregex=search_regex)
-            ),
-            journal=request.journal,
-            stage=submission_models.STAGE_PUBLISHED,
-            date_published__lte=timezone.now()
-        ).distinct().order_by(sort)
+            .distinct()
+            .order_by(sort)
+        )
 
     if keywords:
         articles = articles.filter(
             keywords__word__in=keywords,
             journal=request.journal,
             stage=submission_models.STAGE_PUBLISHED,
-            date_published__lte=timezone.now()
+            date_published__lte=timezone.now(),
         ).order_by(sort)
 
     if sections:
@@ -1434,15 +1433,19 @@ def search(request):
             section__id__in=sections,
             journal=request.journal,
             stage=submission_models.STAGE_PUBLISHED,
-            date_published__lte=timezone.now()
+            date_published__lte=timezone.now(),
         ).order_by(sort)
 
     keyword_limit = 20
-    popular_keywords = submission_models.Keyword.objects.filter(
-        article__journal=request.journal,
-        article__stage=submission_models.STAGE_PUBLISHED,
-        article__date_published__lte=timezone.now(),
-    ).annotate(articles_count=Count('article')).order_by("-articles_count")[:keyword_limit]
+    popular_keywords = (
+        submission_models.Keyword.objects.filter(
+            article__journal=request.journal,
+            article__stage=submission_models.STAGE_PUBLISHED,
+            article__date_published__lte=timezone.now(),
+        )
+        .annotate(articles_count=Count("article"))
+        .order_by("-articles_count")[:keyword_limit]
+    )
 
     paginator = Paginator(articles, per_page=show)
     try:
@@ -1451,17 +1454,17 @@ def search(request):
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
-    template = 'journal/search.html'
+    template = "journal/search.html"
 
     context = {
-        'articles': page_obj,
-        'article_search': search_term,
-        'keywords': keywords,
-        'sections': sections,
-        'form': form,
-        'sort': sort,
-        'show': show,
-        'all_keywords': popular_keywords
+        "articles": page_obj,
+        "article_search": search_term,
+        "keywords": keywords,
+        "sections": sections,
+        "form": form,
+        "sort": sort,
+        "show": show,
+        "all_keywords": popular_keywords,
     }
 
     return render(request, template, context)
