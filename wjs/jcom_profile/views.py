@@ -61,6 +61,7 @@ from wjs.jcom_profile.models import (
 )
 
 from . import forms
+from .newsletter.service import NewsletterMailerService
 from .utils import PATH_PARTS, generate_token, save_file_to_special_issue
 
 logger = get_logger(__name__)
@@ -1110,6 +1111,11 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
                 return False
         return True
 
+    def get_context_data(self, **kwargs):  # noqa
+        context = super().get_context_data(**kwargs)
+        context["active"] = self.object.news or self.object.topics.exists()
+        return context
+
     def get_object(self, queryset=None):  # noqa
         user, journal = self.request.user, self.request.journal
         if user.is_anonymous():
@@ -1121,13 +1127,9 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
     def get_success_url(self):  # noqa
         user = self.request.user
         url = reverse("edit_newsletters")
+        url = f"{url}?update=1"
         if user.is_anonymous():
-            url += f"?{urlencode({'token': self.object.newsletter_token})}"
-        messages.add_message(
-            self.request,
-            messages.SUCCESS,
-            _("Newsletter preferences updated."),
-        )
+            url = f"{url}&{urlencode({'token': self.object.newsletter_token})}"
         return url
 
 
@@ -1141,29 +1143,12 @@ class AnonymousUserNewsletterRegistration(FormView):
         email = form.data["email"]
         journal = self.request.journal
         token = generate_token(email)
-        # TODO: If a recipient with the given email already exists, we will send another email.
-        Recipient.objects.get_or_create(
+        subscriber, __ = Recipient.objects.get_or_create(
             email=email,
             journal=journal,
             newsletter_token=token,
         )
-        acceptance_url = (
-            self.request.build_absolute_uri(reverse("edit_newsletters")) + f"?{urlencode({'token': token})}"
-        )
-        send_mail(
-            setting_handler.get_setting(
-                "email",
-                "publication_alert_subscription_email_subject",
-                self.request.journal,
-            ).processed_value.format(journal, acceptance_url),
-            setting_handler.get_setting(
-                "email",
-                "publication_alert_subscription_email_body",
-                self.request.journal,
-            ).processed_value.format(journal, acceptance_url),
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-        )
+        NewsletterMailerService().send_subscription_confirmation(subscriber)
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
@@ -1174,7 +1159,11 @@ class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
     template_name = "elements/accounts/anonymous_subscription_email_sent.html"
 
 
-def unsubscribe_newsletter(request, recipient_pk):
+class UnsubscribeUserConfirmation(TemplateView):
+    template_name = "elements/accounts/delete_subscription.html"
+
+
+def unsubscribe_newsletter(request, token):
     """
     Unsubscribe from newsletter.
 
@@ -1182,23 +1171,17 @@ def unsubscribe_newsletter(request, recipient_pk):
     """
     user = request.user
     try:
-        recipient = Recipient.objects.get(pk=recipient_pk)
+        if user.is_anonymous():
+            recipient = Recipient.objects.get(newsletter_token=token)
+            recipient.delete()
+        else:
+            recipient = Recipient.objects.get(user=request.user, journal=request.journal)
+            recipient.news = False
+            recipient.topics.clear()
+            recipient.save()
     except Recipient.DoesNotExist:
         return Http404
-    if user.is_anonymous():
-        recipient.delete()
-        response = HttpResponseRedirect(reverse("website_index"))
-    else:
-        recipient.news = False
-        recipient.topics.clear()
-        recipient.save()
-        response = HttpResponseRedirect(reverse("core_edit_profile"))
-    messages.add_message(
-        request,
-        messages.SUCCESS,
-        _("Unsubscription successful"),
-    )
-    return response
+    return HttpResponseRedirect(reverse("unsubscribe_newsletter_confirm"))
 
 
 def filter_articles(request, section=None, keyword=None, author=None):
@@ -1386,7 +1369,7 @@ def search(request):
     search_term, keyword, sort, form, redir = journal_logic.handle_search_controls(request)
     sections = request.GET.get("sections", "")
     keywords = request.GET.get("keywords", "")
-    show = int(request.GET.get("show", 20))
+    show = int(request.GET.get("show", 10))
     page = int(request.GET.get("page", 1))
     if sections.strip():
         sections = sections.strip().split(",")
