@@ -1110,6 +1110,11 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
                 return False
         return True
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active"] = self.object.news or self.object.topics.exists()
+        return context
+
     def get_object(self, queryset=None):  # noqa
         user, journal = self.request.user, self.request.journal
         if user.is_anonymous():
@@ -1169,7 +1174,7 @@ def unsubscribe_newsletter(request, token):
             recipient = Recipient.objects.get(newsletter_token=token)
             recipient.delete()
         else:
-            recipient = Recipient.objects.get(user=request.user)
+            recipient = Recipient.objects.get(user=request.user, journal=request.journal)
             recipient.news = False
             recipient.topics.clear()
             recipient.save()
@@ -1361,7 +1366,7 @@ def search(request):
     search_term, keyword, sort, form, redir = journal_logic.handle_search_controls(request)
     sections = request.GET.get('sections', "")
     keywords = request.GET.get('keywords', "")
-    show = int(request.GET.get('show', 20))
+    show = int(request.GET.get('show', 10))
     page = int(request.GET.get('page', 1))
     if sections.strip():
         sections = sections.strip().split(",")
