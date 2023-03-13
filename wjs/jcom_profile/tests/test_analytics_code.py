@@ -12,17 +12,24 @@ def list_of_target_pages(article):
         # Published article's landing page
         reverse("article_view", kwargs={"identifier_type": "pubid", "identifier": article.get_identifier("pubid")}),
         # Issues and volumes
+        reverse("journal_issues"),
         # All publications
+        reverse("journal_articles"),
         # Filter by keyword
+        reverse("articles_by_keyword", kwargs={"keyword": article.keywords.first().id}),
     )
     return pages
 
 
 @pytest.mark.django_db
-def test_analytics_code(published_articles, generic_analytics_code_setting, client):
+def test_analytics_code(published_articles, issue, generic_analytics_code_setting, client):
     """Set a random code and test that it's present in some important pages."""
     article = published_articles[0]
+
+    # TODO: refactor this into article's factory or fixture
+    article.authors.add(article.correspondence_author)
     article.snapshot_authors()
+
     # Set the script_prefix so that reverse() works properly
     client.get(f"/{article.journal.code}/")
     random_text = faker.Faker().text()
