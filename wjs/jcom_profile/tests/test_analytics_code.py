@@ -1,6 +1,7 @@
 """Test that the analytics code set via the appropriate setting appears in some important pages."""
 import faker
 import pytest
+from django.core.cache import cache
 from django.urls import reverse
 from utils import setting_handler
 
@@ -31,6 +32,10 @@ def test_analytics_code(published_articles, generic_analytics_code_setting, clie
         article.journal,
         random_text,
     )
+
+    # Important!!!
+    cache.clear()
+
     for page in list_of_target_pages(article):
         response = client.get(page)
         assert response.status_code == 200
