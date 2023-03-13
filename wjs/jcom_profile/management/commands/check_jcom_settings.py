@@ -123,6 +123,7 @@ class Command(BaseCommand):
             #
             # Journal Uses HTTPS - Used for URL generation.
             ("general", "is_secure", "on"),
+            # WARNING: there is also a journal attribute!!!
             #
             # Journal Base Theme - When using a custom theme you can
             # set the base theme, when a template from a custom theme
@@ -226,13 +227,13 @@ class Command(BaseCommand):
             #
             # Email message that is sent when an anonymous user
             # subscribes to newsletters. - Message email body
-            (
-                "email",
-                "subscribe_custom_email_message",
-                "Hi,\nYou requested to subscribe to {} journal newsletters.\n"
-                "To continue click the following link:{}",
-            ),
-            # See also wjs/jcom_profile/management/commands/add_custom_subscribe_email_message_settings.py
+            # (
+            #     "email",
+            #     "subscribe_custom_email_message",
+            #     "Hi,\nYou requested to subscribe to {} journal newsletters.\n"
+            #     "To continue click the following link:{}",
+            # ),
+            # Managed by wjs/jcom_profile/management/commands/add_publication_alert_settings.py
             #
             # Janeway Support Contact for Staff - Support message to
             # display to editors and staff on Manager page.
@@ -320,6 +321,7 @@ class Command(BaseCommand):
             ("display_issue_title", True),
             ("display_issue_volume", True),
             ("display_issue_year", True),
+            ("is_secure", True),  # WARNING: there is also a journal setting!!!
         )
         journal = self.journal
         journal_changed = False

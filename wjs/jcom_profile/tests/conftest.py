@@ -77,6 +77,16 @@ def clear_cache():
 
 
 @pytest.fixture
+def mock_premailer_load_url(mocker):
+    """Provide a empty response for css when fetched by premailer."""
+    mock = mocker.patch(
+        "premailer.premailer.Premailer._load_external_url",
+        return_value=""
+    )
+    return mock
+
+
+@pytest.fixture
 def user():
     """Create / reset a user in the DB.
 
@@ -108,7 +118,7 @@ def roles():
 
 @pytest.fixture
 def custom_newsletter_setting():
-    management.call_command("add_custom_subscribe_email_message_settings")
+    management.call_command("add_publication_alert_settings")
 
 
 @pytest.fixture
