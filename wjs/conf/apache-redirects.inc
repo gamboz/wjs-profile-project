@@ -55,7 +55,7 @@ RewriteRule "^/archive/(?<volume>\d{2})/(?<issue>\d{2})/(?<pubid>[\w.()-]+)(?<re
 # To:   https://jcom.sissa.it/article/(\d+)/galley/(\d+)/download/"
 #
 # Main galley in citation_pdf_url for sub-documents
-# The easiest thig here seams to just drop the "parent" part and proxy
+# The easiest thing here seams to just drop the "parent" part and proxy
 # to Janeway for correct resolution
 RewriteCond %{REQUEST_URI} ".*pdf$" [OR]
 RewriteCond %{REQUEST_URI} ".*epub$"
