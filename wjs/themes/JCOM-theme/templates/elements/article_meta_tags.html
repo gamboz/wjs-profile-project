@@ -7,6 +7,7 @@
 
 
     <meta name="description" content="{{ article|description }}"/>
+    <link rel="image_src" href="{{article.large_image_file}}" />
     {% if article.date_published %}<meta name="DC.Date.created" scheme="ISO8601" content="{{ article.date_published|date:"Y-m-d" }}"/>{% endif %}
     {% if article.date_submitted %}<meta name="DC.Date.dateSubmitted" scheme="ISO8601" content="{{ article.date_submitted|date:"Y-m-d" }}"/>{% endif %}
     {% if article.date_published %}<meta name="DC.Date.issued" scheme="ISO8601" content="{{ article.date_published|date:"Y-m-d" }}"/>{% endif %}
