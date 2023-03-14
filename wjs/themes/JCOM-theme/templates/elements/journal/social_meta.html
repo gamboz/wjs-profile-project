@@ -2,18 +2,13 @@
 {% load wjs_tags %}
 
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="{{ news_item.title }}">
-<meta name="twitter:description" content="{{ news_item.body|striptags|truncatesmart:400 }}">
-{% if news_item.best_image_url %}
-    <meta name="twitter:image" content="{{ news_item.best_image_url }}">
-{% endif %}
+<meta name="twitter:title" content="{{ article.title }}">
+<meta name="twitter:description" content="{{ article|description }}">
+<meta name="twitter:image" content="{{ article.large_image_file }}">
 
 <meta property="og:title" content="{{ article.title }}" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="{{ article.url }}" />
-{% if news_item.best_image_url %}
-    <meta name="og:image" content="{{ news_item.best_image_url }}">
-{% endif %}
 
 <meta property="og:description" content="{{ article|description }}"/>
 {# https://prefix.zazuko.com/og:determiner #}
