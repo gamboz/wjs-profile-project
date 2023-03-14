@@ -10,6 +10,8 @@
     <link rel="image_src" href="{{article.large_image_file}}" />
     <link rel="canonical" href="{{ article.url }}"/>
     <meta http-equiv="content-language" content="{{ article.language }}" />
+    {# TODO: Maybe fix the value in Journal.description to reflect what we want here? #}
+    <meta property="og:site_name" content="{{ article.journal.code }} - {{ article.journal.name }}" />
     {% if article.date_published %}<meta property="article:published_time" content="{{ article.date_published|date:"c" }}" />{% endif %}
     {% if article.date_updated %}<meta property="article:modified_time" content="{{ article.date_updated|date:"c" }}" />{% endif %}
     {% if article.date_published %}<meta name="DC.Date.created" scheme="ISO8601" content="{{ article.date_published|date:"Y-m-d" }}"/>{% endif %}
