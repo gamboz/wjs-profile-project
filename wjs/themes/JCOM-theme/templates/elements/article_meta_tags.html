@@ -14,7 +14,7 @@
     {% if article.last_modified %}<meta property="article:modified_time" content="{{ article.last_modified|date:"c" }}" />{% endif %}
 
     <meta name="DC.Title" content="{{ article.title | striptags }}"/>
-    <meta name="DC.Description" xml:lang="en" content="{{ article.abstract | striptags }}"/>
+    <meta name="DC.Description" xml:lang="en" content="{{ article | description }}"/>
     <meta name="DC.Format" scheme="IMT" content="xml"/>
     <meta name="DC.Format" scheme="IMT" content="pdf"/>
     <meta name="DC.Language" scheme="ISO639-1" content="{{ article.language }}"/>
