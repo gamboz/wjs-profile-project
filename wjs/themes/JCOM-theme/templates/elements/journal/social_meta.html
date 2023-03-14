@@ -8,7 +8,7 @@
 
 <meta property="og:title" content="{{ news_item.title }}" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="{{ request.build_absolute_uri }}" />
+<meta property="og:url" content="{{ article.url }}" />
 {% if news_item.best_image_url %}
     <meta name="og:image" content="{{ news_item.best_image_url }}">
 {% endif %}
