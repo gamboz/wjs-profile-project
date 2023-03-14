@@ -16,5 +16,8 @@
 {% endif %}
 
 <meta property="og:description" content="{{ article|description }}"/>
+{# https://prefix.zazuko.com/og:determiner #}
+{# https://ogp.me/#optional #}
+<meta property="og:determiner" content="" />
 {# TODO: Maybe fix the value in Journal.description to reflect what we want here? #}
 <meta property="og:site_name" content="{{ article.journal.code }} - {{ article.journal.name }}" />
