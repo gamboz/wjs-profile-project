@@ -1,10 +1,12 @@
 """WJS tags."""
 from django import template
+from django.db.models import Count
 from django.utils import timezone
 from django.utils.html import strip_tags
 
+from journal import logic as journal_logic
 from journal.models import Issue
-from submission.models import Article
+from submission.models import Article, Section, Keyword, STAGE_PUBLISHED
 
 from wjs.jcom_profile.models import SpecialIssue
 from wjs.jcom_profile.utils import citation_name
@@ -87,7 +89,7 @@ def news_part(news_item, part):
 @register.simple_tag(takes_context=True)
 def all_issues(context):
     request = context["request"]
-    return  Issue.objects.filter(
+    return Issue.objects.filter(
         journal=request.journal,
         date__lte=timezone.now(),
     )
@@ -107,3 +109,24 @@ def description(article):
     # To avoid truncated words at the end of the string, drop the characters after the last space
     # This splits shorter_abstract on spaces into words, takes all but the last word, and rejoins them with spaces.
     return " ".join(shorter_abstract.split(" ")[:-1])
+
+
+@register.simple_tag(takes_context=True)
+def sections(context):
+    request = context["request"]
+    return Section.objects.filter(journal=request.journal, is_filterable=True)
+
+
+@register.simple_tag(takes_context=True)
+def search_form(context):
+    request = context["request"]
+
+    keyword_limit = 20
+    popular_keywords = Keyword.objects.filter(
+        article__journal=request.journal,
+        article__stage=STAGE_PUBLISHED,
+        article__date_published__lte=timezone.now(),
+    ).annotate(articles_count=Count('article')).order_by("-articles_count")[:keyword_limit]
+
+    search_term, keyword, sort, form, redir = journal_logic.handle_search_controls(request)
+    return {"form": form, "all_keywords": popular_keywords}

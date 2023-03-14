@@ -77,6 +77,13 @@ def clear_cache():
 
 
 @pytest.fixture
+def mock_premailer_load_url(mocker):
+    """Provide a empty response for css when fetched by premailer."""
+    mock = mocker.patch("premailer.premailer.Premailer._load_external_url", return_value="")
+    return mock
+
+
+@pytest.fixture
 def user():
     """Create / reset a user in the DB.
 
@@ -108,7 +115,12 @@ def roles():
 
 @pytest.fixture
 def custom_newsletter_setting():
-    management.call_command("add_custom_subscribe_email_message_settings")
+    management.call_command("add_publication_alert_settings")
+
+
+@pytest.fixture
+def generic_analytics_code_setting():
+    management.call_command("add_generic_analytics_code_setting")
 
 
 @pytest.fixture
@@ -189,6 +201,10 @@ def set_jcom_theme(journal):
     setting_handler.save_setting(base_theme_setting.group.name, base_theme_setting.name, journal, base_theme)
 
 
+def set_jcom_settings(journal):
+    setting_handler.save_setting("general", "from_address", journal, "jcom-eo@jcom.sissa.it")
+
+
 @pytest.fixture
 def journal(press):
     """Prepare a journal."""
@@ -197,6 +213,7 @@ def journal(press):
     journal.save()
     update_issue_types(journal)
     set_jcom_theme(journal)
+    set_jcom_settings(journal)
 
     return journal
 
@@ -425,7 +442,7 @@ def issue(issue_type, published_articles):
     issue = Issue.objects.create(
         journal=issue_type.journal,
         date=timezone.now(),
-        issue="1",
+        issue="01",
         issue_title=f"Issue 01, {timezone.now().year}",
         issue_type=issue_type,
     )

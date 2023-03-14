@@ -138,7 +138,7 @@ class IssueFactory(factory.django.DjangoModelFactory):
 
     journal = factory.SubFactory(JournalFactory)
     volume = 1
-    issue = "1"
+    issue = "01"
     # JCOM issue don't usually have a title
     issue_title = ""
     issue_type = factory.LazyAttribute(lambda x: IssueType.objects.first())
@@ -179,6 +179,8 @@ class NewsItemFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = NewsItem
+
+    title = factory.Faker("sentence", nb_words=2)
 
 
 class NewsletterFactory(factory.django.DjangoModelFactory):

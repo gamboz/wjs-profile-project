@@ -1,4 +1,5 @@
 """My views. Looking for a way to "enrich" Janeway's `edit_profile`."""
+import re
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Iterable
@@ -18,6 +19,7 @@ from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import validate_email
 from django.db import IntegrityError
+from django.db.models import Count, Q
 from django.forms import modelformset_factory
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -33,14 +35,15 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
-from journal.models import Issue
 from journal import decorators as journal_decorators
+from journal import logic as journal_logic
+from journal.models import Issue
 from repository import models as preprint_models
 from security.decorators import (
     article_edit_user_required,
     article_is_not_submitted,
-    submission_authorised,
     has_journal,
+    submission_authorised,
 )
 from submission import decorators
 from submission import forms as submission_forms
@@ -58,6 +61,7 @@ from wjs.jcom_profile.models import (
 )
 
 from . import forms
+from .newsletter.service import NewsletterMailerService
 from .utils import PATH_PARTS, generate_token, save_file_to_special_issue
 
 logger = get_logger(__name__)
@@ -1107,6 +1111,11 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
                 return False
         return True
 
+    def get_context_data(self, **kwargs):  # noqa
+        context = super().get_context_data(**kwargs)
+        context["active"] = self.object.news or self.object.topics.exists()
+        return context
+
     def get_object(self, queryset=None):  # noqa
         user, journal = self.request.user, self.request.journal
         if user.is_anonymous():
@@ -1118,13 +1127,9 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
     def get_success_url(self):  # noqa
         user = self.request.user
         url = reverse("edit_newsletters")
+        url = f"{url}?update=1"
         if user.is_anonymous():
-            url += f"?{urlencode({'token': self.object.newsletter_token})}"
-        messages.add_message(
-            self.request,
-            messages.SUCCESS,
-            _("Newsletter preferences updated."),
-        )
+            url = f"{url}&{urlencode({'token': self.object.newsletter_token})}"
         return url
 
 
@@ -1138,25 +1143,12 @@ class AnonymousUserNewsletterRegistration(FormView):
         email = form.data["email"]
         journal = self.request.journal
         token = generate_token(email)
-        # TODO: If a recipient with the given email already exists, we will send another email.
-        Recipient.objects.get_or_create(
+        subscriber, __ = Recipient.objects.get_or_create(
             email=email,
             journal=journal,
             newsletter_token=token,
         )
-        acceptance_url = (
-            self.request.build_absolute_uri(reverse("edit_newsletters")) + f"?{urlencode({'token': token})}"
-        )
-        send_mail(
-            _("Newsletter registration"),
-            setting_handler.get_setting(
-                "email",
-                "subscribe_custom_email_message",
-                self.request.journal,
-            ).processed_value.format(journal, acceptance_url),
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-        )
+        NewsletterMailerService().send_subscription_confirmation(subscriber)
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
@@ -1167,7 +1159,11 @@ class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
     template_name = "elements/accounts/anonymous_subscription_email_sent.html"
 
 
-def unsubscribe_newsletter(request, recipient_pk):
+class UnsubscribeUserConfirmation(TemplateView):
+    template_name = "elements/accounts/delete_subscription.html"
+
+
+def unsubscribe_newsletter(request, token):
     """
     Unsubscribe from newsletter.
 
@@ -1175,23 +1171,17 @@ def unsubscribe_newsletter(request, recipient_pk):
     """
     user = request.user
     try:
-        recipient = Recipient.objects.get(pk=recipient_pk)
+        if user.is_anonymous():
+            recipient = Recipient.objects.get(newsletter_token=token)
+            recipient.delete()
+        else:
+            recipient = Recipient.objects.get(user=request.user, journal=request.journal)
+            recipient.news = False
+            recipient.topics.clear()
+            recipient.save()
     except Recipient.DoesNotExist:
         return Http404
-    if user.is_anonymous():
-        recipient.delete()
-        response = HttpResponseRedirect(reverse("website_index"))
-    else:
-        recipient.news = False
-        recipient.topics.clear()
-        recipient.save()
-        response = HttpResponseRedirect(reverse("core_edit_profile"))
-    messages.add_message(
-        request,
-        messages.SUCCESS,
-        _("Unsubscription successful"),
-    )
-    return response
+    return HttpResponseRedirect(reverse("unsubscribe_newsletter_confirm"))
 
 
 def filter_articles(request, section=None, keyword=None, author=None):
@@ -1210,7 +1200,7 @@ def filter_articles(request, section=None, keyword=None, author=None):
     if keyword:
         filters["keywords__pk"] = keyword
         title = _("Filter by keyword")
-        paragraph = _("Publications that use this keyword are listed below.")
+        paragraph = _("Publications including this keyword are listed below.")
         filtered_object = get_object_or_404(Keyword, pk=keyword).word
     if author:
         filters["frozenauthor__author"] = author
@@ -1235,13 +1225,13 @@ def filter_articles(request, section=None, keyword=None, author=None):
 
 
 class JcomIssueRedirect(RedirectView):
-    permanent = False
+    permanent = True
     query_string = True
 
     def get_redirect_url(self, *args, **kwargs):  # noqa
         issues = Issue.objects.filter(
             volume=kwargs["volume"],
-            issue=int(kwargs["issue"]),
+            issue=kwargs["issue"],
         ).order_by("-date")
         if issues.count() > 1:
             logger.warning(
@@ -1250,12 +1240,13 @@ class JcomIssueRedirect(RedirectView):
         if not issues.first():
             raise Http404()
 
-        return reverse(
+        redirect_location = reverse(
             "journal_issue",
             kwargs={
                 "issue_id": issues.first().pk,
             },
         )
+        return redirect_location
 
 
 class JcomFileRedirect(RedirectView):
@@ -1281,7 +1272,7 @@ class JcomFileRedirect(RedirectView):
 
     """
 
-    permanent = False
+    permanent = True
     query_string = True
 
     def get_redirect_url(self, *args, **kwargs):  # noqa
@@ -1351,7 +1342,7 @@ class JcomFileRedirect(RedirectView):
 @has_journal
 @journal_decorators.frontend_enabled
 def issues(request):
-    """ Renders the list of issues in the journal.
+    """Render the list of issues in the journal.
 
     :param request: the request associated with this call
     :return: a rendered template of all issues
@@ -1360,8 +1351,103 @@ def issues(request):
         journal=request.journal,
         date__lte=timezone.now(),
     )
-    template = 'journal/issues.html'
+    template = "journal/issues.html"
     context = {
-        'issues': issue_objects,
+        "issues": issue_objects,
     }
+    return render(request, template, context)
+
+
+@journal_decorators.frontend_enabled
+def search(request):
+    """
+    Allow a user to search for articles by name or author name.
+
+    :param request: HttpRequest object
+    :return: HttpResponse object
+    """
+    search_term, keyword, sort, form, redir = journal_logic.handle_search_controls(request)
+    sections = request.GET.get("sections", "")
+    keywords = request.GET.get("keywords", "")
+    show = int(request.GET.get("show", 10))
+    page = int(request.GET.get("page", 1))
+    if sections.strip():
+        sections = sections.strip().split(",")
+    if keywords.strip():
+        keywords = keywords.strip().split(",")
+
+    if redir:
+        return redir
+
+    articles = submission_models.Article.objects.all()
+    if search_term:
+        escaped = re.escape(search_term)
+        # checks titles, keywords and subtitles first,
+        # then matches author based on below regex split search term.
+        split_term = [re.escape(word) for word in search_term.split(" ")]
+        split_term.append(escaped)
+        search_regex = "^({})$".format("|".join(set(split_term)))
+        articles = (
+            articles.filter(
+                (
+                    Q(title__icontains=search_term)
+                    | Q(keywords__word__iregex=search_regex)
+                    | Q(subtitle__icontains=search_term)
+                )
+                | (Q(frozenauthor__first_name__iregex=search_regex) | Q(frozenauthor__last_name__iregex=search_regex)),
+                journal=request.journal,
+                stage=submission_models.STAGE_PUBLISHED,
+                date_published__lte=timezone.now(),
+            )
+            .distinct()
+            .order_by(sort)
+        )
+
+    if keywords:
+        articles = articles.filter(
+            keywords__word__in=keywords,
+            journal=request.journal,
+            stage=submission_models.STAGE_PUBLISHED,
+            date_published__lte=timezone.now(),
+        ).order_by(sort)
+
+    if sections:
+        articles = articles.filter(
+            section__id__in=sections,
+            journal=request.journal,
+            stage=submission_models.STAGE_PUBLISHED,
+            date_published__lte=timezone.now(),
+        ).order_by(sort)
+
+    keyword_limit = 20
+    popular_keywords = (
+        submission_models.Keyword.objects.filter(
+            article__journal=request.journal,
+            article__stage=submission_models.STAGE_PUBLISHED,
+            article__date_published__lte=timezone.now(),
+        )
+        .annotate(articles_count=Count("article"))
+        .order_by("-articles_count")[:keyword_limit]
+    )
+
+    paginator = Paginator(articles, per_page=show)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    template = "journal/search.html"
+
+    context = {
+        "articles": page_obj,
+        "article_search": search_term,
+        "keywords": keywords,
+        "sections": sections,
+        "form": form,
+        "sort": sort,
+        "show": show,
+        "all_keywords": popular_keywords,
+    }
+
     return render(request, template, context)
