@@ -62,7 +62,7 @@ We have received a request to subscribe the email address leo@medialab.sissa.it 
 To confirm your email address, activate your subscription and select your topics of interest click on the link below:
 </p>
 <p>
-{}
+<a href="{acceptance_url}">{acceptance_url}</a<
 </p>
 <p>
 By clicking the above link you are agreeing to our <a href="https://medialab.sissa.it/en/privacy">privacy policy</a>.
