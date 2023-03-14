@@ -14,4 +14,5 @@
 {% endif %}
 
 <meta property="og:description" content="{{ news_item.body|striptags|truncatesmart:400 }} ddd" />
-<meta property="og:site_name" content="{{ request.press.name }}" />
+{# TODO: Maybe fix the value in Journal.description to reflect what we want here? #}
+<meta property="og:site_name" content="{{ article.journal.code }} - {{ article.journal.name }}" />
