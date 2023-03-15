@@ -16,7 +16,8 @@
     {% for author in article.frozen_authors.all %}
         <meta name="dcterms.creator" content="{{ author.dc_name_string }}" />
     {% endfor %}
-    {# <meta name="dcterms.subject" content="Public engagement with science and technology" /> #}
+    {# Didn't know how to gather this information #}
+    <meta name="dcterms.subject" content="" />
     <meta name="dcterms.title" content="{{ article.title|striptags }}" />
     <meta name="dcterms.description" content="{{ article|description }}" />
     <meta name="dcterms.publisher" content="{{ article.publisher }}" />
