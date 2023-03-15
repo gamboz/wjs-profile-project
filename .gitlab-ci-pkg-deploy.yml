@@ -1,13 +1,20 @@
-.deploy-to-pp:
+.deploy:
 
   stage: deploy
 
+  # Need these variables to be defined:
+  # The `bin` folder of the virtualenv
+  # e.g.: VENV_BIN: "/home/wjs/.virtualenvs/j-pp/bin"
+  #
+  # The "vassal" file for uwsgi to reload
+  # e.g.:  UWSGI_VASSAL: "/home/wjs/uwsgi/janeway-pp.ini"
+  #
+  # Server (and ssh user) to deploy to $SERVER_USER@$SERVER_IP
+  # e.g.: SERVER_IP: "janeway-test"
+  #       SERVER_USER: "wjs"
   variables:
-    VENV_BIN: "/home/wjs/.virtualenvs/j-pp/bin"
     PYTHON: "${VENV_BIN}/python"
     PIP: "${VENV_BIN}/pip"
-    # touch this file to restart the uwsgi server
-    UWSGI_VASSAL: "/home/wjs/uwsgi/janeway-pp.ini"
 
   script:
     - echo "Deploy to pre-production server"

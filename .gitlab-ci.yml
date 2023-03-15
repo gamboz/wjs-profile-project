@@ -21,13 +21,10 @@ include:
     file: '.gitlab-ci-pkg-build-and-upload.yml'
   - project: 'wjs/wjs-profile-project'
     ref: master
-    file: '.gitlab-ci-pkg-deploy-to-test.yml'
+    file: '.gitlab-ci-pkg-deploy.yml'
   - project: 'wjs/wjs-profile-project'
     ref: ${CI_COMMIT_REF_NAME}
     file: '.gitlab-ci-run-tests.yml'
-  - project: 'wjs/wjs-profile-project'
-    ref: master
-    file: '.gitlab-ci-pkg-deploy-to-pp.yml'
 
 
 run-tests:
@@ -51,15 +48,40 @@ deploy-to-test:
     - tags
 
   extends:
-    - .deploy-to-test
+    - .deploy
 
   # Deploy basically means `pip install`, so the package must already
   # be in the package registry.
   needs:
     - upload-package
 
-deploy-to-pp:
+  variables:
+    # TEST_SERVER_IP and TEST_SERVER_USER are defined in gitlab's group WJS
+    SERVER_IP: "$TEST_SERVER_IP"
+    SERVER_USER: "$TEST_SERVER_USER"
+    VENV_BIN: "/home/wjs/.virtualenvs/j1-venv/bin"
+    UWSGI_VASSAL: "/home/wjs/uwsgi/janeway.ini"
+
+
+deploy-to-pre-production:
   extends:
-    - .deploy-to-pp
+    - .deploy
   when: manual
   environment: pre-production
+  variables:
+    SERVER_IP: "$TEST_SERVER_IP"
+    SERVER_USER: "$TEST_SERVER_USER"
+    VENV_BIN: "/home/wjs/.virtualenvs/j-pp/bin"
+    UWSGI_VASSAL: "/home/wjs/uwsgi/janeway-pp.ini"
+
+
+deploy-to-production:
+  extends:
+    - .deploy
+  when: manual
+  environment: production
+  variables:
+    SERVER_IP: "$PROD_SERVER_IP"
+    SERVER_USER: "$PROD_SERVER_USER"
+    VENV_BIN: "/home/wjs/.virtualenvs/janewsy-venv/bin"
+    UWSGI_VASSAL: "/home/wjs/uwsgi/janeway.ini"
