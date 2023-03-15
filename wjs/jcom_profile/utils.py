@@ -8,6 +8,8 @@ from uuid import uuid4
 
 from core import files as core_files
 from django.conf import settings
+from identifiers.models import Identifier
+from submission.models import Article
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -175,3 +177,16 @@ def citation_name(author, sep=" "):
 
     abbreviated_given_names = abbreviate_first_middle(author, sep)
     return f"{author.last_name}, {abbreviated_given_names}"
+
+
+def generate_doi(article: Article) -> None:
+    """Generate the DOI for the given article following journal-specific rules."""
+    if article.journal.code != "JCOM":
+        logger.error(f"Please implement the DOI-generation rule for {article.journal.code}")
+        return
+
+    if doi := article.get_identifier("doi"):
+        logger.debug(f"DOI {doi} for {article.id} already present. Doing nothing")
+        return
+
+    # See specs#208 for specs on JCOM DOI
