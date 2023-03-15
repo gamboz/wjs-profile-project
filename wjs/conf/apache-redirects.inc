@@ -1,6 +1,9 @@
 # JCOM redirects
 RewriteEngine On
 
+# Disable user registration
+RewriteRule "^/register/.*" "-" [F,L]
+
 # Important! Papers' landing page
 # From: //jcom.sissa.it/archive/13/04/JCOM_1304_2014_E
 # To:   //jcom.sissa.it/article/pubid/JCOM_1304_2014_E
