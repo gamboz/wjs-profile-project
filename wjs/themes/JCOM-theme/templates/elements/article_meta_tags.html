@@ -74,4 +74,4 @@
     {% if article.pdfs.exists %}
     <meta name="citation_pdf_url" content="{% journal_url 'serve_article_pdf' 'id' article.id %}"/>
     {% endif %}
-    {% include "elements/journal/social_meta.html" %}
+    {% include "elements/article_social_meta.html" %}
