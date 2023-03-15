@@ -28,7 +28,7 @@
     {% endcomment %}
     <meta name="dcterms.type" content="Text" />
     {# Is it right? I tried to reproduce precisely what I see in the old website, for example https://jcom.sissa.it/archive/22/01/JCOM_2201_2023_R01 #}
-    {% if aticle.identifier.id_type == "doi" %}<meta name="dcterms.identifier" content="info:doi/{{ article.identifier.identifier}}" />{% endif %}
+    {% if article.identifier.id_type == "doi" %}<meta name="dcterms.identifier" content="info:doi/{{ article.identifier.identifier}}" />{% endif %}
     <meta name="dcterms.bibliographicCitation" content="Stewart, M. L. (2023). ‘Science communication in Germany. A practice in transition’. JCOM 22(01), R01." />
     <meta name="dcterms.isPartOf" content="urn:ISSN:{{ article.journal_issn }}" />
 
