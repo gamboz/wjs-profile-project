@@ -83,5 +83,5 @@ deploy-to-production:
   variables:
     SERVER_IP: "$PROD_SERVER_IP"
     SERVER_USER: "$PROD_SERVER_USER"
-    VENV_BIN: "/home/wjs/.virtualenvs/janewsy-venv/bin"
+    VENV_BIN: "/home/wjs/.virtualenvs/janeway-venv/bin"
     UWSGI_VASSAL: "/home/wjs/uwsgi/janeway.ini"
