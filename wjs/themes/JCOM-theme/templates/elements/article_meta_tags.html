@@ -23,11 +23,6 @@
     <meta name="dcterms.description" content="{{ article|description }}" />
     <meta name="dcterms.publisher" content="{{ article.publisher }}" />
     <meta name="dcterms.date" content="{{ article.date_published|date:"Y/m/d" }}" />
-    {% comment %}
-        Hardcoded "Text". Is it right? See:
-        * https://www.dublincore.org/specifications/dublin-core/dcmi-terms/#http://purl.org/dc/terms/type
-        * https://www.dublincore.org/specifications/dublin-core/dcmi-terms/#section-7
-    {% endcomment %}
     <meta name="dcterms.type" content="Text" />
     {# Is it right? I tried to reproduce precisely what I see in the old website, for example https://jcom.sissa.it/archive/22/01/JCOM_2201_2023_R01 #}
     {% if article.identifier.id_type == "doi" %}<meta name="dcterms.identifier" content="info:doi/{{ article.identifier.identifier}}" />{% endif %}
