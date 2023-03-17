@@ -316,6 +316,7 @@ class Command(BaseCommand):
             ("display_issue_title", True),
             ("display_issue_volume", True),
             ("display_issue_year", True),
+            ("disable_html_downloads", True),
             ("is_secure", True),  # WARNING: there is also a journal setting!!!
         )
         journal = self.journal
