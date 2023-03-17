@@ -2,21 +2,11 @@
 
   stage: deploy
 
-  # Need these variables to be defined:
-  # The `bin` folder of the virtualenv
-  # e.g.: VENV_BIN: "/home/wjs/.virtualenvs/j-pp/bin"
-  #
-  # The "vassal" file for uwsgi to reload
-  # e.g.:  UWSGI_VASSAL: "/home/wjs/uwsgi/janeway-pp.ini"
-  #
-  # Server (and ssh user) to deploy to $SERVER_USER@$SERVER_IP
-  # e.g.: SERVER_IP: "janeway-test"
+  # Need to find defined the server (and ssh user) to deploy to.
+  # E.g.: SERVER_IP: "127.0.0.1"
   #       SERVER_USER: "wjs"
-  variables:
-    PYTHON: "${VENV_BIN}/python"
-    PIP: "${VENV_BIN}/pip"
 
-  # The key on the server is configured with an hardcoded ForceCommand
+  # The key on the server is configured with a single ForceCommand
   script:
     - echo "Deploying to $SERVER_IP"
     - chmod og= $ID_RSA

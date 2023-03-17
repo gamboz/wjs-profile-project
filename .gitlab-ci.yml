@@ -37,6 +37,7 @@ run-tests:
   extends:
     - .run-tests
 
+
 upload-package:
   only:
     - tags
@@ -44,10 +45,10 @@ upload-package:
   extends:
     - .upload-package
 
+
 deploy-to-test:
   only:
     - tags
-
   extends:
     - .deploy
 
@@ -60,20 +61,6 @@ deploy-to-test:
     # TEST_SERVER_IP and TEST_SERVER_USER are defined in gitlab's group WJS
     SERVER_IP: "$TEST_SERVER_IP"
     SERVER_USER: "$TEST_SERVER_USER"
-    VENV_BIN: "/home/wjs/.virtualenvs/j1-venv/bin"
-    UWSGI_VASSAL: "/home/wjs/uwsgi/janeway.ini"
-
-
-deploy-to-pre-production:
-  extends:
-    - .deploy
-  when: manual
-  environment: pre-production
-  variables:
-    SERVER_IP: "$TEST_SERVER_IP"
-    SERVER_USER: "$TEST_SERVER_USER"
-    VENV_BIN: "/home/wjs/.virtualenvs/j-pp/bin"
-    UWSGI_VASSAL: "/home/wjs/uwsgi/janeway-pp.ini"
 
 
 deploy-to-production:
@@ -84,5 +71,3 @@ deploy-to-production:
   variables:
     SERVER_IP: "$PROD_SERVER_IP"
     SERVER_USER: "$PROD_SERVER_USER"
-    VENV_BIN: "/home/wjs/.virtualenvs/janeway-venv/bin"
-    UWSGI_VASSAL: "/home/wjs/uwsgi/janeway.ini"
