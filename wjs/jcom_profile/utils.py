@@ -185,10 +185,6 @@ def generate_doi(article: Article) -> None:
         logger.error(f"Please implement the DOI-generation rule for {article.journal.code}")
         return
 
-    if doi := article.get_identifier("doi"):
-        logger.debug(f"DOI {doi} for {article.id} already present. Doing nothing")
-        return
-
     # See specs#208 for specs on JCOM DOI
     prefix = "10.22323"
     system_number = "2"
@@ -218,6 +214,14 @@ def generate_doi(article: Article) -> None:
         return
 
     doi = f"{prefix}/{system_number}.{volume}{issue}{type_code}{eid}"
+
+    if existing_doi := article.get_identifier("doi"):
+        if existing_doi == doi:
+            logger.debug(f"DOI {existing_doi} for {article.id} already present. Doing nothing")
+        else:
+            logger.critical(f"DOI {existing_doi} for {article.id} different from expected {doi}! Doing nothing.")
+        return
+
     Identifier.objects.create(
         identifier=doi,
         article=article,

@@ -40,7 +40,7 @@ from wjs.jcom_profile.management.commands.import_from_drupal import (
     SECTION_ORDER,
     rome_timezone,
 )
-from wjs.jcom_profile.utils import from_pubid_to_eid
+from wjs.jcom_profile.utils import from_pubid_to_eid, generate_doi
 
 # Map wjapp article types to Janeway section names
 SECTIONS_MAPPING = {
@@ -248,6 +248,7 @@ class Command(BaseCommand):
         epub_galley_filename = make_epub.make(html_galley_filename, tex_data=tex_data)
         self.set_epub_galley(article, epub_galley_filename, pubid)
 
+        self.set_doi(article)
         publish_article(article)
         # Cleanup
         shutil.rmtree(tmpdir)
@@ -621,6 +622,11 @@ class Command(BaseCommand):
                 label=file_name,
             )
             logger.debug(f"Supplementary material {file_name} set onto {pubid}")
+
+    def set_doi(self, article):
+        """Generate the DOI for this article ala JCOM."""
+        # Janeway would have {prefix}/{journal.id}.{article.id}
+        generate_doi(article)
 
 
 # TODO: consider refactoring with import_from_drupal
