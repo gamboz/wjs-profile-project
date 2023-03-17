@@ -128,7 +128,8 @@
         }
       }
 
-      &-epub {
+      &-epub,
+      &-html {
         &:before {
           color: #85b916;
           content: "\f102";
