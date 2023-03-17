@@ -42,6 +42,7 @@
         {% endif %}
         <meta name="citation_author_institution" content="{{ author.institution }}"/>{% endfor %}
     <meta name="citation_title" content="{{ article.title | striptags }}"/>
+    {# https://scholar.google.no/intl/en/scholar/inclusion.html#indexing 2.C #}
     {% if article.date_published %}<meta name="citation_publication_date" content="{{ article.date_published|date:"Y/n/j" }}"/>{% endif %}
     {% if article.issue.volume %}<meta name="citation_volume" content="{{ article.issue.volume }}"/>{% endif %}
     {% if article.issue.issue %}<meta name="citation_issue" content="{{ article.issue.issue|floatformat }}"/>{% endif %}
