@@ -58,7 +58,7 @@ class Command(BaseCommand):
                 default_value="""
 Hello,
 <p>
-We have received a request to subscribe the email address {} to JCOM publication alert.
+We have received a request to subscribe the email address {email} to JCOM publication alert.
 </p>
 <p>
 To confirm your email address, activate your subscription and select your topics of interest click <a href="{acceptance_url}">on this link</a>.
