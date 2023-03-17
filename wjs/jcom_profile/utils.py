@@ -4,11 +4,11 @@ import hashlib
 import os
 import re
 import shutil
+from typing import Optional
 from uuid import uuid4
 
 from core import files as core_files
 from django.conf import settings
-from identifiers.models import Identifier
 from submission.models import Article
 from utils.logger import get_logger
 
@@ -179,7 +179,7 @@ def citation_name(author, sep=" "):
     return f"{author.last_name}, {abbreviated_given_names}"
 
 
-def generate_doi(article: Article) -> None:
+def generate_doi(article: Article) -> Optional[str]:
     """Generate the DOI for the given article following journal-specific rules."""
     if article.journal.code != "JCOM":
         logger.error(f"Please implement the DOI-generation rule for {article.journal.code}")
@@ -214,16 +214,4 @@ def generate_doi(article: Article) -> None:
         return
 
     doi = f"{prefix}/{system_number}.{volume}{issue}{type_code}{eid}"
-
-    if existing_doi := article.get_identifier("doi"):
-        if existing_doi == doi:
-            logger.debug(f"DOI {existing_doi} for {article.id} already present. Doing nothing")
-        else:
-            logger.critical(f"DOI {existing_doi} for {article.id} different from expected {doi}! Doing nothing.")
-        return
-
-    Identifier.objects.create(
-        identifier=doi,
-        article=article,
-        id_type="doi",
-    )
+    return doi

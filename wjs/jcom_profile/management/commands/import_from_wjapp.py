@@ -15,6 +15,7 @@ from core.models import File as JanewayFile
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from identifiers import models as identifiers_models
+from identifiers.models import Identifier
 from jcomassistant import make_epub, make_xhtml
 from jcomassistant.utils import TeXData, buildTag, read_tex
 from journal import models as journal_models
@@ -624,9 +625,24 @@ class Command(BaseCommand):
             logger.debug(f"Supplementary material {file_name} set onto {pubid}")
 
     def set_doi(self, article):
-        """Generate the DOI for this article ala JCOM."""
-        # Janeway would have {prefix}/{journal.id}.{article.id}
-        generate_doi(article)
+        """Check that the article has a DOI ala JCOM."""
+        # I'm not sure that wjapp is trustworty and Janeway's default
+        # is {prefix}/{journal.id}.{article.id}
+        expected_doi = generate_doi(article)
+        if existing_doi := article.get_identifier("doi"):
+            if existing_doi == expected_doi:
+                logger.debug(f"DOI {existing_doi} for {article.id} already present. Doing nothing")
+            else:
+                logger.critical(
+                    f"DOI {existing_doi} for {article.id} different from expected {expected_doi}! Doing nothing.",
+                )
+        else:
+            logger.debug(f"Did not receive a DOI from wjapp. Setting for {expected_doi} on {article.id}.")
+            Identifier.objects.create(
+                identifier=expected_doi,
+                article=article,
+                id_type="doi",
+            )
 
 
 # TODO: consider refactoring with import_from_drupal

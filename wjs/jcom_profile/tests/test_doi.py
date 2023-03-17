@@ -53,7 +53,9 @@ def test_doi_generation_jcom(
         issue=issue,
     )
     issue.articles.add(article)
-    # TODO: drop? issue.save()
+    # In previous versions, utils.generate_doi() also set the Identifier.
+    # Now we don't want this.
     assert article.get_identifier("doi") is None
-    generate_doi(article)
-    assert article.get_identifier("doi") == expected_doi
+    generated_doi = generate_doi(article)
+    assert generated_doi == expected_doi
+    assert article.get_identifier("doi") is None
