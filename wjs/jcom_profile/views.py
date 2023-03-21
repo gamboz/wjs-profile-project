@@ -1150,7 +1150,7 @@ class AnonymousUserNewsletterRegistration(FormView):
             newsletter_token=token,
         )
         self.object = subscriber
-        NewsletterMailerService().send_subscription_confirmation(subscriber)
+        NewsletterMailerService().send_subscription_confirmation(subscriber, prefix="publication_alert_subscription")
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
