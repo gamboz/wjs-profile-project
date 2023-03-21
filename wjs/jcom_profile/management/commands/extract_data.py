@@ -34,9 +34,9 @@ class Command(BaseCommand):
                 self.extract_date_published(dir_path, article_id)
                 self.extract_corr_auth(dir_path, article_id)
             else:
-               self.stdout.write("\nPARAMETERS ERROR: directory not existing \n\n --base-path " + base_path  +  "\n\n ")
+               self.stdout.write(self.style.ERROR("\nPARAMETERS ERROR: directory not existing \n\n --base-path " + base_path  +  "\n\n "))
         else:
-            self.stdout.write("\nPARAMETERS ERROR: the data files destination directory (existing) is a mandatory option:\n\nExample:\n--base-path /home/user1/tmp/ \n\n")
+            self.stdout.write(self.style.ERROR("\nPARAMETERS ERROR: the data files destination directory (existing) is a mandatory option:\n\nExample:\n--base-path /home/user1/tmp/ \n\n"))
        
             
     def add_arguments(self, parser):
