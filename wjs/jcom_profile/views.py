@@ -1139,7 +1139,7 @@ class AnonymousUserNewsletterRegistration(FormView):
     object = None
 
     def form_valid(self, request, *args, **kwargs):  # noqa
-        user = request.user
+        user = self.request.user
         context = self.get_context_data()
         form = context.get("form")
         email = form.data["email"]
