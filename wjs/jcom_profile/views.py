@@ -1139,6 +1139,9 @@ class AnonymousUserNewsletterRegistration(FormView):
     object = None
 
     def form_valid(self, request, *args, **kwargs):  # noqa
+        # Previous workflow redirected by default to this view
+        #self.redirect_view = "register_newsletters_email_sent"
+        self.reminder = False
         user = self.request.user
         context = self.get_context_data()
         form = context.get("form")
@@ -1149,25 +1152,26 @@ class AnonymousUserNewsletterRegistration(FormView):
             # User is logged in
             recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
             # TODO: Redirect to "edit_newsletters"
-            self.success_url = reverse("edit_newsletters")
+            #self.redirect_view = "edit_newsletters"
         else:
             # User is anonymous
             try:
                 recipient = Recipient.objects.get(email=email, journal=journal)
-                # TODO: Send a reminder email
                 # TODO: Create new settings for publication_alert_reminder_{subject,body}
                 NewsletterMailerService().send_subscription_confirmation(
                     recipient,
                     prefix="publication_alert_reminder",
                 )
                 # TODO: Redirect to AnonymousNewsletterConfirmationEmailSent + additional parameter
-                self.success_url = reverse("register_newsletters_email_sent")
+                #self.redirect_view = "register_newsletters_email_sent"
+                self.reminder = True
             except Recipient.DoesNotExist:
                 recipient = Recipient.objects.create(
                     email=email,
                     journal=journal,
                     newsletter_token=token,
                 )
+                # TODO: Keep the existing flow
         self.object = recipient
         NewsletterMailerService().send_subscription_confirmation(recipient, prefix="publication_alert_subscription")
         return super().form_valid(form)
