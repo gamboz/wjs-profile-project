@@ -86,6 +86,36 @@ JCOM - Journal of Science Communication
                 pretty_name="Subject of the email sent when an anonymous user subscribes to publication alert.",
                 default_value="JCOM alert confirmation",
             )
+            # FIXME: The default_value is just a draft.
+            self._create_setting(
+                group=general_settings_group,
+                setting_name="publication_alert_reminder_email_body",
+                setting_description="Email body",
+                pretty_name="Body of the email sent when an anonymous user tries to subscribe to a publication alert that is already subscribed to.",    # noqa: E501
+                field_type="rich-text",
+                default_value="""
+Hello,
+<p>
+We have received a request to subscribe the email address {email} to JCOM publication alert.
+</p>
+<p>
+This email address is already subscribed to this alert.
+</p>
+<p>
+Kind regards,
+</p>
+<p>
+JCOM - Journal of Science Communication
+</p>
+""",
+            )
+            self._create_setting(
+                group=general_settings_group,
+                setting_name="publication_alert_reminder_email_subject",
+                setting_description="Email subject",
+                pretty_name="Subject of the email sent when an anonymous user tries to subscribe to a publication alert that is already subscribed to.",    # noqa: E501
+                default_value="JCOM alert confirmation",
+            )
             self._create_setting(
                 group=general_settings_group,
                 setting_name="publication_alert_email_intro_message",
