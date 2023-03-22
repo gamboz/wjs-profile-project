@@ -1139,18 +1139,37 @@ class AnonymousUserNewsletterRegistration(FormView):
     object = None
 
     def form_valid(self, request, *args, **kwargs):  # noqa
+        user = request.user
         context = self.get_context_data()
         form = context.get("form")
         email = form.data["email"]
         journal = self.request.journal
         token = generate_token(email)
-        subscriber, __ = Recipient.objects.get_or_create(
-            email=email,
-            journal=journal,
-            newsletter_token=token,
-        )
-        self.object = subscriber
-        NewsletterMailerService().send_subscription_confirmation(subscriber, prefix="publication_alert_subscription")
+        if not user.is_anonymous():
+            # User is logged in
+            recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
+            # TODO: Redirect to "edit_newsletters"
+            self.success_url = reverse("edit_newsletters")
+        else:
+            # User is anonymous
+            try:
+                recipient = Recipient.objects.get(email=email, journal=journal)
+                # TODO: Send a reminder email
+                # TODO: Create new settings for publication_alert_reminder_{subject,body}
+                NewsletterMailerService().send_subscription_confirmation(
+                    recipient,
+                    prefix="publication_alert_reminder",
+                )
+                # TODO: Redirect to AnonymousNewsletterConfirmationEmailSent + additional parameter
+                self.success_url = reverse("register_newsletters_email_sent")
+            except Recipient.DoesNotExist:
+                recipient = Recipient.objects.create(
+                    email=email,
+                    journal=journal,
+                    newsletter_token=token,
+                )
+        self.object = recipient
+        NewsletterMailerService().send_subscription_confirmation(recipient, prefix="publication_alert_subscription")
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
