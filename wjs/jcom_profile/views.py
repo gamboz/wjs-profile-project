@@ -1177,10 +1177,19 @@ class AnonymousUserNewsletterRegistration(FormView):
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
-        if self.object:
-            return reverse("register_newsletters_email_sent", args=(self.object.pk,))
+        if self.object and self.object.user:
+            # The user was logged in, redirect to edit_newsletters
+            return reverse("edit_newsletters")
+        if self.reminder:
+            # Add a parameter to allow the target view to show different messages in the template
+            _url = reverse("register_newsletters_email_sent", kwargs={"id": self.object.pk})
+            return f"{url}?reminder=1"
         else:
-            return reverse("register_newsletters_email_sent")
+            # Keep the existing flow
+            if self.object:
+                return reverse("register_newsletters_email_sent", args=(self.object.pk,))
+            else:
+                return reverse("register_newsletters_email_sent")
 
 
 class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
