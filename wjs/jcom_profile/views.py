@@ -1199,6 +1199,9 @@ class AnonymousUserNewsletterConfirmationEmailSent(TemplateView):
         context = super().get_context_data(**kwargs)
         if self.kwargs.get("id", None):
             context["object"] = Recipient.objects.get(pk=self.kwargs.get("id", None))
+        # Variable to allow for different messages in the template
+        if self.request.GET.get("reminder", None):
+            context["reminder"] = True
         return context
 
 
