@@ -73,24 +73,27 @@ def get_plugin_context(request, homepage_elements):
     # the plugins are imported from plugins package by janeway
     PluginConfig = apps.get_model("wjs_latest_news.PluginConfig")
 
-    configuration = PluginConfig.objects.filter(journal=request.journal).first()
+    # Janeway provides the list of all the home page elements, which is rather weird
+    # we only need the first one as we only take the generic foreign key objects, which is the same for all
+    # home page elements
+    try:
+        base_element = homepage_elements[0]
+        journal = base_element.object
+        content_type = base_element.content_type
+    except IndexError:
+        journal = None
+        content_type = None
+
+    configuration = PluginConfig.objects.filter(journal=journal).first()
 
     # filter news by
     # - start display in the past
     # - no end display or end display in the future
     news_filter = Q(Q(start_display__lte=now()) & (Q(end_display__gte=now()) | Q(end_display__isnull=True)))
 
-    # Janeway provides the list of all the home page elements, which is rather weird
-    # we only need the first one as we only take the generic foreign key objects, which is the same for all
-    # home page elements
-    try:
-        base_element = homepage_elements[0]
-    except IndexError:
-        base_element = None
-
     # - current journal if defined
-    if base_element:
-        news_filter &= Q(content_type=base_element.content_type) & Q(object_id=base_element.object_id)
+    if content_type and journal.pk:
+        news_filter &= Q(content_type=content_type) & Q(object_id=journal.pk)
 
     news = NewsItem.objects.filter(news_filter).order_by("sequence", "-start_display")
 
