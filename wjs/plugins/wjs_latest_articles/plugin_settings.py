@@ -74,12 +74,6 @@ def get_plugin_context(request, homepage_elements):
     # the plugins are imported from plugins package by janeway
     PluginConfig = apps.get_model("wjs_latest_articles.PluginConfig")
 
-    configuration = PluginConfig.objects.filter(journal=request.journal).first()
-
-    # filter articles by
-    # - date_published in the past
-    articles_filter = Q(date_published__lte=now())
-
     # Janeway provides the list of all the home page elements, which is rather weird
     # we only need the first one as we only take the generic foreign key objects, which is the same for all
     # home page elements
@@ -88,6 +82,12 @@ def get_plugin_context(request, homepage_elements):
         journal = base_element.object
     except IndexError:
         journal = None
+
+    configuration = PluginConfig.objects.filter(journal=journal).first()
+
+    # filter articles by
+    # - date_published in the past
+    articles_filter = Q(date_published__lte=now())
 
     # - current journal if defined
     if journal:
