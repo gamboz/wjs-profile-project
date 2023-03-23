@@ -1,19 +1,20 @@
 from datetime import timedelta
 
+import factory
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
 
-from wjs.plugins.wjs_latest_news.plugin_settings import (
-    get_plugin_context as get_news_plugin_context,
-    WJSLatestArticles as WJSLatestnews,
-)
+from wjs.plugins.wjs_latest_articles.plugin_settings import WJSLatestArticles
 from wjs.plugins.wjs_latest_articles.plugin_settings import (
     get_plugin_context as get_articles_plugin_context,
-    WJSLatestArticles,
 )
-
-import factory
+from wjs.plugins.wjs_latest_news.plugin_settings import (
+    WJSLatestArticles as WJSLatestnews,
+)
+from wjs.plugins.wjs_latest_news.plugin_settings import (
+    get_plugin_context as get_news_plugin_context,
+)
 
 
 @pytest.mark.django_db
@@ -64,7 +65,7 @@ def test_article_context(fake_request, article_factory):
         items_count,
         journal=journal,
         date_published=factory.Sequence(
-            lambda n: _now + timedelta(days=n) if n % 3 == 0 else _now - timedelta(days=n)
+            lambda n: _now + timedelta(days=n) if n % 3 == 0 else _now - timedelta(days=n),
         ),
     )
     context = get_articles_plugin_context(fake_request, [home_page_element])
