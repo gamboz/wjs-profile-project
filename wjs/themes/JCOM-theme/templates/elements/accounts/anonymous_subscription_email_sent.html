@@ -8,11 +8,14 @@
             <h2 class="main-title">{% trans "Your subscription to JCOM publication alert" %}</h2>
             <div class="card-panel">
                 <p>
-                    {# FIXME: Get the journal title from the context, and add the link to the newsletters #}
+                    {# FIXME: Get the journal title from the context #}
                     {% blocktrans %}
                         Hello,
                         <p>We have received a request to subscribe your email address to JCOM publication alert.</p>
-                        <p>Please note that you are already subscribed. If you wish to change your topics of interest use the link below.</p>
+                        <p>Please note that you are already subscribed. If you wish to change your topics of interest use the link below:</p>
+                        <br/>
+                        <p><a href="{% url "update_newsletters" %}">Change topics of interest</a></p>
+                        <br/>
                         <p>Kind regards,</p>
                         <p>JCOM - Journal of Science Communication</p>
                     {% endblocktrans %}
