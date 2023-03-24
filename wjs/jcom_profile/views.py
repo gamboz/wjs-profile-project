@@ -1183,7 +1183,7 @@ class AnonymousUserNewsletterRegistration(FormView):
         if self.reminder:
             # Add a parameter to allow the target view to show different messages in the template
             _url = reverse("register_newsletters_email_sent", kwargs={"id": self.object.pk})
-            return f"{url}?reminder=1"
+            return f"{_url}?reminder=1"
         else:
             # Keep the existing flow
             if self.object:
