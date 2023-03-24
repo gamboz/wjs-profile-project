@@ -3,45 +3,45 @@
 {% block body %}
 <div class="row">
     <div class="s12 center">
-        {% if reminder %}
-            {# FIXME: Get the publication title from the context #}
-            <h2 class="main-title">{% trans "Your subscription to JCOM publication alert" %}</h2>
-            <div class="card-panel">
-                <p>
-                    {# FIXME: Get the journal title from the context #}
-                    {% url "update_newsletters" as url_link %}
-                    {% blocktrans %}
-                        Hello,
-                        <p>We have received a request to subscribe your email address to JCOM publication alert.</p>
-                        <p>Please note that you are already subscribed. If you wish to change your topics of interest use the link below:</p>
-                        <br/>
-                        <p><a href="{{url_link}}">Change topics of interest</a></p>
-                        <br/>
-                        <p>Kind regards,</p>
-                        <p>JCOM - Journal of Science Communication</p>
-                    {% endblocktrans %}
-                </p>
-            </div>
-        {% else %}
-            <h2 class="main-title">{% trans "Subscription to be confirmed" %}</h2>
-            <div class="card-panel">
-                <p>
-                    {% if object %}
-                        {% blocktrans with email=object.newsletter_destination_email %}
-                            An email with a confirmation link has been sent to your email address {{ email }}.
-                            <br/>
-                            Please open the link to activate your publication alert.
-                        {% endblocktrans %}
-                    {% else %}
+        {% with journal_code=object.journal.code journal_name=object.journal.name %}
+            {% if reminder %}
+                <h2 class="main-title">{% blocktrans %}Your subscription to {{journal_code}} publication alert{% endblocktrans %}</h2>
+                <div class="card-panel">
+                    <p>
+                        {% url "update_newsletters" as url_link %}
                         {% blocktrans %}
-                            An email with a confirmation link has been sent to your email address.
+                            Hello,
+                            <p>We have received a request to subscribe your email address to {{journal_code}} publication alert.</p>
+                            <p>Please note that you are already subscribed. If you wish to change your topics of interest use the link below:</p>
                             <br/>
-                            Please open the link to activate your publication alert.
+                            <p><a href="{{url_link}}">Change topics of interest</a></p>
+                            <br/>
+                            <p>Kind regards,</p>
+                            <p>{{journal_code}} - {{journal_name}}</p>
                         {% endblocktrans %}
-                    {% endif %}
-                </p>
-            </div>
-        {% endif %}
+                    </p>
+                </div>
+            {% else %}
+                <h2 class="main-title">{% trans "Subscription to be confirmed" %}</h2>
+                <div class="card-panel">
+                    <p>
+                        {% if object %}
+                            {% blocktrans with email=object.newsletter_destination_email %}
+                                An email with a confirmation link has been sent to your email address {{ email }}.
+                                <br/>
+                                Please open the link to activate your publication alert.
+                            {% endblocktrans %}
+                        {% else %}
+                            {% blocktrans %}
+                                An email with a confirmation link has been sent to your email address.
+                                <br/>
+                                Please open the link to activate your publication alert.
+                            {% endblocktrans %}
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        {% endwith %}
     </div>
 </div>
 {% endblock body %}
