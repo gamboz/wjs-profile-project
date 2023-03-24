@@ -91,7 +91,7 @@ JCOM - Journal of Science Communication
                 group=general_settings_group,
                 setting_name="publication_alert_reminder_email_body",
                 setting_description="Email body",
-                pretty_name="Body of the email sent when an anonymous user tries to subscribe to a publication alert that is already subscribed to.",    # noqa: E501
+                pretty_name="Body of the email sent when an anon user subscribes to an alert that is already subscribed to",    # noqa: E501
                 field_type="rich-text",
                 default_value="""
 Hello,
