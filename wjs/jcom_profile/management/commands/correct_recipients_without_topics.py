@@ -27,14 +27,12 @@ class Command(BaseCommand):
 
     def process_recipients(self, force=False):
         """Check (and correct) all recipients of a journal."""
-        # TODO: link kwds to journal and use journal's kwds only!!!
-        kwds_pks = [k.pk for k in Keyword.objects.all()]
         for recipient in Recipient.objects.filter(journal=self.journal):
             if recipient.topics.count() == 0:
                 if force:
                     logger.warning(f'Setting all topics to "{recipient.newsletter_destination_email}".')
-                    [recipient.topics.add(pk) for pk in kwds_pks]
-                    recipient.save()
+                    # TODO: link kwds to journal and use journal's kwds only!!!
+                    recipient.topics.set(Keyword.objects.all())
                 else:
                     logger.warning(f'Recipient "{recipient.newsletter_destination_email}" has no topics selected.')
 
