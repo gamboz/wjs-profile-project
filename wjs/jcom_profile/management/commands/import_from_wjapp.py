@@ -69,7 +69,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Command entry point."""
         self.options = options
-        self.journal_data = JOURNALS_DATA[options["journal_code"]]
+        self.journal_data = JOURNALS_DATA[options["journal-code"]]
         self.read_from_watched_dir()
 
     def add_arguments(self, parser):
@@ -85,9 +85,9 @@ class Command(BaseCommand):
             help="Where to keep zip files received from wjapp (and processed). Defaults to %(default)s",
         )
         parser.add_argument(
-            "--journal-code",
-            default="JCOM",
-            help="Toward which journal to import. Defaults to %(default)s.",
+            "journal-code",
+            choices=["JCOM", "JCOMAL"],
+            help="Toward which journal to import.",
         )
 
     def read_from_watched_dir(self):
