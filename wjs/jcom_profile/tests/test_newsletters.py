@@ -378,3 +378,30 @@ def test_one_recipient_one_article_two_topics(
     assert newsletter.last_sent.date() == timezone.now().date()
     assert len(mail.outbox) == 2
     check_email_body(mail.outbox, journal)
+
+
+@pytest.mark.django_db
+def test_registration_as_non_logged_user_creates_a_recipient_and_redirects_to_email_sent_view(
+        client,
+        journal,
+        recipient_factory,
+        newsletter_factory,
+        article_factory,
+        keyword_factory,
+        custom_newsletter_setting,
+        mock_premailer_load_url,
+):
+    newsletter = newsletter_factory()
+    before_recipients = [x.pk for x in Recipient.objects.all()]
+    url = f"/{journal.code}/register/newsletters/"
+    response = client.post(url, {"email": "a@b.com"}, SERVER_NAME="testserver", follow=True)
+    new_recipients = Recipient.objects.exclude(pk__in=before_recipients)
+    assert new_recipients.count() == 1
+    new_recipient = new_recipients[0]
+    # Check new Recipient object's fields
+    assert new_recipient.user is None
+    assert new_recipient.email == "a@b.com"
+    assert new_recipient.journal == journal
+    assert len(new_recipient.newsletter_token) > 0
+    last_url, status_code = response.redirect_chain[-1]
+    assert last_url == f"/{journal.code}/register/newsletters/email-sent/{new_recipient.pk}/"
