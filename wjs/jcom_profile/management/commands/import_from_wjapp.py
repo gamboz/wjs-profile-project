@@ -340,6 +340,9 @@ class Command(BaseCommand):
             issue_type__code = "collection"
             issue_title = issue_obj_a.text
 
+        # NB: we 0-pad the issue "number"
+        issue = f"{issue:02}"
+
         issue, created = journal_models.Issue.objects.get_or_create(
             journal=article.journal,
             volume=volume,
