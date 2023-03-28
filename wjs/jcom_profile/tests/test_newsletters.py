@@ -1,17 +1,17 @@
 import datetime
 import random
+from zoneinfo import ZoneInfo
 
 import pytest
-from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse
-
 from comms.models import NewsItem
+from django.contrib.contenttypes.models import ContentType
 from django.core import mail, management
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from submission.models import Article
 from utils.setting_handler import get_setting
-from zoneinfo import ZoneInfo
+
 from wjs.jcom_profile.models import Recipient
 from wjs.jcom_profile.newsletter.service import NewsletterMailerService
 
@@ -71,7 +71,7 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     custom_newsletter_setting,
     keywords,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     content_type = ContentType.objects.get_for_model(journal)
@@ -121,7 +121,7 @@ def test_newsletters_with_news_items_only_must_be_sent(
     custom_newsletter_setting,
     keywords,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     news_user, no_news_user = account_factory(email="news@news.it"), account_factory(email="nonews@nonews.it")
@@ -154,7 +154,7 @@ def test_newsletters_with_articles_only_must_be_sent(
     keyword_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     correspondence_author = account_factory()
@@ -211,7 +211,7 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscrib
     custom_newsletter_setting,
     keywords,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     content_type = ContentType.objects.get_for_model(journal)
@@ -266,7 +266,7 @@ def test_two_recipients_one_news(
     news_item_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     """Service test.
 
@@ -310,7 +310,7 @@ def test_two_recipients_one_article(
     keyword_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     """Service test.
 
@@ -350,7 +350,7 @@ def test_one_recipient_one_article_two_topics(
     keyword_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     """
     Test recipients not related to any account.
