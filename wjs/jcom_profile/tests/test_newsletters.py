@@ -405,3 +405,28 @@ def test_registration_as_non_logged_user_creates_a_recipient_and_redirects_to_em
     assert len(new_recipient.newsletter_token) > 0
     last_url, status_code = response.redirect_chain[-1]
     assert last_url == f"/{journal.code}/register/newsletters/email-sent/{new_recipient.pk}/"
+
+
+@pytest.mark.django_db
+def test_registration_as_non_logged_user_when_there_is_already_a_recipient(
+        client,
+        journal,
+        recipient_factory,
+        newsletter_factory,
+        article_factory,
+        keyword_factory,
+        custom_newsletter_setting,
+        mock_premailer_load_url,
+):
+    newsletter = newsletter_factory()
+    r1 = recipient_factory(journal=journal, news=False, email="nr1@email.com")
+    before_recipients = [x.pk for x in Recipient.objects.all()]
+    url = f"/{journal.code}/register/newsletters/"
+    response = client.post(url, {"email": "nr1@email.com"}, SERVER_NAME="testserver", follow=True)
+    new_recipients = Recipient.objects.exclude(pk__in=before_recipients)
+    # No new Recipient is created
+    assert new_recipients.count() == 0
+    last_url, status_code = response.redirect_chain[-1]
+    # Check that rmeinder=1 is in the url
+    assert last_url == f"/{journal.code}/register/newsletters/email-sent/{r1.pk}/?reminder=1"
+    assert response.context_data.get("reminder", None) == True
