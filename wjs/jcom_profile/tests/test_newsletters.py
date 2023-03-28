@@ -1,5 +1,6 @@
 import datetime
 import random
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -13,6 +14,7 @@ from submission.models import Article
 from utils.setting_handler import get_setting
 
 from wjs.jcom_profile.models import Recipient
+from wjs.jcom_profile.newsletter.service import NewsletterMailerService
 
 
 def select_random_keywords(keywords):
@@ -378,6 +380,47 @@ def test_one_recipient_one_article_two_topics(
     assert newsletter.last_sent.date() == timezone.now().date()
     assert len(mail.outbox) == 2
     check_email_body(mail.outbox, journal)
+
+
+rome_tz = ZoneInfo("Europe/Rome")
+last_sent_23 = datetime.datetime(2023, 3, 26, 23, 0, 3, tzinfo=rome_tz)
+last_sent_11 = datetime.datetime(2023, 3, 26, 11, 0, 3, tzinfo=rome_tz)
+CASES = (
+    # Papers imported from wjapp have dates set from info gathered
+    # from the XML, that only reports a date (i.e. not a datetime).
+    (last_sent_23, datetime.datetime(2023, 3, 27, tzinfo=rome_tz), False),
+    (last_sent_23, last_sent_23 + datetime.timedelta(hours=1), False),
+    (last_sent_23, last_sent_23 + datetime.timedelta(hours=2), False),
+    (last_sent_23, last_sent_23 + datetime.timedelta(hours=3), False),
+    (last_sent_23, last_sent_23 + datetime.timedelta(hours=4), False),
+    #
+    (last_sent_11, datetime.datetime(2023, 3, 27, tzinfo=rome_tz), False),
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=1), True),
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=2), True),
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=3), True),
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=4), True),
+    #
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=12), True),
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=13), False),
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=14), False),
+    (last_sent_11, last_sent_11 + datetime.timedelta(hours=15), False),
+)
+
+
+@pytest.mark.parametrize(["last_sent", "date_published", "empty"], CASES)
+@pytest.mark.django_db
+def test_last_sent_timezone(last_sent, date_published, empty, article_factory, journal):
+    nms = NewsletterMailerService()
+    a1 = article_factory(journal=journal, date_published=timezone.now())
+
+    a1.date_published = date_published
+    a1.save()
+    recipients, articles, news = nms._get_objects(journal, last_sent)
+    if empty:
+        assert len(articles) == 0
+    else:
+        assert len(articles) == 1
+        assert articles[0] == a1
 
 
 @pytest.mark.django_db
