@@ -471,6 +471,19 @@ def test_registration_as_non_logged_user_when_there_is_already_a_recipient(
     # No new Recipient is created
     assert new_recipients.count() == 0
     last_url, status_code = response.redirect_chain[-1]
-    # Check that rmeinder=1 is in the url
+    # Check that reminder=1 is in the url
     assert last_url == f"/{journal.code}/register/newsletters/email-sent/{r1.pk}/?reminder=1"
     assert response.context_data.get("reminder", None) == True
+    # Check the email
+    assert len(mail.outbox) == 1
+    from_email = get_setting(
+        "general",
+        "from_address",
+        journal,
+        create=False,
+        default=True,
+    )
+    mail_message = mail.outbox[0]
+    assert mail_message.from_email == from_email.value
+    assert mail_message.to == ["nr1@email.com"]
+    assert "Please note that you are already subscribed" in mail_message.body
