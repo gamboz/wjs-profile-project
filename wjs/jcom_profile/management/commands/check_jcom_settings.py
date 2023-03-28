@@ -607,7 +607,7 @@ SETTINGS = {
         # Just ignore for now: ("general", "journal_languages", ["en"]),
         #
         # Journal Name - Name of the journal.
-        ("general", "journal_name", "Journal of Science Communication - America Latina"),
+        ("general", "journal_name", "Journal of Science Communication - América Latina"),
         #
         # Journal Theme - The HTML theme set to use for the journal.
         ("general", "journal_theme", "JCOM-theme"),
@@ -659,7 +659,7 @@ SETTINGS = {
         # External Privacy Policy URL - URL to an external
         # privacy-policy, linked from the footer. If blank, it
         # links to the Janeway CMS page: /site/privacy.
-        ("general", "privacy_policy_url", "https://medialab.sissa.it/en/privacy"),
+        ("general", "privacy_policy_url", ""),
         #
         # Publication Fees - Display of feeds for this
         # journal. Displayed on the About and the Submission
