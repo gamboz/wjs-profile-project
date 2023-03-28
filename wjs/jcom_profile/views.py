@@ -1173,7 +1173,9 @@ class AnonymousUserNewsletterRegistration(FormView):
                 )
                 # TODO: Keep the existing flow
         self.object = recipient
-        NewsletterMailerService().send_subscription_confirmation(recipient, prefix="publication_alert_subscription")
+        # Send email only if it's not a reminder, to avoid double mail sending
+        if self.reminder == False:
+            NewsletterMailerService().send_subscription_confirmation(recipient, prefix="publication_alert_subscription")
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
