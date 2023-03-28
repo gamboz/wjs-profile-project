@@ -8,7 +8,7 @@
                 <h2 class="main-title">{% blocktrans %}Your subscription to {{journal_code}} publication alert{% endblocktrans %}</h2>
                 <div class="card-panel">
                     <p>
-                        {% url "update_newsletters" as url_link %}
+                        {% url "edit_newsletters" as url_link %}
                         {% blocktrans %}
                             Hello,
                             <p>We have received a request to subscribe your email address to {{journal_code}} publication alert.</p>
