@@ -405,6 +405,7 @@ def test_registration_as_non_logged_user_creates_a_recipient_and_redirects_to_em
     assert len(new_recipient.newsletter_token) > 0
     last_url, status_code = response.redirect_chain[-1]
     assert last_url == f"/{journal.code}/register/newsletters/email-sent/{new_recipient.pk}/"
+    assert "reminder" not in response.context_data.keys()
 
 
 @pytest.mark.django_db
