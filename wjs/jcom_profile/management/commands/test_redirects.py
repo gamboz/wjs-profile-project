@@ -92,7 +92,7 @@ class Command(BaseCommand):
 
     def notice(self, msg):
         """Emit a notice."""
-        self.stdout.write(self.style.NOTICE(msg))
+        self.stdout.write(self.style.SUCCESS(msg))
 
     def error(self, msg):
         """Emit an error."""
