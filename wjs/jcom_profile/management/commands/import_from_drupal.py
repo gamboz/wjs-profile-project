@@ -1162,4 +1162,8 @@ def translate_kwds():
         except submission_models.Keyword.DoesNotExist:
             logger.error(f'Kwd "{eng_word}" does not exist. Please check!')
             continue
-        logger.warning(f"Please translate {keyword} to {por_word} and {spa_word}")
+        else:
+            keyword.word_pt = por_word
+            keyword.word_es = spa_word
+            keyword.save()
+            logger.debug(f"Translated {keyword} to {por_word} and {spa_word}")
