@@ -298,6 +298,13 @@ class Command(BaseCommand):
             article.articlewrapper.nid = self.nid
             article.articlewrapper.save()
         assert article.articlewrapper.nid == self.nid
+        if self.options["journal_code"] == "JCOMAL":
+            language_code = raw_data["language"]
+            language_specific_title = f"title_{language_code}"
+            if not hasattr(article, language_specific_title):
+                logger.error(f"Article {article} has no field {language_specific_title}. Unexpected!")
+            else:
+                setattr(article, language_specific_title, raw_data["title"])
         eid = from_pubid_to_eid(raw_data["field_id"])
         article.page_numbers = eid
         article.save()
