@@ -117,7 +117,7 @@ JCOM - Journal of Science Communication
                 setting_name="publication_alert_reminder_email_subject",
                 setting_description="Email subject",
                 pretty_name="Subject of the email sent when an anon user subscribes to an alert that is already subscribed to",    # noqa: E501
-                default_value="JCOM alert confirmation",
+                default_value="Your subscription to JCOM publication",
             )
             self._create_setting(
                 group=general_settings_group,
