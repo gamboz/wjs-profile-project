@@ -96,10 +96,13 @@ JCOM - Journal of Science Communication
                 default_value="""
 Hello,
 <p>
-We have received a request to subscribe the email address {email} to JCOM publication alert.
+We have received a request to subscribe your email address to JCOM publication alert.
 </p>
 <p>
-This email address is already subscribed to this alert.
+Please note that you are already subscribed. If you wish to change your topics of interest use the link below.
+</p>
+<p>
+<a href="/update/newsletters/">Change topics of interest</a>
 </p>
 <p>
 Kind regards,
