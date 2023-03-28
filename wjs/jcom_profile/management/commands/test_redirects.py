@@ -22,7 +22,8 @@ TESTS = (
     ("/archive/01/01/E0101", 301, "/article/pubid/E0101/"),
     ("/archive/09/04/Jcom0904(2010)E", 301, r"/article/pubid/Jcom0904\(2010\)E/"),
     #     - non standard-issue 12/3-4
-    ("/archive/12/3-4/JCOM1203(2013)A04", 301, "/article/pubid/JCOM1203(2013)A04/"),
+    ("/archive/12/3-4/JCOM1203(2013)A04", 301, r"/article/pubid/JCOM1203\(2013\)A04/"),
+    ("/archive/12/3-4/JCOM1203(2013)C01/JCOM1203(2013)C02", 301, r"/article/pubid/JCOM1203\(2013\)C02/"),
     #
     # Issue
     ("/archive/03/03", 301, r"/issue/(\d+)/info"),
