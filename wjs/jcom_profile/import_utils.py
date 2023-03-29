@@ -168,18 +168,22 @@ def set_language(article, language):
     article.save()
 
 
-def set_language_specific_field(article, field, value):
-    """Set the given field for the article's language to given value."""
-    # Remember that article.language is alpha3, but modeltranslation's adapted fields are alpha2
+def set_language_specific_field(article, field, value, clear_en=False):
+    """Set the given field for the article's language to given value.
 
-    # I only know about JCOMAL, all other journals I don't care :|
+    Warning: I'm not going to "save()" the article!
+
+    We only know about JCOMAL, all other journals we just se the field.
+    """
     if article.journal.code != "JCOMAL":
+        setattr(article, field, value)
         return
 
     if not article.language:
         logger.error(f"No language set for {article.get_identifier('pubid')}")
         return
 
+    # Remember that article.language is alpha3, but modeltranslation's adapted fields are alpha2
     lang_obj = pycountry.languages.get(alpha_3=article.language)
     if lang_obj is None:
         logger.error(
@@ -195,6 +199,15 @@ def set_language_specific_field(article, field, value):
         return
 
     setattr(article, language_specific_field, value)
+
+    # This is mainly a workaround for the fact that I use `title` to
+    # create the article.  There could be better ways but it doesn't
+    # seem worth the effort. See
+    # e.g. https://django-modeltranslation.readthedocs.io/en/latest/usage.html#multilingual-manager-1
+    if clear_en:
+        en_field = f"{field}_en"
+        setattr(article, en_field, None)
+
     article.save()
 
 

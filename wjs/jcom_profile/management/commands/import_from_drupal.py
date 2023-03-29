@@ -300,11 +300,12 @@ class Command(BaseCommand):
             article.articlewrapper.save()
         assert article.articlewrapper.nid == self.nid
 
-        # I explicitly receive the language info only for JCOMAL
+        # I explicitly receive the language info only for JCOMAL.
+        # For JCOM, I must infer it form the galleys that I find.
         if journal.code == "JCOMAL":
             set_language(article, raw_data["language"])
 
-        set_language_specific_field(article, "title", article.title)
+        set_language_specific_field(article, "title", article.title, clear_en=True)
         eid = from_pubid_to_eid(raw_data["field_id"])
         article.page_numbers = eid
         article.save()
@@ -554,12 +555,10 @@ class Command(BaseCommand):
                 raw_data["field_id"],
                 len(abstract_dict["summary"]),
             )
-        # TODO: ask what's best:
-        # - always set the (generic) field
-        # - only set the language-specific field (might be a problem
-        #   with "title", since it's used for article creation)
-        article.abstract = abstract
+        # I don't always set the (generic) field. Because this way it
+        # will be easier to find non-translated parts.
         set_language_specific_field(article, "abstract", abstract)
+        article.save()
         logger.debug("  %s - abstract", raw_data["field_id"])
 
     def set_body(self, article, raw_data):
@@ -1024,7 +1023,9 @@ class Command(BaseCommand):
     def tidy_up(self):
         """Run una-tantum operations at the end of the import process."""
         if self.options["journal_code"] == "JCOMAL":
-            translate_kwds()
+            journal = journal_models.Journal.objects.get(code=self.options["journal_code"])
+            translate_kwds(journal)
+            translate_sections(journal)
 
     def set_children(self, article, raw_data):
         """Process children if present (mainly for commentaries)."""
@@ -1086,7 +1087,7 @@ class Command(BaseCommand):
         a.save()
 
 
-def translate_kwds():
+def translate_kwds(journal):
     """Translate JCOMAL kwds."""
     # Adapted from https://jcomal.sissa.it/jcomal/help/keywordsList.jsp
     keyword_list = (
@@ -1177,6 +1178,7 @@ def translate_kwds():
     )
     for eng_word, por_word, spa_word in keyword_list:
         try:
+            # TODO: use journal's kwds only!
             keyword = submission_models.Keyword.objects.get(word=eng_word)
         except submission_models.Keyword.DoesNotExist:
             logger.error(f'Kwd "{eng_word}" does not exist. Please check!')
