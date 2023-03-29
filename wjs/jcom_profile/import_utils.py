@@ -35,6 +35,7 @@ FUNNY_LANGUAGE_CODES = {
     "sp": "es",  # Spanish, Castilian
     "dk": "da",  # Danish
     "po": "pt",  # Portuguese
+    "pt-br": "pt",  # This is not technically perfect (pt-br is better than just pt)
 }
 
 
@@ -164,6 +165,36 @@ def set_language(article, language):
                 JANEWAY_LANGUAGES_BY_CODE[lang_obj.alpha_3],
                 article.get_identifier("pubid"),
             )
+    article.save()
+
+
+def set_language_specific_field(article, field, value):
+    """Set the given field for the article's language to given value."""
+    # Remember that article.language is alpha3, but modeltranslation's adapted fields are alpha2
+
+    # I only know about JCOMAL, all other journals I don't care :|
+    if article.journal.code != "JCOMAL":
+        return
+
+    if not article.language:
+        logger.error(f"No language set for {article.get_identifier('pubid')}")
+        return
+
+    lang_obj = pycountry.languages.get(alpha_3=article.language)
+    if lang_obj is None:
+        logger.error(
+            'Unknown language code "%s" for %s. Keeping default "English"',
+            article.language,
+            article.get_identifier("pubid"),
+        )
+        return
+
+    language_specific_field = f"title_{lang_obj.alpha_2}"
+    if not hasattr(article, language_specific_field):
+        logger.error(f"Article {article.get_identifier('pubid')} has no field {language_specific_field}. Unexpected!")
+        return
+
+    setattr(article, language_specific_field, value)
     article.save()
 
 

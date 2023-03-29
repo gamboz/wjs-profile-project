@@ -34,6 +34,7 @@ from wjs.jcom_profile.import_utils import (
     query_wjapp_by_pubid,
     set_author_country,
     set_language,
+    set_language_specific_field,
 )
 from wjs.jcom_profile.utils import from_pubid_to_eid
 
@@ -298,13 +299,12 @@ class Command(BaseCommand):
             article.articlewrapper.nid = self.nid
             article.articlewrapper.save()
         assert article.articlewrapper.nid == self.nid
-        if self.options["journal_code"] == "JCOMAL":
-            language_code = raw_data["language"]
-            language_specific_title = f"title_{language_code}"
-            if not hasattr(article, language_specific_title):
-                logger.error(f"Article {article} has no field {language_specific_title}. Unexpected!")
-            else:
-                setattr(article, language_specific_title, raw_data["title"])
+
+        # I explicitly receive the language info only for JCOMAL
+        if journal.code == "JCOMAL":
+            set_language(article, raw_data["language"])
+
+        set_language_specific_field(article, "title", article.title)
         eid = from_pubid_to_eid(raw_data["field_id"])
         article.page_numbers = eid
         article.save()
@@ -400,7 +400,12 @@ class Command(BaseCommand):
     def set_files(self, article, raw_data):
         """Find info about the article "attachments", download them and import them as galleys.
 
-        Here we also set the article's language, as it depends on which galleys we find.
+        For JCOM, here we also set the article's language, as it
+        depends on which galleys we find.
+
+        For JCOMAL we receive the language info explicitly so there is
+        no need to try to infer it from the galleys.
+
         """
         # See also plugin imports.ojs.importers.import_galleys.
 
@@ -413,7 +418,8 @@ class Command(BaseCommand):
         # I'm not sure that it is correct to set a language different
         # from English when the doi points to English-only metadata
         # (even if there are two PDF files). But see #194.
-        article.language = "eng"
+        if self.options["journal_code"] == "JCOM":
+            article.language = "eng"
 
         attachments = raw_data["field_attachments"]
         # Drupal "attachments" are only references to "file" nodes
@@ -426,18 +432,19 @@ class Command(BaseCommand):
                 file_name=file_dict["name"],
                 file_mimetype=file_dict["mime"],
             )
-            if language and language != "en":
-                if article.language != "eng":
-                    # We can have 2 non-English galleys (PDF and EPUB),
-                    # they are supposed to be of the same language. Not checking.
-                    #
-                    # If the article language is different from
-                    # english, this means that a non-English gally has
-                    # already been processed and there is no need to
-                    # set the language again.
-                    pass
-                else:
-                    set_language(article, language)
+            if self.options["journal_code"] == "JCOM":
+                if language and language != "en":
+                    if article.language != "eng":
+                        # We can have 2 non-English galleys (PDF and EPUB),
+                        # they are supposed to be of the same language. Not checking.
+                        #
+                        # If the article language is different from
+                        # english, this means that a non-English gally has
+                        # already been processed and there is no need to
+                        # set the language again.
+                        pass
+                    else:
+                        set_language(article, language)
             save_galley(
                 article,
                 request=fake_request,
@@ -547,7 +554,12 @@ class Command(BaseCommand):
                 raw_data["field_id"],
                 len(abstract_dict["summary"]),
             )
+        # TODO: ask what's best:
+        # - always set the (generic) field
+        # - only set the language-specific field (might be a problem
+        #   with "title", since it's used for article creation)
         article.abstract = abstract
+        set_language_specific_field(article, "abstract", abstract)
         logger.debug("  %s - abstract", raw_data["field_id"])
 
     def set_body(self, article, raw_data):
