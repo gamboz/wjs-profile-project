@@ -1164,10 +1164,11 @@ class AnonymousUserNewsletterRegistration(FormView):
                     journal=journal,
                     newsletter_token=token,
                 )
+                # Send a subscription email only if a non-logged-in user has just subscribed
+                NewsletterMailerService().send_subscription_confirmation(
+                    recipient, prefix="publication_alert_subscription",
+                )
         self.object = recipient
-        # Send email only if it's not a reminder, to avoid double mail sending
-        if self.reminder == False:
-            NewsletterMailerService().send_subscription_confirmation(recipient, prefix="publication_alert_subscription")
         return super().form_valid(form)
 
     def get_success_url(self):  # noqa
