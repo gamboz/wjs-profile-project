@@ -189,7 +189,7 @@ def set_language_specific_field(article, field, value):
         )
         return
 
-    language_specific_field = f"title_{lang_obj.alpha_2}"
+    language_specific_field = f"{field}_{lang_obj.alpha_2}"
     if not hasattr(article, language_specific_field):
         logger.error(f"Article {article.get_identifier('pubid')} has no field {language_specific_field}. Unexpected!")
         return
