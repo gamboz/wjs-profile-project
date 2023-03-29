@@ -487,3 +487,35 @@ def test_registration_as_non_logged_user_when_there_is_already_a_recipient(
     assert mail_message.from_email == from_email.value
     assert mail_message.to == ["nr1@email.com"]
     assert "Please note that you are already subscribed" in mail_message.body
+
+
+@pytest.mark.django_db
+def test_registration_as_logged_user_when_a_recipient_does_not_exist(
+        jcom_user,
+        client,
+        journal,
+        recipient_factory,
+        newsletter_factory,
+        article_factory,
+        keyword_factory,
+        custom_newsletter_setting,
+        mock_premailer_load_url,
+):
+    newsletter = newsletter_factory()
+    # Set an email for the user
+    jcom_user.email = "jcom_user@email.com"
+    jcom_user.save()
+    assert Recipient.objects.filter(user=jcom_user, journal=journal).count() == 0
+    # Login and make the POST call
+    client.force_login(jcom_user)
+    url = f"/{journal.code}/register/newsletters/"
+    response = client.post(url, {"email": jcom_user.email}, SERVER_NAME="testserver", follow=True)
+    # Check that a new Recipient was created
+    new_recipients = Recipient.objects.filter(user=jcom_user, journal=journal)
+    assert new_recipients.count() == 1
+    # Check the new Recipient's characteristics
+    new_recipient = new_recipients.first()
+    assert new_recipient.email == jcom_user.email
+    # Check the redirect
+    last_url, status_code = response.redirect_chain[-1]
+    assert last_url == f"/{journal.code}/update/newsletters/"
