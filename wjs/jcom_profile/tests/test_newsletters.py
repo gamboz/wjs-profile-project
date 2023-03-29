@@ -440,7 +440,7 @@ def test_registration_as_non_logged_user_creates_a_recipient_and_redirects_to_em
     response = client.post(url, {"email": "nr1@email.com"}, SERVER_NAME="testserver", follow=True)
     new_recipients = Recipient.objects.exclude(pk__in=before_recipients)
     assert new_recipients.count() == 1
-    new_recipient = new_recipients[0]
+    new_recipient = new_recipients.first()
     # Check new Recipient object's fields
     assert new_recipient.user is None
     assert new_recipient.email == "nr1@email.com"
