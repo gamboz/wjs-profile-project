@@ -520,3 +520,17 @@ def test_registration_as_logged_user_when_a_recipient_does_not_exist(
     # Check the redirect
     last_url, status_code = response.redirect_chain[-1]
     assert last_url == f"/{journal.code}/update/newsletters/"
+    # Check the email
+    assert len(mail.outbox) == 1
+    from_email = get_setting(
+        "general",
+        "from_address",
+        journal,
+        create=False,
+        default=True,
+    )
+    mail_message = mail.outbox[0]
+    assert mail_message.from_email == from_email.value
+    assert mail_message.to == [jcom_user.email]
+    assert jcom_user.email in mail_message.body
+    assert "Please note that you are already subscribed" not in mail_message.body
