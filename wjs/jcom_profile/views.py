@@ -1149,9 +1149,6 @@ class AnonymousUserNewsletterRegistration(FormView):
         if not user.is_anonymous():
             # User is logged in, get or create the Recipient based on user and journal
             recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
-            # Set the Recipient email to the user's email, ignoring the email the user has passed in the form
-            recipient.email = user.email
-            recipient.save()
         else:
             # User is anonymous
             try:
