@@ -516,6 +516,7 @@ def test_registration_as_logged_user_when_a_recipient_does_not_exist(
     # Check the new Recipient's characteristics
     new_recipient = new_recipients.first()
     assert new_recipient.email == jcom_user.email
+    assert new_recipient.newsletter_token == ""
     # Check the redirect
     last_url, status_code = response.redirect_chain[-1]
     assert last_url == f"/{journal.code}/update/newsletters/"
