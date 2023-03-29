@@ -1186,3 +1186,36 @@ def translate_kwds():
             keyword.word_es = spa_word
             keyword.save()
             logger.debug(f"Translated {keyword} to {por_word} and {spa_word}")
+
+
+def translate_sections(journal):
+    """Translate JCOMAL sections."""
+    # See https://gitlab.sissamedialab.it/wjs/specs/-/issues/267#note_5073
+    section_list = (
+        # en, es, plural_es, pt, plural_pt
+        ("Article", "Articles", "Artículo", "", "Artigo", ""),
+        ("Comment", "Comments", "Comentario", "", "Comentário", ""),
+        ("Commentary", "Commentaries", "", "", "", ""),
+        ("Conference Review", "Conference Reviews", "Reseña de la conferencia", "", "Revisão de conferência", ""),
+        ("Editorial", "Editorials", "Editorial", "", "Editorial", ""),
+        ("Essay", "Essays", "Ensayo", "", "Ensaio", ""),
+        ("Focus", "Focus", "Enfoque", "", "Foco", ""),
+        ("Letter", "Letters", "Carta", "", "Carta", ""),
+        ("Practice Insight", "Practice Insights", "Practice insight", "", "Insight da prática", ""),
+        ("Review Article", "Review Articles", "", "", "", ""),
+        ("Review", "Reviews", "", "", "", ""),
+    )
+    for name, plural, name_es, plural_es, name_pt, plural_pt in section_list:
+        try:
+            section = submission_models.Section.objects.get(journal=journal, name=name)
+        except submission_models.Section.DoesNotExist:
+            logger.error(f'Section "{name}" does not exist. Please check!')
+            continue
+        else:
+            section.plural = plural
+            section.name_pt = name_pt
+            section.name_es = name_es
+            section.plural_pt = plural_pt
+            section.plural_es = plural_es
+            section.save()
+            logger.debug(f"Translated {section} to {name_pt} and {name_es}")
