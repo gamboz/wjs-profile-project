@@ -1136,10 +1136,8 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
 class AnonymousUserNewsletterRegistration(FormView):
     template_name = "elements/accounts/anonymous_user_register_newsletter.html"
     form_class = forms.RegisterUserNewsletterForm
-    object = None
 
     def form_valid(self, request, *args, **kwargs):  # noqa
-        self.reminder = False
         user = self.request.user
         context = self.get_context_data()
         form = context.get("form")
@@ -1159,10 +1157,8 @@ class AnonymousUserNewsletterRegistration(FormView):
                 },
             )
             if created:
-                self.reminder = False
                 prefix = "publication_alert_subscription"
             else:
-                self.reminder = True
                 prefix = "publication_alert_reminder"
                 # It is possible that an anonymous user registers, but
                 # never clicks on the activation link, then
@@ -1171,7 +1167,6 @@ class AnonymousUserNewsletterRegistration(FormView):
                 # news). We prefer to treat this case as a new
                 # registration.
                 if recipient.topics.count() == 0 and recipient.news is False:
-                    self.reminder = False
                     prefix = "publication_alert_subscription"
 
             NewsletterMailerService().send_subscription_confirmation(
