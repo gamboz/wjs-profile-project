@@ -486,7 +486,8 @@ def test_register_to_newsletter_as_anonymous_user(journal, custom_newsletter_set
     anonymous_recipient = Recipient.objects.get(email=anonymous_email)
 
     assert status_code == 302
-    assert redirect_url == reverse("register_newsletters_email_sent", args=(anonymous_recipient.pk,))
+    assert redirect_url == reverse("register_newsletters_email_sent")
+
     assert len(mail.outbox) == 1
     newsletter_email = mail.outbox[0]
     acceptance_url = (
