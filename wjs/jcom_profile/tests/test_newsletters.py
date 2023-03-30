@@ -3,12 +3,11 @@ import random
 from zoneinfo import ZoneInfo
 
 import pytest
-from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse
-
 from comms.models import NewsItem
+from django.contrib.contenttypes.models import ContentType
 from django.core import mail, management
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from submission.models import Article
 from utils.setting_handler import get_setting
@@ -72,7 +71,7 @@ def test_no_newsletters_must_be_sent_when_no_new_articles_with_interesting_keywo
     custom_newsletter_setting,
     keywords,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     content_type = ContentType.objects.get_for_model(journal)
@@ -122,7 +121,7 @@ def test_newsletters_with_news_items_only_must_be_sent(
     custom_newsletter_setting,
     keywords,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     news_user, no_news_user = account_factory(email="news@news.it"), account_factory(email="nonews@nonews.it")
@@ -155,7 +154,7 @@ def test_newsletters_with_articles_only_must_be_sent(
     keyword_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     correspondence_author = account_factory()
@@ -212,7 +211,7 @@ def test_newsletters_are_correctly_sent_with_both_news_and_articles_for_subscrib
     custom_newsletter_setting,
     keywords,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     newsletter = newsletter_factory()
     content_type = ContentType.objects.get_for_model(journal)
@@ -267,7 +266,7 @@ def test_two_recipients_one_news(
     news_item_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     """Service test.
 
@@ -311,7 +310,7 @@ def test_two_recipients_one_article(
     keyword_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     """Service test.
 
@@ -351,7 +350,7 @@ def test_one_recipient_one_article_two_topics(
     keyword_factory,
     custom_newsletter_setting,
     journal,
-    mock_premailer_load_url
+    mock_premailer_load_url,
 ):
     """
     Test recipients not related to any account.
@@ -425,16 +424,15 @@ def test_last_sent_timezone(last_sent, date_published, empty, article_factory, j
 
 @pytest.mark.django_db
 def test_registration_as_non_logged_user_creates_a_recipient_and_redirects_to_email_sent_view(
-        client,
-        journal,
-        recipient_factory,
-        newsletter_factory,
-        article_factory,
-        keyword_factory,
-        custom_newsletter_setting,
-        mock_premailer_load_url,
+    client,
+    journal,
+    recipient_factory,
+    newsletter,
+    article_factory,
+    keyword_factory,
+    custom_newsletter_setting,
+    mock_premailer_load_url,
 ):
-    newsletter = newsletter_factory()
     before_recipients = [x.pk for x in Recipient.objects.all()]
     url = f"/{journal.code}/register/newsletters/"
     response = client.post(url, {"email": "nr1@email.com"}, SERVER_NAME="testserver", follow=True)
@@ -447,33 +445,43 @@ def test_registration_as_non_logged_user_creates_a_recipient_and_redirects_to_em
     assert new_recipient.journal == journal
     assert len(new_recipient.newsletter_token) > 0
     last_url, status_code = response.redirect_chain[-1]
-    assert last_url == f"/{journal.code}/register/newsletters/email-sent/{new_recipient.pk}/"
+    assert last_url == f"/{journal.code}/register/newsletters/email-sent/"
     assert "reminder" not in response.context_data.keys()
 
 
 @pytest.mark.django_db
 def test_registration_as_non_logged_user_when_there_is_already_a_recipient(
-        client,
-        journal,
-        recipient_factory,
-        newsletter_factory,
-        article_factory,
-        keyword_factory,
-        custom_newsletter_setting,
-        mock_premailer_load_url,
+    client,
+    journal,
+    recipient_factory,
+    newsletter,
+    article_factory,
+    keyword_factory,
+    custom_newsletter_setting,
+    mock_premailer_load_url,
 ):
-    newsletter = newsletter_factory()
-    r1 = recipient_factory(journal=journal, news=False, email="nr1@email.com")
+    # Please note that we set the `news=True`, as if the recipient had
+    # already set his preferences. This is to distinguish from the
+    # case when an anonymous user registers the same email multiple
+    # times but never edits his preferences (this case is considered
+    # as a "new registration" - see
+    # views.AnonymousUserNewsletterRegistration:1173)
+    r1 = recipient_factory(journal=journal, news=True, email="nr1@email.com")
+
     before_recipients = [x.pk for x in Recipient.objects.all()]
+
     url = f"/{journal.code}/register/newsletters/"
-    response = client.post(url, {"email": "nr1@email.com"}, SERVER_NAME="testserver", follow=True)
-    new_recipients = Recipient.objects.exclude(pk__in=before_recipients)
+    response = client.post(url, {"email": r1.email}, SERVER_NAME="testserver", follow=True)
+
     # No new Recipient is created
+    new_recipients = Recipient.objects.exclude(pk__in=before_recipients)
     assert new_recipients.count() == 0
+
+    # We get the usual message in the browser (no indication that this
+    # is a reminder, for security reasons)
     last_url, status_code = response.redirect_chain[-1]
-    # Check that reminder=1 is in the url
-    assert last_url == f"/{journal.code}/register/newsletters/email-sent/{r1.pk}/?reminder=1"
-    assert response.context_data.get("reminder", None) == True
+    assert last_url == f"/{journal.code}/register/newsletters/email-sent/"
+
     # Check the email
     assert len(mail.outbox) == 1
     from_email = get_setting(
@@ -485,23 +493,22 @@ def test_registration_as_non_logged_user_when_there_is_already_a_recipient(
     )
     mail_message = mail.outbox[0]
     assert mail_message.from_email == from_email.value
-    assert mail_message.to == ["nr1@email.com"]
+    assert mail_message.to == [r1.email]
     assert "Please note that you are already subscribed" in mail_message.body
 
 
 @pytest.mark.django_db
 def test_registration_as_logged_user_when_a_recipient_does_not_exist(
-        jcom_user,
-        client,
-        journal,
-        recipient_factory,
-        newsletter_factory,
-        article_factory,
-        keyword_factory,
-        custom_newsletter_setting,
-        mock_premailer_load_url,
+    jcom_user,
+    client,
+    journal,
+    recipient_factory,
+    newsletter,
+    article_factory,
+    keyword_factory,
+    custom_newsletter_setting,
+    mock_premailer_load_url,
 ):
-    newsletter = newsletter_factory()
     # Set an email for the user
     jcom_user.email = "jcom_user@email.com"
     jcom_user.save()
