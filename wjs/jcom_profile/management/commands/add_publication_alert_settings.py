@@ -101,7 +101,7 @@ We have received a request to subscribe your email address to JCOM publication a
 Please note that you are already subscribed. If you wish to change your topics of interest use the link below.
 </p>
 <p>
-<a href="/update/newsletters/">Change topics of interest</a>
+<a href="{acceptance_url}">Change topics of interest</a>
 </p>
 <p>
 Kind regards,
