@@ -564,13 +564,12 @@ def test_registered_user_newsletter_unsubscription(jcom_user, journal):
     url = f"/{journal.code}/newsletters/unsubscribe/{user_recipient.pk}"
     response = client.get(url, follow=True)
     redirect_url, status_code = response.redirect_chain[-1]
-    user_recipient.refresh_from_db()
 
     assert status_code == 302
     assert redirect_url == reverse("unsubscribe_newsletter_confirm")
 
-    assert not user_recipient.topics.all()
-    assert not user_recipient.news
+    with pytest.raises(Recipient.DoesNotExist):
+        user_recipient.refresh_from_db()
 
 
 @pytest.mark.django_db

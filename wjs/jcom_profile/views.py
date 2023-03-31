@@ -1203,21 +1203,18 @@ class UnsubscribeUserConfirmation(TemplateView):
 
 
 def unsubscribe_newsletter(request, token):
-    """
-    Unsubscribe from newsletter.
+    """Unsubscribe from newsletter.
 
-    Anonymous users' recipient subscription is deleted, while registered users' ones are emptied.
+    Recipient objects are deleted both for anonymous and registered
+    users so that the "fill-all-if-first-time" logic can apply.
     """
     user = request.user
     try:
         if user.is_anonymous():
             recipient = Recipient.objects.get(newsletter_token=token)
-            recipient.delete()
         else:
             recipient = Recipient.objects.get(user=request.user, journal=request.journal)
-            recipient.news = False
-            recipient.topics.clear()
-            recipient.save()
+        recipient.delete()
     except Recipient.DoesNotExist:
         return Http404
     return HttpResponseRedirect(reverse("unsubscribe_newsletter_confirm"))
