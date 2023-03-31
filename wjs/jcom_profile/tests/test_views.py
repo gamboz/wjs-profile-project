@@ -434,7 +434,8 @@ def test_director_can_change_editor_parameters(journal, roles, admin, editor, ke
 @pytest.mark.parametrize("is_news", (True, False))
 @pytest.mark.django_db
 def test_update_newsletter_subscription(jcom_user, keywords, journal, is_news):
-    keywords = random.choices(Keyword.objects.values_list("id", "word"), k=5)
+    journal.keywords.set(keywords)
+    keywords = random.choices(journal.keywords.values_list("id", "word"), k=5)
 
     client = Client()
     client.force_login(jcom_user)
