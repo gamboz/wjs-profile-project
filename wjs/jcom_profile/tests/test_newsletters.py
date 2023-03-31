@@ -12,7 +12,7 @@ from django.test import Client
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
-from submission.models import Article
+from submission.models import Article, Keyword
 from utils import setting_handler
 from utils.setting_handler import get_setting
 
@@ -503,34 +503,87 @@ def test_registration_as_non_logged_user_when_there_is_already_a_recipient(
 
 
 @pytest.mark.django_db
-def test_registration_as_logged_user_when_a_recipient_does_not_exist(
+def test_registration_as_logged_user_via_post_in_homepage_plugin(
     jcom_user,
     client,
     journal,
-    recipient_factory,
-    newsletter,
-    article_factory,
     keyword_factory,
-    custom_newsletter_setting,
-    mock_premailer_load_url,
 ):
     # Set an email for the user
     jcom_user.email = "jcom_user@email.com"
     jcom_user.save()
     assert Recipient.objects.filter(user=jcom_user, journal=journal).count() == 0
+    # Add some keywords to the journal
+    kwd_count = 3
+    keywords = [keyword_factory() for _ in range(kwd_count)]
+    journal.keywords.set(keywords)
+    assert Keyword.objects.count() == kwd_count
+
     # Login and make the POST call
     client.force_login(jcom_user)
     url = f"/{journal.code}/register/newsletters/"
-    response = client.post(url, {"email": jcom_user.email}, SERVER_NAME="testserver", follow=True)
+    response = client.post(
+        url,
+        {
+            "email": "any@example.com",  # Any email does the same: the logged user takes precedence!
+        },
+        SERVER_NAME="testserver",
+        follow=True,
+    )
+
     # Check that a new Recipient was created
     new_recipients = Recipient.objects.filter(user=jcom_user, journal=journal)
     assert new_recipients.count() == 1
+
     # Check the new Recipient's characteristics
     new_recipient = new_recipients.first()
     assert new_recipient.newsletter_token == ""
+    #  all active at first
+    assert new_recipient.news is True
+    assert new_recipient.topics.count() == new_recipient.journal.keywords.count()
+
     # Check the redirect
     last_url, status_code = response.redirect_chain[-1]
     assert last_url == f"/{journal.code}/update/newsletters/"
+    # Check the email
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_registration_as_logged_user_via_link_in_profile_page(
+    jcom_user,
+    client,
+    journal,
+    keyword_factory,
+):
+    # Set an email for the user
+    jcom_user.email = "jcom_user@email.com"
+    jcom_user.save()
+    assert Recipient.objects.filter(user=jcom_user, journal=journal).count() == 0
+    # Add some keywords to the journal
+    kwd_count = 3
+    keywords = [keyword_factory() for _ in range(kwd_count)]
+    journal.keywords.set(keywords)
+    assert Keyword.objects.count() == kwd_count
+
+    # Login and make visit the update-newsletter page (reachable from the profile page)
+    client.force_login(jcom_user)
+    url = f"/{journal.code}/update/newsletters/"
+    response = client.get(url, SERVER_NAME="testserver", follow=True)
+
+    # Check that a new Recipient was created
+    new_recipients = Recipient.objects.filter(user=jcom_user, journal=journal)
+    assert new_recipients.count() == 1
+
+    # Check the new Recipient's characteristics
+    new_recipient = new_recipients.first()
+    assert new_recipient.newsletter_token == ""
+    #  all active at first
+    assert new_recipient.news is True
+    assert new_recipient.topics.count() == new_recipient.journal.keywords.count()
+
+    # Check the response
+    assert response.status_code == 200
     # Check the email
     assert len(mail.outbox) == 0
 
