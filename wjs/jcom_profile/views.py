@@ -1155,7 +1155,12 @@ class AnonymousUserNewsletterRegistration(FormView):
         token = generate_token(email)
         if not user.is_anonymous():
             # User is logged in, get or create the Recipient based on user and journal
-            recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
+            recipient, created = Recipient.objects.get_or_create(user=user, journal=journal)
+            if created:
+                recipient.topics.set(recipient.journal.keywords.all())
+                recipient.news = True
+                recipient.save()
+
         else:
             # User is anonymous
             recipient, created = Recipient.objects.get_or_create(
