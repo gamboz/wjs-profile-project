@@ -29,6 +29,7 @@
     {% if article.identifier.id_type == "doi" %}<meta name="dcterms.identifier" content="info:doi/{{ article.identifier.identifier}}" />{% endif %}
     <meta name="dcterms.bibliographicCitation" content="{{ article|how_to_cite|striptags|force_escape }}" />
     <meta name="dcterms.isPartOf" content="urn:ISSN:{{ article.journal_issn }}" />
+    <meta name="dcterms.license" content="{{ article.license.url }}" />
 
     {% if article.publisher_name%}<meta name="citation_publisher" content="{{ article.publisher_name }}"/>
     {% elif journal_settings.general.publisher_name %}<meta name="citation_publisher" content="{{ journal_settings.general.publisher_name }}"/>
