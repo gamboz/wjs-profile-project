@@ -360,7 +360,7 @@ class SIUpdateForm(forms.ModelForm):
 
 class NewsletterTopicForm(forms.ModelForm):
     topics = forms.ModelMultipleChoiceField(
-        label=_("Topics"),
+        label=_(""),
         queryset=None,
         widget=forms.CheckboxSelectMultiple,
         required=False,
