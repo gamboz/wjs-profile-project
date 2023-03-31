@@ -1111,11 +1111,6 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
                 return False
         return True
 
-    def get_context_data(self, **kwargs):  # noqa
-        context = super().get_context_data(**kwargs)
-        context["active"] = self.object.news or self.object.topics.exists()
-        return context
-
     def get_object(self, queryset=None):  # noqa
         user, journal = self.request.user, self.request.journal
         if user.is_anonymous():
