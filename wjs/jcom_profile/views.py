@@ -1120,8 +1120,17 @@ class NewsletterParametersUpdate(UserPassesTestMixin, UpdateView):
         user, journal = self.request.user, self.request.journal
         if user.is_anonymous():
             recipient = Recipient.objects.get(newsletter_token=self.request.GET.get("token"))
+            if (not recipient.topics.exists()) and (recipient.news is False):
+                recipient.topics.set(recipient.journal.keywords.all())
+                recipient.news = True
+                recipient.save()
         else:
-            recipient, _ = Recipient.objects.get_or_create(user=user, journal=journal)
+            recipient, created = Recipient.objects.get_or_create(user=user, journal=journal)
+            if created:
+                recipient.topics.set(recipient.journal.keywords.all())
+                recipient.news = True
+                recipient.save()
+
         return recipient
 
     def get_success_url(self):  # noqa

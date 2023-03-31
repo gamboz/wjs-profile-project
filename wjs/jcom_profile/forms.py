@@ -11,9 +11,6 @@ from django.utils.translation import ugettext_lazy as _
 from easy_select2.widgets import Select2Multiple
 from submission.models import Keyword, Section
 from utils.forms import CaptchaForm
-from utils.logger import get_logger
-logger = get_logger(__name__)
-
 
 from wjs.jcom_profile.models import (
     ArticleWrapper,
@@ -379,36 +376,8 @@ class NewsletterTopicForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         """Prepare the queryset for topics."""
-        # TBV! initial doesn't work...
-        # see also
-        # - https://code.djangoproject.com/ticket/5247#comment:6
-        # - https://stackoverflow.com/a/46713270
-        if "initial" not in kwargs:
-            kwargs["initial"] = {}
-        # kwargs["initial"]["topics"] = [kwd_id for kwd_id in kwargs.get("instance").topics.all().values_list("id", flat=True)]
-        kwargs["initial"]["topics"] = kwargs.get("instance").topics.all()
-
+        self.base_fields["topics"].queryset = kwargs.get("instance").journal.keywords.all().order_by("word")
         super().__init__(*args, **kwargs)
-
-        self.fields["topics"].queryset = kwargs.get("instance").journal.keywords.all().order_by("word")
-
-        # # NB: If one deselect all and saves (instead of clicking
-        # # "unsubscribe") the behaviour is unexpected: all the fields
-        # # are selected again.
-        # if (not recipient.topics.exists()) and (recipient.news is False):
-        #     # First time here: enable all.
-        #     #
-        #     # NB: don't do that when creating the recipient object: it
-        #     # must be created empty and filled only when activated by
-        #     # user action!
-        #     self.fields["news"].initial = True
-        #     kwds_ids = [kwd_id for kwd_id in journal.keywords.all().values_list("id", flat=True)]
-        #     self.fields["topics"].initial = kwds_ids
-
-        # else:
-        #     self.fields["news"].initial = recipient.news
-        #     topics_ids = [kwd_id for kwd_id in recipient.topics.all().values_list("id", flat=True)]
-        #     self.fields["topics"].initial = topics_ids
 
 
 class RegisterUserNewsletterForm(forms.Form):
