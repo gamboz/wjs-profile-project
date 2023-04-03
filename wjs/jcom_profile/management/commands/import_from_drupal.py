@@ -1194,18 +1194,30 @@ def translate_sections(journal):
     """Translate JCOMAL sections."""
     # See https://gitlab.sissamedialab.it/wjs/specs/-/issues/267#note_5073
     section_list = (
-        # en, es, plural_es, pt, plural_pt
-        ("Article", "Articles", "Artículo", "", "Artigo", ""),
-        ("Comment", "Comments", "Comentario", "", "Comentário", ""),
-        ("Commentary", "Commentaries", "", "", "", ""),
-        ("Conference Review", "Conference Reviews", "Reseña de la conferencia", "", "Revisão de conferência", ""),
-        ("Editorial", "Editorials", "Editorial", "", "Editorial", ""),
-        ("Essay", "Essays", "Ensayo", "", "Ensaio", ""),
-        ("Focus", "Focus", "Enfoque", "", "Foco", ""),
-        ("Letter", "Letters", "Carta", "", "Carta", ""),
-        ("Practice Insight", "Practice Insights", "Practice insight", "", "Insight da prática", ""),
-        ("Review Article", "Review Articles", "", "", "", ""),
-        ("Review", "Reviews", "", "", "", ""),
+        # en, plural_en,   es, plural_es,   pt, plural_pt
+        ("Article", "Articles", "Artículo", "Artículos", "Artigo", "Artigos"),
+        ("Comment", "Comments", "Comentario", "Comentarios", "Comentário", "Comentários"),
+        ("Editorial", "Editorials", "Editorial", "Editoriales", "Editorial", "Editoriais"),
+        ("Essay", "Essays", "Ensayo", "Ensayos", "Ensaio", "Ensaios"),
+        ("Focus", "Focus", "Enfoque", "Enfoques", "Foco", "Focos"),
+        ("Letter", "Letters", "Carta", "Cartas", "Carta", "Cartas"),
+        (
+            "Practice Insight",
+            "Practice Insights",
+            "Practice insight",
+            "Practice insight",
+            "Insight da prática",
+            "Insight da prática",
+        ),
+        (
+            "Review Article",
+            "Review Articles",
+            "Artículo de revisión",
+            "Artículos de revisión",
+            "Artigo de revisão",
+            "Artigos de revisão",
+        ),
+        ("Review", "Reviews", "Reseña", "Reseñas", "Resenha", "Resenhas"),
     )
     for name, plural, name_es, plural_es, name_pt, plural_pt in section_list:
         try:
