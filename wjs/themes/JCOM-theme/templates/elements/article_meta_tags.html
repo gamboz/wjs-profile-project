@@ -26,17 +26,13 @@
     <meta name="dcterms.date" content="{{ article.date_published|date:"Y/m/d" }}" />
     <meta name="dcterms.type" content="Text" />
     {# Is it right? I tried to reproduce precisely what I see in the old website, for example https://jcom.sissa.it/archive/22/01/JCOM_2201_2023_R01 #}
-    {% if article.identifier.id_type == "doi" %}<meta name="dcterms.identifier" content="info:doi/{{ article.identifier.identifier}}" />{% endif %}
+    {% if article.identifier.id_type == "doi" %}<meta name="dcterms.identifier" content="info:doi/{{ article.identifier.identifier }}" />{% endif %}
     <meta name="dcterms.bibliographicCitation" content="{{ article|how_to_cite|striptags|force_escape }}" />
     <meta name="dcterms.isPartOf" content="urn:ISSN:{{ article.journal_issn }}" />
     <meta name="dcterms.license" content="{{ article.license.url }}" />
-    {% if request.is_secure %}
-        <meta name="dcterms.rights" content="https://{{ request.get_host }}/site/about-{{journal.code|lower}}" />
-    {% else %}
-        <meta name="dcterms.rights" content="http://{{ request.get_host }}/site/about-{{journal.code|lower}}" />
-    {% endif %}
+    <meta name="dcterms.rights" content="{{ request.journal.site_url }}/site/about-{{ journal.code|lower }}" />
 
-    {% if article.publisher_name%}<meta name="citation_publisher" content="{{ article.publisher_name }}"/>
+    {% if article.publisher_name %}<meta name="citation_publisher" content="{{ article.publisher_name }}"/>
     {% elif journal_settings.general.publisher_name %}<meta name="citation_publisher" content="{{ journal_settings.general.publisher_name }}"/>
     {% endif %}
     <meta name="citation_journal_title" content="{{ article.journal_title }}"/>
