@@ -183,9 +183,8 @@ class Command(BaseCommand):
             help="Do create a thumbnail for the article from the large image.",
         )
         parser.add_argument(
-            "--journal-code",
-            default="JCOM",
-            help="Toward which journal to import. Defaults to %(default)s.",
+            "journal-code",
+            help="Toward which journal to import.",
         )
 
     def find_articles(self):
@@ -244,11 +243,11 @@ class Command(BaseCommand):
     def process(self, raw_data):
         """Process an article's raw json data."""
         logger.debug("Processing %s (nid=%s)", raw_data["field_id"], raw_data["nid"])
-        self.journal_data = JOURNALS_DATA[self.options["journal_code"]]
+        self.journal_data = JOURNALS_DATA[self.options["journal-code"]]
         self.nid = int(raw_data["nid"])
         # Ugly hack in order not to overlap with JCOM imported papers.
         # Also, do I really need to keep the Drupal node id?
-        if self.options["journal_code"] == "JCOMAL":
+        if self.options["journal-code"] == "JCOMAL":
             self.nid += 10000
         if article_pk := Command.seen_articles.get(raw_data["field_id"], None):
             logger.debug("  %s - already imported. Just retrieving from DB (%s).", raw_data["field_id"], article_pk)
@@ -281,7 +280,7 @@ class Command(BaseCommand):
           nothing (the old value is preserverd).
 
         """
-        journal = journal_models.Journal.objects.get(code=self.options["journal_code"])
+        journal = journal_models.Journal.objects.get(code=self.options["journal-code"])
         # There is a document with no DOI (JCOM_1303_2014_RCR), so I use the "pubid"
         article = submission_models.Article.get_article(
             journal=journal,
@@ -419,7 +418,7 @@ class Command(BaseCommand):
         # I'm not sure that it is correct to set a language different
         # from English when the doi points to English-only metadata
         # (even if there are two PDF files). But see #194.
-        if self.options["journal_code"] == "JCOM":
+        if self.options["journal-code"] == "JCOM":
             article.language = "eng"
 
         attachments = raw_data["field_attachments"]
@@ -433,7 +432,7 @@ class Command(BaseCommand):
                 file_name=file_dict["name"],
                 file_mimetype=file_dict["mime"],
             )
-            if self.options["journal_code"] == "JCOM":
+            if self.options["journal-code"] == "JCOM":
                 if language and language != "en":
                     if article.language != "eng":
                         # We can have 2 non-English galleys (PDF and EPUB),
@@ -1003,7 +1002,7 @@ class Command(BaseCommand):
         # journal. We just know it's there.
         self.license_ccbyncnd = submission_models.Licence.objects.get(
             short_name="CC BY-NC-ND 4.0",
-            journal=journal_models.Journal.objects.get(code=self.options["journal_code"]),
+            journal=journal_models.Journal.objects.get(code=self.options["journal-code"]),
         )
         if "NoDerivatives" not in self.license_ccbyncnd.name:
             logger.warning('Please fix the text of the ND licenses: should read "NoDerivatives".')
@@ -1022,8 +1021,8 @@ class Command(BaseCommand):
 
     def tidy_up(self):
         """Run una-tantum operations at the end of the import process."""
-        if self.options["journal_code"] == "JCOMAL":
-            journal = journal_models.Journal.objects.get(code=self.options["journal_code"])
+        if self.options["journal-code"] == "JCOMAL":
+            journal = journal_models.Journal.objects.get(code=self.options["journal-code"])
             translate_kwds(journal)
             translate_sections(journal)
 
